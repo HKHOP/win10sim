@@ -1,0 +1,254 @@
+/* Win10 sign-in: avatar, name, password box, status bar, welcome. */
+
+.signin-layer {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+}
+
+.signin-wallpaper {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1);
+  filter: blur(0);
+  opacity: 1;
+  transition: transform 0.55s ease, filter 0.55s ease, opacity 0.6s ease;
+}
+
+/* Win10 zooms + blurs the wallpaper as the lock panel slides away. */
+.lock-root.dismissed .signin-wallpaper {
+  transform: scale(1.07);
+  filter: blur(8px);
+}
+
+.signin-dim {
+  position: absolute;
+  inset: 0;
+  /* Win10 dims the wallpaper slightly behind the sign-in UI. */
+  background: rgba(0, 0, 0, 0.28);
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+
+.signin-center,
+.signin-statusbar {
+  transition: opacity 0.4s ease;
+}
+
+/* Phase 1: icons and controls fade while the wallpaper holds... */
+.signin-content-fade .signin-center,
+.signin-content-fade .signin-statusbar {
+  opacity: 0;
+}
+
+/* ...phase 2: the wallpaper follows, revealing the desktop underneath. */
+.signin-bg-fade .signin-wallpaper,
+.signin-bg-fade .signin-dim {
+  opacity: 0;
+}
+
+.signin-center {
+  position: absolute;
+  top: 160px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.signin-avatar {
+  border-radius: 50%;
+  display: block;
+}
+
+.signin-name {
+  font-size: 42px;
+  font-weight: 200;
+  margin: 18px 0 24px;
+  text-align: center;
+}
+
+.signin-form {
+  display: flex;
+  width: 340px;
+  height: 40px;
+  background: #fff;
+  border: 2px solid #767676;
+}
+
+.signin-form:focus-within {
+  border-color: #0078d7;
+}
+
+.signin-password {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0 10px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.signin-icon-btn {
+  width: 40px;
+  border: 0;
+  padding: 0;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signin-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.signin-submit {
+  width: 48px;
+  background: #e1e1e1;
+}
+
+.signin-shake {
+  animation: signin-shake 0.3s ease;
+}
+
+@keyframes signin-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+}
+
+.signin-statusbar {
+  position: absolute;
+  right: 40px;
+  bottom: 34px;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+}
+
+.signin-lang {
+  font-size: 15px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.status-icon-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.status-icon-btn svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.power-wrap {
+  position: relative;
+}
+
+.power-menu {
+  position: absolute;
+  right: 0;
+  bottom: 44px;
+  min-width: 160px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #333;
+}
+
+.power-hidden {
+  display: none;
+}
+
+.power-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 10px 14px;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.power-item:hover,
+.power-item.sim-hover {
+  background: #333;
+}
+
+/* Post-password: the box is replaced by a spinner with Welcome beside it. */
+.welcome-row {
+  width: 340px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.welcome-spinner-inline {
+  display: block;
+}
+
+.welcome-text-inline {
+  font-size: 28px;
+  font-weight: 300;
+}
+
+.sleep-overlay,
+.shutdown-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sleep-on,
+.shutdown-on {
+  opacity: 1;
+}
+
+.shutdown-hint {
+  color: #888;
+  font-size: 18px;
+  font-weight: 300;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signin-shake {
+    animation: none;
+  }
+
+  .signin-center,
+  .signin-statusbar,
+  .signin-wallpaper,
+  .signin-dim {
+    transition: none;
+  }
+
+  .lock-root.dismissed .signin-wallpaper {
+    transform: none;
+    filter: none;
+  }
+
+  .welcome-spinner-inline {
+    visibility: hidden;
+  }
+}

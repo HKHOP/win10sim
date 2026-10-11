@@ -1,0 +1,52 @@
+/* Win10 boot splash: black screen, logo artwork, spinner artwork. */
+
+.boot-screen {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  user-select: none;
+  transition: opacity 0.4s ease;
+}
+
+.boot-screen.boot-fade {
+  opacity: 0;
+}
+
+.boot-logo {
+  position: absolute;
+  top: 168px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.boot-logo-mark {
+  height: auto;
+  display: block;
+}
+
+.boot-spinner-wrap {
+  position: absolute;
+  top: 560px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.boot-spinner-img {
+  display: block;
+}
+
+/* The bug: the logo vanishes for no reason... */
+.boot-logo-gone {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A GIF cannot be paused via CSS, so hide the motion for reduced motion. */
+  .boot-spinner-img {
+    visibility: hidden;
+  }
+}

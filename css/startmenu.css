@@ -1,0 +1,534 @@
+/* Win10 Start menu: the panel that opens over the taskbar's left corner.
+   Left rail = app list ("Most used", "Recently added", A-Z groups) with the
+   account/power row at the bottom; right pane = pinned tile grid. */
+
+.start-menu {
+  position: absolute;
+  display: flex;
+  /* Above windows, below context menus. */
+  z-index: 1400;
+  background: rgba(243, 243, 243, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  /* Sits on the taskbar, so only the free edges cast a shadow. */
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Win10 slides the Start menu out of the taskbar while it fades in, and
+   drops it back while it fades away. */
+.start-open {
+  animation: start-menu-in 0.24s ease-out;
+}
+
+.start-closing {
+  animation: start-menu-out 0.2s ease-in forwards;
+}
+
+@keyframes start-menu-in {
+  from {
+    translate: 0 48px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes start-menu-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 0 48px;
+    opacity: 0;
+  }
+}
+
+.start-menu[hidden] {
+  display: none;
+}
+
+/* --- Left rail ---------------------------------------------------------- */
+
+.start-rail {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  background: rgba(238, 238, 238, 0.9);
+  transition: width 0.18s ease-out;
+}
+
+.start-hamburger {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 44px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 14px;
+}
+
+.start-hamburger svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.start-hamburger:hover,
+.start-hamburger.sim-hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Win10's own slim scrollbars for the app list. */
+.start-list::-webkit-scrollbar,
+.start-tiles::-webkit-scrollbar {
+  width: 6px;
+}
+
+.start-list::-webkit-scrollbar-thumb,
+.start-tiles::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+.start-list::-webkit-scrollbar-track,
+.start-tiles::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.start-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 6px;
+  outline: none;
+}
+
+.start-section {
+  padding: 12px 10px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1b1b1b;
+}
+
+/* A-Z jump headers: Win10 prints them grey and smaller. */
+.start-section.start-section-letter {
+  color: #4a4a4a;
+  font-size: 12px;
+  font-weight: 600;
+  padding-top: 10px;
+}
+
+.start-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  margin: 1px 0;
+  padding: 0 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: #111;
+  outline: none;
+}
+
+.start-item:hover,
+.start-item.sim-hover,
+.start-item:focus-visible {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.start-item:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.start-item-icon {
+  position: relative;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-item-icon img {
+  max-width: 24px;
+  max-height: 24px;
+  display: block;
+}
+
+/* Running apps get the taskbar's blue underline, the way Win10 marks them. */
+.start-item.is-running .start-item-icon::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: -4px;
+  height: 2px;
+  background: #0078d7;
+}
+
+.start-item-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.start-item-name {
+  font-size: 13px;
+  line-height: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.start-item-sub {
+  font-size: 11px;
+  line-height: 14px;
+  color: #6a6a6a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rail collapsed (hamburger toggled): icons only. */
+.rail-collapsed .start-item {
+  justify-content: center;
+  padding: 0;
+}
+
+.rail-collapsed .start-item-text,
+.rail-collapsed .start-section {
+  display: none;
+}
+
+.rail-collapsed .start-account-name {
+  display: none;
+}
+
+/* --- Account + power row ------------------------------------------------ */
+
+.start-rail-bottom {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.start-account {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  border: 0;
+  padding: 0 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.start-account:hover,
+.start-account.sim-hover,
+.start-account.is-open {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.start-account-pic {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: block;
+}
+
+.start-account-name {
+  font-size: 12px;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.start-power {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-power svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.start-power:hover,
+.start-power.sim-hover,
+.start-power.is-open {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+/* --- Popovers ----------------------------------------------------------- */
+
+.start-power-menu,
+.start-account-menu {
+  position: absolute;
+  right: 6px;
+  bottom: 48px;
+  min-width: 180px;
+  padding: 4px 0;
+  background: rgba(252, 252, 252, 0.99);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  z-index: 5;
+}
+
+.start-power-menu[hidden],
+.start-account-menu[hidden] {
+  display: none;
+}
+
+.start-power-item,
+.start-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 34px;
+  border: 0;
+  padding: 0 14px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-power-item svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.start-power-item:hover,
+.start-power-item.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.start-menu-item:hover,
+.start-menu-item.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.start-menu-item.is-disabled {
+  color: #9a9a9a;
+  cursor: default;
+}
+
+.start-menu-item.is-disabled:hover {
+  background: transparent;
+}
+
+/* --- Tiles -------------------------------------------------------------- */
+
+.start-tiles {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 108px);
+  grid-auto-rows: auto;
+  gap: 9px;
+  align-content: start;
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.start-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Lifted while being dragged to a new slot. */
+.start-tile.is-dragging {
+  z-index: 2;
+}
+
+.start-tile.is-dragging .start-tile-art {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  border-color: rgba(0, 120, 215, 0.6);
+}
+
+/* Win10's resize handles on a tile's right and bottom edges. */
+.start-tile-grip {
+  position: absolute;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+}
+
+.start-tile:hover .start-tile-grip,
+.start-tile:focus-visible .start-tile-grip,
+.start-tile.is-dragging .start-tile-grip,
+.start-tile.sim-hover .start-tile-grip {
+  opacity: 1;
+}
+
+.start-tile-grip-x {
+  right: -5px;
+  top: 0;
+  bottom: 26px;
+  width: 12px;
+  cursor: ew-resize;
+  background: linear-gradient(to right, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.45));
+  border-radius: 0 3px 3px 0;
+}
+
+.start-tile-grip-y {
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 12px;
+  cursor: ns-resize;
+  background: linear-gradient(to bottom, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.45));
+  border-radius: 0 0 3px 3px;
+}
+
+.start-tile-art {
+  position: relative;
+  flex: 0 0 auto;
+  height: 108px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.start-tile-art img {
+  width: 52px;
+  height: 52px;
+  display: block;
+}
+
+.start-tile-glyph {
+  display: flex;
+  color: #fff;
+}
+
+.start-tile-glyph svg {
+  width: 48px;
+  height: 48px;
+  display: block;
+}
+
+.start-tile:hover .start-tile-art,
+.start-tile.sim-hover .start-tile-art {
+  filter: brightness(1.08);
+}
+
+.start-tile:active .start-tile-art {
+  filter: brightness(0.95);
+}
+
+/* Running apps keep a marker, as on the taskbar. */
+.start-tile.is-running .start-tile-art {
+  border-color: #0078d7;
+  box-shadow: inset 0 0 0 1px rgba(0, 120, 215, 0.6);
+}
+
+.start-tile-label {
+  font-size: 12px;
+  line-height: 16px;
+  height: 22px;
+  color: #1b1b1b;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.start-tile-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #0078d7;
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.start-tile-badge[hidden] {
+  display: none;
+}
+
+/* Tile sizes: Win10 small / medium / wide / large. */
+.start-tile-small .start-tile-art {
+  height: 108px;
+}
+
+.start-tile-wide {
+  grid-column: span 2;
+}
+
+.start-tile-large {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.start-tile-large .start-tile-art {
+  height: 225px;
+}
+
+.start-tile-large .start-tile-art img {
+  width: 96px;
+  height: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-rail {
+    transition: none;
+  }
+
+  .start-closing {
+    animation: none;
+  }
+}

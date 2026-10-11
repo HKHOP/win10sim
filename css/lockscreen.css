@@ -1,0 +1,68 @@
+/* Win10 lock screen: full-bleed wallpaper, big clock, slide-up dismiss. */
+
+.lock-root {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.lock-root.lock-visible {
+  opacity: 1;
+}
+
+.lock-layer {
+  position: absolute;
+  inset: 0;
+  background-color: #000;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: transform 0.38s ease-in;
+}
+
+.lock-root.dismissed .lock-layer {
+  transform: translateY(-100%);
+}
+
+.lock-clock {
+  position: absolute;
+  left: 64px;
+  bottom: 118px;
+  color: #fff;
+}
+
+.lock-time {
+  font-size: 96px;
+  font-weight: 200;
+  line-height: 1;
+}
+
+.lock-date {
+  font-size: 34px;
+  font-weight: 300;
+  margin-top: 10px;
+}
+
+.lock-status {
+  position: absolute;
+  right: 32px;
+  bottom: 26px;
+}
+
+.lock-status svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lock-root {
+    transition: none;
+    opacity: 1;
+  }
+
+  .lock-layer {
+    transition: none;
+  }
+}

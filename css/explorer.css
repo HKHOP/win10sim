@@ -1,0 +1,626 @@
+/* File Explorer: address bar, nav pane, browsable content, status bar. */
+
+.explorer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  user-select: none;
+}
+
+.exp-unavailable {
+  padding: 24px;
+  font-size: 13px;
+  color: #555;
+}
+
+/* Address bar: history arrows, breadcrumb, refresh, search. */
+
+.exp-address {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e0e0e0;
+  position: relative;
+  z-index: 40;
+}
+
+.exp-navbtn {
+  width: 28px;
+  height: 26px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exp-navbtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.exp-navbtn:not(:disabled):hover,
+.exp-navbtn:not(:disabled).sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.exp-navbtn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.exp-crumb {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  border: 1px solid #999;
+  height: 28px;
+  padding: 0 4px;
+  margin: 0 4px;
+  background: #fff;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Edit mode: crumbs swap for the full path, box takes the focus colour. */
+.exp-crumb-edit {
+  border-color: #0078d7;
+}
+
+.exp-addr-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: #fff;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.exp-crumb-btn {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  padding: 3px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.exp-crumb-btn:hover,
+.exp-crumb-btn.sim-hover {
+  background: #e5f1fd;
+  outline: 1px solid #b8d6fb;
+}
+
+.exp-crumb-sep {
+  color: #777;
+  padding: 0 1px;
+}
+
+.exp-crumb .exp-navbtn {
+  margin-left: auto;
+}
+
+.exp-search {
+  width: 200px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #999;
+  height: 28px;
+  padding: 0 6px;
+  gap: 6px;
+}
+
+.exp-search:focus-within {
+  border-color: #0078d7;
+}
+
+.exp-search-icon {
+  display: flex;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.exp-search-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.exp-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  font-size: 12px;
+  font-family: inherit;
+  background: transparent;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Recent-places drop-down under the address box. */
+
+.exp-recent {
+  position: absolute;
+  top: 100%;
+  left: 44px;
+  right: 216px;
+  min-width: 240px;
+  max-width: 460px;
+  background: #fff;
+  border: 1px solid #adadad;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  padding: 2px 0;
+  display: none;
+  z-index: 60;
+}
+
+.exp-recent.on {
+  display: block;
+}
+
+.exp-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exp-recent-item:hover,
+.exp-recent-item.sim-hover {
+  background: #e5f1fd;
+}
+
+.exp-recent-item img {
+  width: 16px;
+  height: 16px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.exp-recent-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Win10-style message box for unresolvable addresses. */
+
+.exp-msgbox {
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 10px 12px;
+  padding: 18px 16px 14px;
+}
+
+.exp-msgbox-icon {
+  display: flex;
+}
+
+.exp-msgbox-icon svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.exp-msgbox-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #111;
+  align-self: start;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.exp-msgbox-btn {
+  grid-column: 2;
+  justify-self: end;
+  min-width: 90px;
+  height: 28px;
+  border: 1px solid #adadad;
+  background: #e1e1e1;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  cursor: pointer;
+}
+
+.exp-msgbox-btn:hover,
+.exp-msgbox-btn.sim-hover {
+  background: #e5f1fd;
+  border-color: #0078d7;
+}
+
+/* Buttons sit bottom-right in a row, as in Win10 dialogs. */
+.exp-msgbox-actions {
+  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-self: end;
+}
+
+.exp-msgbox-actions .exp-msgbox-btn {
+  grid-column: auto;
+  justify-self: auto;
+}
+
+/* Properties sheet. */
+
+.exp-props {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 12px;
+  gap: 12px;
+}
+
+.exp-props-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.exp-props-art img {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.exp-props-title {
+  font-size: 13px;
+  color: #111;
+  word-break: break-word;
+}
+
+.exp-props-rows {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+}
+
+.exp-props-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  font-size: 12px;
+  color: #333;
+}
+
+.exp-props-key {
+  text-align: right;
+  color: #555;
+}
+
+.exp-props-val {
+  color: #111;
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.exp-props-actions {
+  margin-top: auto;
+}
+
+/* Inline rename (F2 / context menu): a boxed field over the item label. */
+
+.exp-rename {
+  width: 100%;
+  min-width: 60px;
+  border: 1px solid #0078d7;
+  outline: 0;
+  padding: 1px 2px;
+  font-size: 12px;
+  font-family: inherit;
+  text-align: inherit;
+  background: #fff;
+  color: #111;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.exp-list-row .exp-rename,
+.exp-detail-name .exp-rename {
+  text-align: left;
+}
+
+/* Main split: nav pane + content. */
+
+.exp-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.exp-nav {
+  flex: 0 0 190px;
+  overflow-y: auto;
+  padding: 6px 0 12px;
+  border-right: 1px solid #e0e0e0;
+}
+
+.exp-nav-header {
+  font-size: 12px;
+  color: #333;
+  padding: 6px 10px 2px;
+}
+
+.exp-nav-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exp-nav-row:hover,
+.exp-nav-row.sim-hover {
+  background: #e5f1fd;
+}
+
+.exp-nav-active {
+  background: #cde6ff;
+}
+
+.exp-nav-art {
+  display: flex;
+}
+
+.exp-nav-art img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.exp-nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Content: groups, tiles, details, list, drives. */
+
+.exp-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 8px 12px 16px;
+}
+
+.exp-empty {
+  color: #666;
+  padding: 20px 8px;
+}
+
+.exp-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  font-size: 12px;
+  font-family: inherit;
+  color: #0078d7;
+  padding: 8px 0 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.exp-group-chevron {
+  width: 12px;
+  color: #555;
+}
+
+.exp-group-hidden {
+  display: none;
+}
+
+.exp-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.exp-tile {
+  width: 104px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  border: 1px dotted transparent;
+  cursor: pointer;
+}
+
+.exp-tile-art img {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+
+.exp-tile-label {
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.exp-tile:hover,
+.exp-list-row:hover,
+.exp-detail-row:hover,
+.exp-tile.sim-hover,
+.exp-list-row.sim-hover,
+.exp-detail-row.sim-hover {
+  background: #e5f1fd;
+}
+
+.exp-selected {
+  background: #cde6ff !important;
+  border-color: #99c7f5 !important;
+}
+
+.exp-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.exp-list-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border: 1px dotted transparent;
+  cursor: pointer;
+}
+
+.exp-list-row img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.exp-detail-head,
+.exp-detail-row {
+  display: grid;
+  grid-template-columns: 1fr 150px 140px 90px;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+}
+
+.exp-detail-head {
+  color: #666;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.exp-detail-row {
+  border: 1px dotted transparent;
+  cursor: pointer;
+}
+
+.exp-detail-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.exp-detail-name span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exp-detail-art {
+  display: flex;
+}
+
+.exp-detail-art img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.exp-detail-date,
+.exp-detail-type,
+.exp-detail-size {
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exp-drive {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 300px;
+  padding: 8px;
+  border: 1px dotted transparent;
+  cursor: pointer;
+}
+
+.exp-drive:hover,
+.exp-drive.sim-hover {
+  background: #e5f1fd;
+}
+
+.exp-drive-art img {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+
+.exp-drive-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.exp-drive-name {
+  margin-bottom: 4px;
+}
+
+.exp-drive-bar {
+  height: 12px;
+  background: #e0e0e0;
+  border: 1px solid #bbb;
+}
+
+.exp-drive-fill {
+  height: 100%;
+  background: #0078d7;
+}
+
+.exp-drive-sub {
+  color: #555;
+  margin-top: 3px;
+}
+
+/* Status bar. */
+
+.exp-status {
+  flex: 0 0 auto;
+  border-top: 1px solid #e0e0e0;
+  padding: 4px 10px;
+  color: #333;
+  background: #fff;
+}

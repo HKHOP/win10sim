@@ -1,0 +1,178 @@
+/* Win10 light-theme taskbar: 40px, pale surface, dark glyphs. */
+
+.taskbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  background: rgba(238, 238, 238, 0.92);
+  border-top: 1px solid #d4d4d4;
+  user-select: none;
+  /* Above windows and the Start menu: the Start panel slides out from
+     behind this bar, exactly like Win10. Context menus sit far above. */
+  z-index: 1700;
+}
+
+.task-start {
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-start:hover,
+.task-start.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Start menu open: Win10 keeps the button lit while the panel is showing. */
+.task-start.task-active-app {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.task-start-logo {
+  width: 20px;
+  height: 20px;
+  display: block;
+  /* Blue boot artwork filtered down to the dark Start glyph. */
+  filter: brightness(0);
+}
+
+.task-search {
+  width: 220px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 1px solid #d4d4d4;
+  border-right: 1px solid #d4d4d4;
+  padding: 0 10px;
+  gap: 8px;
+}
+
+.task-search-icon {
+  display: flex;
+}
+
+.task-search-icon svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.task-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: #222;
+}
+
+.task-search-input::placeholder {
+  color: #666;
+}
+
+.task-btn,
+.task-pinned {
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-btn:hover,
+.task-pinned:hover,
+.tray-btn:hover,
+.tray-clock:hover,
+.task-btn.sim-hover,
+.task-pinned.sim-hover,
+.tray-btn.sim-hover,
+.tray-clock.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.task-btn svg,
+.task-pinned svg,
+.task-pinned img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.task-pinned-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.task-running {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+}
+
+.task-tray {
+  display: flex;
+  align-items: stretch;
+}
+
+.tray-btn {
+  width: 30px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tray-btn svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.tray-lang {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 12px;
+  color: #222;
+}
+
+.tray-clock {
+  border: 0;
+  padding: 0 8px;
+  background: transparent;
+  cursor: pointer;
+  color: #222;
+  font-size: 12px;
+  line-height: 1.35;
+  font-family: inherit;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.task-showdesktop {
+  width: 6px;
+  border-left: 1px solid #999;
+}
+
+.task-showdesktop:hover,
+.task-showdesktop.sim-hover {
+  background: rgba(0, 0, 0, 0.12);
+}

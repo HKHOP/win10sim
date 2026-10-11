@@ -1,0 +1,24 @@
+/* Emulated monitor: internal grid is ALWAYS 1366x768 (see js/core/stage.js).
+   Smaller viewports get a scaled-down view; the grid itself never changes. */
+
+#viewport {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #101010;
+}
+
+#monitor-stage {
+  width: 1366px;
+  height: 768px;
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  transform-origin: center center;
+  /* Bezel hint so the fixed grid reads as a monitor on big screens. */
+  box-shadow: 0 0 0 4px #1b1b1b, 0 24px 80px rgba(0, 0, 0, 0.65);
+}

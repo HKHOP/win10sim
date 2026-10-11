@@ -1,0 +1,531 @@
+// Win10 Start menu: the medium panel anchored over the taskbar's left
+// corner. Left rail carries "Most used" / "Recently added" / the A-Z app
+// list, with the account and power row at the bottom; the right pane is the
+// pinned tile grid.
+//
+// Everything the menu lists comes from the app registry (apps/), so any app
+// that registers later shows up here — in the list, in Most used once it has
+// been launched, and on a tile if it declares one — with no shell change.
+
+import {
+  DISPLAY_HEIGHT,
+  TASKBAR_HEIGHT_PX,
+  START_W,
+  START_TOP_PX,
+  START_ANIM_MS,
+  START_ANIM_CLOSE_MS,
+  START_LEFT_PX,
+  START_LIST_W,
+  START_ACCOUNT_H,
+  START_RAIL_W,
+  ACCOUNT_NAME,
+  ACCOUNT_PIC_SRC,
+  START_ACCOUNT_ROW_ICON_PX
+} from '../global/constants.js';
+import { HAMBURGER_SVG, START_POWER_SVG, SLEEP_SVG, SHUTDOWN_SVG, RESTART_SVG } from '../global/icons.js';
+import { listStartApps, launchApp } from './apps.js';
+import { subscribeWindows } from './windowmanager.js';
+import { showContextMenu } from './contextmenu.js';
+import { sleep, shutDown, restart } from './power.js';
+import {
+  getMostUsed,
+  getRecentlyAdded,
+  pinApp,
+  isPinned,
+  unpinApp,
+  subscribeStartState
+} from './startstate.js';
+import {
+  buildTileGrid,
+  renderTileGrid,
+  startLiveTiles,
+  stopLiveTiles,
+  highlightRunningTiles,
+  setTileLaunchHandler
+} from './starttiles.js';
+
+var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+var menuEl = null;
+var railEl = null;
+var listEl = null;
+var tileGrid = null;
+var powerMenu = null;
+var accountMenu = null;
+var rows = [];
+var open = false;
+var runningApps = {};
+var openListeners = [];
+
+// Starts listeners for open/close state, so the Start button can light up.
+export function subscribeStartOpen(fn) {
+  openListeners.push(fn);
+  fn(open);
+}
+
+function emitOpen() {
+  openListeners.forEach(function (fn) {
+    fn(open);
+  });
+}
+
+// Flush on the taskbar: the panel's bottom edge is the taskbar's top edge,
+// like Win10 — the menu never floats above it.
+function menuHeight() {
+  return DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX - START_TOP_PX;
+}
+
+function sectionHeader(text, letter) {
+  var el = document.createElement('div');
+  el.className = 'start-section' + (letter ? ' start-section-letter' : '');
+  el.textContent = text;
+  return el;
+}
+
+// Repaints both panes: the app list from the registry history, the tile
+// grid from the pinned layout. Running markers are re-applied after, since
+// the tile grid is rebuilt from scratch.
+function render() {
+  renderList();
+  renderTileGrid(tileGrid);
+  applyRunning();
+}
+
+// Win10 files non-letters under their own heading.
+function letterOf(name) {
+  var first = String(name || '').charAt(0).toUpperCase();
+  return first >= 'A' && first <= 'Z' ? first : '0-9';
+}
+
+function buildRow(entry) {
+  var row = document.createElement('div');
+  row.className = 'start-item';
+  row.dataset.appId = entry.id;
+  row.tabIndex = -1;
+
+  var art = document.createElement('span');
+  art.className = 'start-item-icon';
+  if (entry.icon) {
+    var img = document.createElement('img');
+    img.src = entry.icon;
+    img.alt = '';
+    img.draggable = false;
+    art.appendChild(img);
+  }
+
+  var text = document.createElement('span');
+  text.className = 'start-item-text';
+  var name = document.createElement('span');
+  name.className = 'start-item-name';
+  name.textContent = entry.name;
+  text.appendChild(name);
+  if (entry.subtitle) {
+    var sub = document.createElement('span');
+    sub.className = 'start-item-sub';
+    sub.textContent = entry.subtitle;
+    text.appendChild(sub);
+  }
+
+  row.appendChild(art);
+  row.appendChild(text);
+
+  row.addEventListener('click', function (event) {
+    event.stopPropagation();
+    launchApp(entry.id);
+    closeStartMenu();
+  });
+
+  var openMenu = function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    var point = event.detail && typeof event.detail.clientX === 'number'
+      ? { x: event.detail.clientX, y: event.detail.clientY }
+      : { x: event.clientX, y: event.clientY };
+    openRowMenu(point.x, point.y, entry);
+  };
+  row.addEventListener('contextmenu', openMenu);
+  row.addEventListener('simcontextmenu', openMenu);
+
+  rows.push(row);
+  return row;
+}
+
+// Win10's app-list context menu: pin/unpin the Start tile, plus items that
+// only matter on a full shell.
+function openRowMenu(x, y, entry) {
+  var pinned = isPinned(entry.id);
+  showContextMenu(x, y, [
+    {
+      label: pinned ? 'Unpin from Start' : 'Pin to Start',
+      action: function () {
+        if (pinned) {
+          unpinApp(entry.id);
+        } else {
+          pinApp(entry.id);
+        }
+      }
+    },
+    { separator: true },
+    { label: 'Run as administrator', disabled: true },
+    { label: 'Open file location', disabled: true },
+    { separator: true },
+    { label: 'Uninstall', disabled: true }
+  ]);
+}
+
+function renderList() {
+  rows = [];
+  while (listEl.firstChild) {
+    listEl.removeChild(listEl.firstChild);
+  }
+  var entries = listStartApps();
+  var byId = {};
+  entries.forEach(function (entry) {
+    byId[entry.id] = entry;
+  });
+
+  var mostUsed = getMostUsed()
+    .map(function (id) { return byId[id]; })
+    .filter(Boolean);
+  if (mostUsed.length) {
+    listEl.appendChild(sectionHeader('Most used'));
+    mostUsed.forEach(function (entry) {
+      listEl.appendChild(buildRow(entry));
+    });
+  }
+
+  // Only genuinely new apps get a Recently added section.
+  var recent = getRecentlyAdded()
+    .map(function (id) { return byId[id]; })
+    .filter(Boolean);
+  if (recent.length) {
+    listEl.appendChild(sectionHeader('Recently added'));
+    recent.forEach(function (entry) {
+      listEl.appendChild(buildRow(entry));
+    });
+  }
+
+  var groups = {};
+  entries.forEach(function (entry) {
+    var letter = letterOf(entry.name);
+    (groups[letter] = groups[letter] || []).push(entry);
+  });
+  Object.keys(groups).sort().forEach(function (letter) {
+    listEl.appendChild(sectionHeader(letter, true));
+    groups[letter].forEach(function (entry) {
+      listEl.appendChild(buildRow(entry));
+    });
+  });
+  applyRunning();
+}
+
+function applyRunning() {
+  rows.forEach(function (row) {
+    row.classList.toggle('is-running', !!runningApps[row.dataset.appId]);
+  });
+  highlightRunningTiles(tileGrid, runningApps);
+}
+
+// --- Popovers: power and account ----------------------------------------
+
+function popover(className) {
+  var el = document.createElement('div');
+  el.className = className;
+  el.hidden = true;
+  return el;
+}
+
+function togglePopover(pop, anchor) {
+  var wasHidden = pop.hidden;
+  hidePopovers();
+  if (wasHidden) {
+    pop.hidden = false;
+    anchor.classList.add('is-open');
+  }
+}
+
+function hidePopovers() {
+  [powerMenu, accountMenu].forEach(function (pop) {
+    if (!pop) {
+      return;
+    }
+    pop.hidden = true;
+  });
+  var buttons = menuEl.querySelectorAll('.is-open');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].classList.remove('is-open');
+  }
+}
+
+function powerItem(label, glyph, run) {
+  var row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'start-power-item';
+  row.innerHTML = glyph;
+  var text = document.createElement('span');
+  text.textContent = label;
+  row.appendChild(text);
+  row.addEventListener('click', function (event) {
+    event.stopPropagation();
+    closeStartMenu();
+    run();
+  });
+  return row;
+}
+
+// --- Open / close --------------------------------------------------------
+
+export function isStartMenuOpen() {
+  return open;
+}
+
+export function toggleStartMenu() {
+  if (open) {
+    closeStartMenu();
+  } else {
+    openStartMenu();
+  }
+}
+
+export function openStartMenu() {
+  if (open) {
+    return;
+  }
+  hidePopovers();
+  render();
+  menuEl.hidden = false;
+  // Force a reflow so the enter animation runs from its start state.
+  void menuEl.offsetWidth;
+  menuEl.classList.remove('start-closing');
+  menuEl.classList.add('start-open');
+  open = true;
+  emitOpen();
+  startLiveTiles(tileGrid);
+  window.addEventListener('mousedown', onOutsidePress, true);
+  window.addEventListener('touchstart', onOutsidePress, true);
+  window.addEventListener('keydown', onMenuKey, true);
+  if (listEl && listEl.focus) {
+    listEl.focus();
+  }
+}
+
+export function closeStartMenu() {
+  if (!open) {
+    return;
+  }
+  open = false;
+  hidePopovers();
+  stopLiveTiles();
+  emitOpen();
+  window.removeEventListener('mousedown', onOutsidePress, true);
+  window.removeEventListener('touchstart', onOutsidePress, true);
+  window.removeEventListener('keydown', onMenuKey, true);
+  if (REDUCED) {
+    menuEl.hidden = true;
+    menuEl.classList.remove('start-open');
+    return;
+  }
+  menuEl.classList.remove('start-open');
+  menuEl.classList.add('start-closing');
+  window.setTimeout(function () {
+    menuEl.classList.remove('start-closing');
+    if (!open) {
+      menuEl.hidden = true;
+    }
+  }, START_ANIM_CLOSE_MS);
+}
+
+// A press outside the panel closes it, Win10 style. The Start button is
+// exempt because it toggles the menu itself, and a locked press is ignored
+// here: the routed press right behind it carries the real target.
+function onOutsidePress(event) {
+  if (document.pointerLockElement && event.isTrusted) {
+    return;
+  }
+  var target = event.target;
+  if (!target) {
+    return;
+  }
+  if (menuEl.contains(target)) {
+    return;
+  }
+  if (target.closest && target.closest('.task-start')) {
+    return;
+  }
+  closeStartMenu();
+}
+
+function onMenuKey(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeStartMenu();
+    return;
+  }
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Enter') {
+    return;
+  }
+  // Arrow keys move the highlight through the app list, Enter launches.
+  if (menuEl.classList.contains('rail-collapsed') && event.key !== 'Enter') {
+    return;
+  }
+  var visible = rows.filter(function (row) {
+    return row.parentNode;
+  });
+  if (!visible.length) {
+    return;
+  }
+  var at = visible.indexOf(document.activeElement);
+  if (at < 0) {
+    at = 0;
+  }
+  if (event.key === 'Enter') {
+    if (visible[at]) {
+      event.preventDefault();
+      launchApp(visible[at].dataset.appId);
+      closeStartMenu();
+    }
+    return;
+  }
+  event.preventDefault();
+  var next = at + (event.key === 'ArrowDown' ? 1 : -1);
+  if (next < 0) {
+    next = visible.length - 1;
+  }
+  if (next >= visible.length) {
+    next = 0;
+  }
+  visible[next].focus();
+}
+
+// --- Build ----------------------------------------------------------------
+
+export function buildStartMenu(cursor, stage) {
+  menuEl = document.createElement('div');
+  menuEl.className = 'start-menu';
+  menuEl.hidden = true;
+  menuEl.style.width = START_W + 'px';
+  menuEl.style.left = START_LEFT_PX + 'px';
+  menuEl.style.top = START_TOP_PX + 'px';
+  menuEl.style.height = menuHeight() + 'px';
+
+  railEl = document.createElement('div');
+  railEl.className = 'start-rail';
+  railEl.style.width = START_LIST_W + 'px';
+
+  var hamburger = document.createElement('button');
+  hamburger.type = 'button';
+  hamburger.className = 'start-hamburger';
+  hamburger.innerHTML = HAMBURGER_SVG;
+  hamburger.setAttribute('aria-label', 'Show app list');
+  hamburger.addEventListener('click', function (event) {
+    event.stopPropagation();
+    menuEl.classList.toggle('rail-collapsed');
+    var collapsed = menuEl.classList.contains('rail-collapsed');
+    railEl.style.width = (collapsed ? START_RAIL_W : START_LIST_W) + 'px';
+    hamburger.setAttribute('aria-label', collapsed ? 'Show app list' : 'Show menu');
+  });
+  railEl.appendChild(hamburger);
+
+  listEl = document.createElement('div');
+  listEl.className = 'start-list';
+  listEl.tabIndex = -1;
+  listEl.setAttribute('role', 'list');
+  railEl.appendChild(listEl);
+
+  var bottom = document.createElement('div');
+  bottom.className = 'start-rail-bottom';
+  bottom.style.height = START_ACCOUNT_H + 'px';
+
+  var account = document.createElement('button');
+  account.type = 'button';
+  account.className = 'start-account';
+  account.setAttribute('aria-label', 'Account: ' + ACCOUNT_NAME);
+  var pic = document.createElement('img');
+  pic.className = 'start-account-pic';
+  pic.src = ACCOUNT_PIC_SRC;
+  pic.alt = '';
+  pic.draggable = false;
+  pic.style.width = START_ACCOUNT_ROW_ICON_PX + 'px';
+  pic.style.height = START_ACCOUNT_ROW_ICON_PX + 'px';
+  var accountName = document.createElement('span');
+  accountName.className = 'start-account-name';
+  accountName.textContent = ACCOUNT_NAME;
+  account.appendChild(pic);
+  account.appendChild(accountName);
+  accountMenu = popover('start-account-menu');
+  [
+    { label: 'Change account settings', disabled: true },
+    { label: 'Lock', disabled: true },
+    { separator: true },
+    { label: 'Sign out', action: function () { closeStartMenu(); restart(); } }
+  ].forEach(function (item) {
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'start-menu-item' + (item.disabled ? ' is-disabled' : '');
+    row.textContent = item.label;
+    if (!item.disabled) {
+      row.addEventListener('click', function (event) {
+        event.stopPropagation();
+        item.action();
+      });
+    }
+    accountMenu.appendChild(row);
+  });
+  account.addEventListener('click', function (event) {
+    event.stopPropagation();
+    togglePopover(accountMenu, account);
+  });
+
+  var power = document.createElement('button');
+  power.type = 'button';
+  power.className = 'start-power';
+  power.innerHTML = START_POWER_SVG;
+  power.setAttribute('aria-label', 'Power');
+  powerMenu = popover('start-power-menu');
+  powerMenu.appendChild(powerItem('Sleep', SLEEP_SVG, function () { sleep(menuEl); }));
+  powerMenu.appendChild(powerItem('Shut down', SHUTDOWN_SVG, function () { shutDown(menuEl); }));
+  powerMenu.appendChild(powerItem('Restart', RESTART_SVG, restart));
+  power.addEventListener('click', function (event) {
+    event.stopPropagation();
+    togglePopover(powerMenu, power);
+  });
+
+  bottom.appendChild(account);
+  bottom.appendChild(accountMenu);
+  bottom.appendChild(power);
+  bottom.appendChild(powerMenu);
+  railEl.appendChild(bottom);
+
+  tileGrid = buildTileGrid(cursor, stage);
+  tileGrid.addEventListener('click', function (event) {
+    event.stopPropagation();
+  });
+  tileGrid.addEventListener('contextmenu', function (event) {
+    event.preventDefault();
+  });
+
+  menuEl.appendChild(railEl);
+  menuEl.appendChild(tileGrid);
+
+  // The registry and the Start layout can change underneath the menu, so
+  // re-render whenever either does. A closed menu re-renders on open.
+  subscribeStartState(function () {
+    if (open) {
+      render();
+    }
+  });
+  subscribeWindows(function (snapshot) {
+    runningApps = {};
+    snapshot.forEach(function (item) {
+      runningApps[item.appId] = true;
+    });
+    applyRunning();
+  });
+
+  // Launching from a tile folds the menu away, like Win10.
+  setTileLaunchHandler(function () {
+    closeStartMenu();
+  });
+
+  return menuEl;
+}

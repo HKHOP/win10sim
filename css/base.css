@@ -1,0 +1,14 @@
+/* Base page: centers the emulated monitor, letterboxes the rest. */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #101010;
+}
+
+body {
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}

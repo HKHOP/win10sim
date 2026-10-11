@@ -1,0 +1,307 @@
+/* Floating windows above the desktop, below the taskbar. */
+
+.window-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  pointer-events: none;
+}
+
+.win {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f0f0f0;
+  border: 1px solid #888;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  min-width: 220px;
+  min-height: 140px;
+}
+
+.win-titlebar {
+  height: 30px;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  user-select: none;
+}
+
+.win:not(.win-focused) .win-titlebar {
+  background: #e8e8e8;
+  color: #555;
+}
+
+.win-icon {
+  width: 16px;
+  height: 16px;
+  margin: 0 6px 0 8px;
+  display: block;
+}
+
+.win-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #111;
+}
+
+.win-caps {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.win-cap {
+  width: 45px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.win-cap svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.win-cap:hover,
+.win-cap.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.win-cap.win-close:hover,
+.win-cap.win-close.sim-hover {
+  background: #e81123;
+}
+
+.win-cap.win-close:hover svg path,
+.win-cap.win-close.sim-hover svg path {
+  stroke: #fff;
+}
+
+.win-body {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  overflow: auto;
+  color: #111;
+  font-size: 13px;
+}
+
+.win-maximized {
+  border-width: 0;
+}
+
+/* Aero Snap preview: the translucent landing rect while a titlebar drag is
+   held over a screen edge. Same fill as the desktop marquee. */
+.snap-preview {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(0, 120, 215, 0.2);
+  border: 1px solid rgba(0, 120, 215, 0.8);
+  pointer-events: none;
+  z-index: 1500;
+  transition: left 0.1s ease-out, top 0.1s ease-out, width 0.1s ease-out, height 0.1s ease-out;
+}
+
+.snap-preview[hidden] {
+  display: none;
+}
+
+/* Snap Assist: the window chooser offered in the vacant half after a snap,
+   filled with the other open windows, most recent first. */
+.snap-assist {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(246, 246, 246, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  z-index: 1600;
+}
+
+.snap-assist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+  text-align: left;
+  cursor: pointer;
+}
+
+.snap-assist-item:hover,
+.snap-assist-item.sim-hover {
+  background: rgba(0, 120, 215, 0.12);
+  border-color: rgba(0, 120, 215, 0.5);
+}
+
+.snap-assist-item img {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.snap-assist-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Universal window motion: open zooms in, close zooms out, minimize sinks
+   toward the taskbar. Position uses transform, so motion uses scale.
+   Minimize / restore fly at the window's taskbar button instead: the
+   manager stores the stage-space offset in --win-snap-dx / --win-snap-dy,
+   and because the individual translate property composes with the inline
+   position transform, the window centre lands on the button. */
+.win-opening {
+  animation: win-open 0.22s ease-out;
+}
+
+.win-closing {
+  animation: win-close 0.16s ease-in forwards;
+}
+
+.win-minimizing {
+  animation: win-min 0.18s ease-in forwards;
+  transform-origin: 50% 50%;
+}
+
+.win-restoring {
+  animation: win-restore 0.2s ease-out;
+  transform-origin: 50% 50%;
+}
+
+@keyframes win-open {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes win-close {
+  to {
+    opacity: 0;
+    scale: 0.94;
+  }
+}
+
+@keyframes win-min {
+  to {
+    opacity: 0;
+    translate: var(--win-snap-dx, 0px) var(--win-snap-dy, -40px);
+    scale: 0.2;
+  }
+}
+
+@keyframes win-restore {
+  from {
+    opacity: 0;
+    translate: var(--win-snap-dx, 0px) var(--win-snap-dy, -40px);
+    scale: 0.2;
+  }
+  to {
+    opacity: 1;
+    translate: 0px 0px;
+    scale: 1;
+  }
+}
+
+.win-resize {
+  position: absolute;
+  z-index: 5;
+}
+
+.win-maximized .win-resize {
+  display: none;
+}
+
+.win-resize-n { top: -4px; left: 8px; right: 8px; height: 8px; }
+.win-resize-s { bottom: -4px; left: 8px; right: 8px; height: 8px; }
+.win-resize-e { right: -4px; top: 8px; bottom: 8px; width: 8px; }
+.win-resize-w { left: -4px; top: 8px; bottom: 8px; width: 8px; }
+.win-resize-ne { right: -4px; top: -4px; width: 12px; height: 12px; }
+.win-resize-nw { left: -4px; top: -4px; width: 12px; height: 12px; }
+.win-resize-se { right: -4px; bottom: -4px; width: 12px; height: 12px; }
+.win-resize-sw { left: -4px; bottom: -4px; width: 12px; height: 12px; }
+
+/* Running apps in the taskbar: icon with a state underline. */
+.task-running-app {
+  position: relative;
+  width: 48px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-running-app:hover,
+.task-running-app.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.task-running-app img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.task-running-app::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 2px;
+  height: 2px;
+  background: #999;
+}
+
+.task-running-app.task-active::after {
+  left: 6px;
+  right: 6px;
+  background: #0078d7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win {
+    box-shadow: none;
+  }
+
+  .win-opening,
+  .win-closing,
+  .win-minimizing,
+  .win-restoring {
+    animation: none;
+  }
+}

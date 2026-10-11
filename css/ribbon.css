@@ -1,0 +1,191 @@
+/* Explorer ribbon: tabs, quick-access bar, grouped command buttons. */
+
+.exp-ribbon {
+  flex: 0 0 auto;
+  background: #f0f0f0;
+  border-bottom: 1px solid #d4d4d4;
+  user-select: none;
+}
+
+.ribbon-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 0;
+}
+
+.ribbon-qat {
+  display: flex;
+  gap: 2px;
+  padding-right: 8px;
+}
+
+.ribbon-qat-btn {
+  width: 26px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ribbon-qat-btn:hover,
+.ribbon-qat-btn.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.ribbon-qat-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.ribbon-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.ribbon-tab {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  background: transparent;
+  font-size: 12px;
+  font-family: inherit;
+  color: #222;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+.ribbon-tab:hover,
+.ribbon-tab.sim-hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ribbon-tab-active {
+  background: #fff;
+  border-color: #d4d4d4;
+  color: #0078d7;
+}
+
+.ribbon-collapse,
+.ribbon-help {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #555;
+  font-size: 13px;
+  width: 26px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ribbon-help {
+  margin-left: auto;
+}
+
+.ribbon-help svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.ribbon-collapse-open {
+  transform: rotate(180deg);
+}
+
+.ribbon-body {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  background: #fff;
+  border-top: 1px solid #d4d4d4;
+  padding: 4px 6px 2px;
+  min-height: 88px;
+}
+
+.exp-ribbon.ribbon-collapsed .ribbon-body {
+  display: none;
+}
+
+.ribbon-group {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e0e0e0;
+  padding: 0 6px;
+}
+
+.ribbon-group:last-child {
+  border-right: 0;
+}
+
+.ribbon-items {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 1px;
+  max-width: 300px;
+}
+
+.ribbon-caption {
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+  padding: 2px 0 1px;
+}
+
+.ribbon-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: inherit;
+  color: #222;
+  padding: 3px 5px;
+  white-space: nowrap;
+}
+
+.ribbon-btn:hover,
+.ribbon-btn.sim-hover {
+  border-color: #b8d6fb;
+  background: #e5f1fd;
+}
+
+.ribbon-btn.ribbon-active {
+  border-color: #99c7f5;
+  background: #cde6ff;
+}
+
+.ribbon-art {
+  display: flex;
+}
+
+.ribbon-art svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.ribbon-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #222;
+  padding: 3px 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ribbon-check input {
+  accent-color: #0078d7;
+  margin: 0;
+}

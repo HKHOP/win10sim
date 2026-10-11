@@ -1,0 +1,81 @@
+/* Desktop: hero wallpaper, top-left icon stack, taskbar at the bottom. */
+
+.desktop {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: #0078d7;
+  user-select: none;
+  overflow: hidden;
+}
+
+.desktop-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  /* View menu icon sizes drive these; desktop.js sets them per scale. */
+  --desktop-icon-w: 84px;
+  --desktop-icon-art: 42px;
+}
+
+.desktop-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--desktop-icon-w);
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 1px dotted transparent;
+  cursor: pointer;
+  will-change: transform;
+}
+
+.desktop-icon-art svg,
+.desktop-icon-art img {
+  width: var(--desktop-icon-art);
+  height: var(--desktop-icon-art);
+  display: block;
+}
+
+.desktop-icon-label {
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.25;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  word-break: break-word;
+}
+
+.desktop-icon:hover,
+.desktop-icon.sim-hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.desktop-icon.selected {
+  background: rgba(0, 120, 215, 0.35);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.desktop-icon.dragging {
+  z-index: 10;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Rubber-band marquee: translucent blue box while dragging empty space. */
+.desktop-marquee {
+  position: absolute;
+  display: none;
+  background: rgba(0, 120, 215, 0.15);
+  border: 1px solid rgba(0, 120, 215, 0.8);
+  pointer-events: none;
+}
+
+.desktop-marquee.on {
+  display: block;
+}

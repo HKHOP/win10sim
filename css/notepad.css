@@ -1,0 +1,365 @@
+/* Notepad: the menu bar, the monospace editor, the status bar, and the
+   classic dialogs (Find, Replace, Go To, Font, Open, Save As, About). */
+
+.np-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+}
+
+/* --- Menu bar ---------------------------------------------------------- */
+
+.np-menubar {
+  display: flex;
+  flex: 0 0 auto;
+  background: #f0f0f0;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+.np-menubar-item {
+  height: 22px;
+  border: 0;
+  padding: 0 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+  cursor: pointer;
+}
+
+.np-menubar-item:hover,
+.np-menubar-item.sim-hover,
+.np-menubar-item:focus-visible {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* --- Editor ------------------------------------------------------------ */
+
+.np-editor-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.np-editor {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  resize: none;
+  padding: 2px 4px;
+  margin: 0;
+  background: #fff;
+  color: #000;
+  font-family: Consolas, 'Courier New', monospace;
+  line-height: 1.25;
+  /* Notepad has no spell squiggles and no autocorrect. */
+  caret-color: #000;
+}
+
+/* Word wrap off: the text keeps one line and scrolls sideways, like Notepad. */
+.np-editor-wrap.no-wrap .np-editor {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.np-editor-wrap .np-editor {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-x: hidden;
+}
+
+/* --- Status bar -------------------------------------------------------- */
+
+.np-statusbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  height: 22px;
+  background: #f0f0f0;
+  border-top: 1px solid #dcdcdc;
+  font-size: 12px;
+  color: #111;
+}
+
+.np-statusbar[hidden] {
+  display: none;
+}
+
+.np-status-pos {
+  flex: 1 1 auto;
+  padding: 0 8px;
+  border-right: 1px solid #dcdcdc;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.np-status-zoom {
+  flex: 0 0 auto;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+/* --- Dialog shell ------------------------------------------------------ */
+
+.np-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 14px;
+  background: #f0f0f0;
+  font-size: 12px;
+  color: #111;
+}
+
+.np-dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.np-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.np-dialog-button {
+  min-width: 84px;
+  height: 24px;
+  padding: 0 12px;
+  background: #e1e1e1;
+  border: 1px solid #adadad;
+  border-radius: 2px;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+  cursor: pointer;
+}
+
+.np-dialog-button:hover,
+.np-dialog-button.sim-hover {
+  background: #f0f0f0;
+  border-color: #7a7a7a;
+}
+
+.np-dialog-button.is-default {
+  /* Win10 marks the default action with a thin accent outline. */
+  border-color: #0078d7;
+}
+
+.np-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.np-label {
+  flex: 0 0 auto;
+  min-width: 96px;
+  text-align: right;
+}
+
+.np-input {
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid #adadad;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+}
+
+.np-input:focus {
+  outline: 1px solid #0078d7;
+}
+
+.np-input-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.np-input-number {
+  width: 64px;
+  flex: 0 0 auto;
+}
+
+.np-check-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.np-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.np-find-arrows {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.np-arrow {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  background: #e1e1e1;
+  border: 1px solid #adadad;
+  font-size: 9px;
+  color: #333;
+  cursor: pointer;
+}
+
+.np-arrow.is-active {
+  background: #cfe4f7;
+  border-color: #7a7a7a;
+}
+
+.np-select {
+  flex: 1 1 auto;
+  height: 22px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.np-select-narrow {
+  flex: 0 0 64px;
+}
+
+.np-font-preview {
+  margin-top: 6px;
+  padding: 8px;
+  height: 90px;
+  border: 1px solid #adadad;
+  background: #fff;
+  color: #000;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+/* --- Message box ------------------------------------------------------- */
+
+.np-dialog-message .np-dialog-content {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.np-dialog-icon {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.np-dialog-icon-info {
+  background: radial-gradient(circle at 50% 50%, #6fb7f0 0 60%, transparent 61%);
+}
+
+.np-dialog-icon-error {
+  background: radial-gradient(circle at 50% 50%, #e05a5a 0 60%, transparent 61%);
+}
+
+.np-dialog-text {
+  flex: 1 1 auto;
+  padding-top: 4px;
+  line-height: 1.5;
+}
+
+/* --- File dialogs ------------------------------------------------------ */
+
+.np-filedlg-lookin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.np-filedlg-up {
+  margin-bottom: 4px;
+}
+
+.np-filedlg-upbtn {
+  width: 26px;
+  height: 20px;
+  background: #e1e1e1;
+  border: 1px solid #adadad;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.np-filedlg-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #adadad;
+  padding: 2px;
+}
+
+.np-filedlg-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+
+.np-filedlg-item.is-selected {
+  background: rgba(0, 120, 215, 0.2);
+}
+
+.np-filedlg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.np-filedlg-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* --- About ------------------------------------------------------------- */
+
+.np-dialog-about .np-dialog-content {
+  text-align: center;
+  padding-top: 4px;
+}
+
+.np-about-mark {
+  width: 48px;
+  height: 48px;
+}
+
+.np-about-title {
+  margin-top: 6px;
+}
+
+.np-about-name {
+  font-weight: 700;
+}
+
+.np-about-version,
+.np-about-copy {
+  margin-top: 4px;
+}
+
+.np-about-legal {
+  margin-top: 12px;
+  color: #555;
+}
+
+.np-about-user {
+  margin-top: 2px;
+}
