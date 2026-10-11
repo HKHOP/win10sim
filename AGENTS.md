@@ -4,12 +4,21 @@ This file guides all agents (human + AI) working on this repo. Follow it on ever
 
 ## 1. Project Overview
 
-- Full Windows 10 simulator as a static web app, hosted on GitHub (e.g. GitHub Pages).
+- Full Windows 10 simulator as a static web app, hosted on GitHub Pages.
+- Live site: `https://hkhop.github.io/win10sim/` (repo `HKHOP/win10sim`, served from `main` root).
 - Goal: faithful Windows 10 system UI + emulated APIs / system behavior.
 - Audience: primarily mobile-device users who have never used a PC — teach basics through advanced usage by exploring the simulated system itself.
 - No step-by-step tutorials in-app. Learning happens through the UI emulation.
 - Stack: plain HTML + CSS + vanilla JavaScript (ES modules). No TypeScript. No Node.js. No npm. No build step. No backend.
-- Deploy model: the repo IS the build. The completed state on the main/git-synced branch is what gets served statically. Do not add anything that requires server-side execution.
+- Deploy model: the repo IS the build. The completed state on `main` is what GitHub Pages serves. Do not add anything that requires server-side execution.
+
+## 1a. Git & Hosting
+
+- Remote: `https://github.com/HKHOP/win10sim.git` (HTTPS; the local machine's SSH key is not registered with GitHub, so use HTTPS + the stored credential).
+- Branch: `main` only. Pages builds from `main` at the repo root (`.nojekyll` is committed, so files are served as-is).
+- Push after a task completes, alongside the CHANGELOG entry (§6). Do not commit secrets, logs, or editor junk.
+- `assets/win10-shell-icons/` is the real Windows 10 build-21343 icon library (Imageres.dll + Shell32.dll, ~37 MB). It is source material, not runtime content: only the extracted PNGs under `assets/` and `assets/shell/` are referenced by the app.
+- Enabling or reconfiguring Pages needs the GitHub REST API (`POST /repos/HKHOP/win10sim/pages`); `gh` CLI is not installed on this machine.
 
 ## 2. Repository Structure (Iteration 1 — do not reshape without approval)
 
@@ -34,12 +43,32 @@ Root/
 ```
 
 Placement rules:
-- UI shell (taskbar, desktop, windows) → `js/core/` + `css/`.
+- UI shell (taskbar, desktop, windows, Start menu) → `js/core/` + `css/`.
 - Cross-cutting state/events → `js/system/`.
 - Fake OS primitives (processes, FS, registry) → `js/kernel/` (scheduling/lifecycle) or `js/apis/` (call surface).
 - New app → new folder under `js/apps/<app-name>/`. Never drop loose app files in `js/apps/` root.
 - Shared pure helpers → `js/global/`. If it touches DOM/state, it does not belong in `global/`.
 - Binary/media → `assets/` only.
+
+### Shell module map (`js/core/`)
+
+Big subsystems are split so no file grows unbounded:
+
+| Module | Responsibility |
+| --- | --- |
+| `windowmanager.js` | Window records, z-order/focus, minimize/maximize/snap state, drag & resize gestures, shake, taskbar-aimed animations |
+| `windowchrome.js` | Builds the window frame (titlebar, caption buttons, resize grips) — DOM only, behaviour injected |
+| `windowmenu.js` | The Win10 window system menu (Restore/Move/Size/…) and the guided keyboard Move/Size loop |
+| `snap.js` | Aero Snap zone geometry + the translucent landing preview |
+| `snapassist.js` | The Snap Assist window chooser offered in the vacant half |
+| `startmenu.js` | Start menu panel: app list sections, account/power row, open/close behavior |
+| `starttiles.js` | Tile grid: sizes, drag-to-reorder, edge-drag resize, live tiles, badges |
+| `startstate.js` | Persisted Start layout + launch history (API only) |
+| `pointer.js` | Where the emulated pointer is: sim cursor under pointer lock / on touch, real pointer otherwise |
+| `contextmenu.js` | Win10 popup menus (desktop, Explorer, window system menu) |
+| `apps.js` | App registry, launch, Start-menu manifests, launch counting |
+| `power.js` | Shared Sleep / Shut down / Restart actions (sign-in + Start menu) |
+| `cursor.js` | The emulated hardware cursor, pointer lock, touchpad mode, click routing |
 
 ## 3. Technical Constraints
 
@@ -49,6 +78,8 @@ Placement rules:
 4. Performance: DOM-based windowing, no canvas for UI chrome. Cap animations with `prefers-reduced-motion` respect.
 5. Persistence is OPFS-backed (`js/apis/storage/opfs.js` via the `ntfs` surface); never use cookies or external storage.
 6. No external network calls at runtime (offline-capable, except GitHub Pages hosting itself).
+7. Icons come from the real Windows 10 sets in `assets/win10-shell-icons/` (build 21343 Imageres.dll / Shell32.dll). Reference extracted PNGs by constant in `js/global/constants.js` — never draw a new approximation when a real icon exists. Extract with Python + PIL: `Image.open(ico).convert("RGBA")`, crop to the alpha bbox, square it, resize to 128px.
+8. Windows that open a modal dialog must consume Enter/Escape themselves and stop the keydown there, so a single global shortcut handler can never fire a second time behind the dialog.
 
 ## 4. Coding Conventions
 
@@ -64,8 +95,9 @@ Placement rules:
 
 1. One task = one changelog version (see §6). Do not batch unrelated tasks into one version.
 2. Structure first, logic later: Iteration 1 is structure only. Do not implement simulator logic until asked.
-3. Verify by opening `index.html` directly in a browser (or `npx serve` equivalent is FORBIDDEN — no Node; use VS Code Live Server / Python http.server / GitHub Pages preview if needed).
+3. Verify by opening `index.html` directly in a browser (or `npx serve` equivalent is FORBIDDEN — no Node; use VS Code Live Server / Python http.server / GitHub Pages preview if needed). Behaviour is confirmed by the human in the browser; headless DOM-stub harnesses are not a substitute for their feedback.
 4. Keep diffs minimal and categorized — never move files across categories silently; call it out in the changelog under `Changed`.
+5. Push to `main` when a task completes (§1a), so GitHub Pages redeploys.
 
 ## 6. CHANGELOG.md Rules (strict)
 
