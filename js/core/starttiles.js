@@ -292,6 +292,10 @@ function beginDrag(grid, target, origin) {
     // Reference rect captured once, so a resize does not chase its own tail
     // as the tile grows.
     ref: tile.getBoundingClientRect(),
+    // The grid as it stands when the drag begins. Moving a tile changes this
+    // layout, so the cell maths reads this instead of the live one and a still
+    // pointer keeps meaning the same cell all drag long.
+    metrics: gridMetrics(grid),
     moved: false
   };
 }
@@ -342,53 +346,41 @@ function gridMetrics(grid) {
 
 // Which cell a point is over. Rows vary in height (a 2x2 tile's row is taller
 // than a plain one), so the row is found by walking the tracks, and a point
-// below the last row means "the next row down". spanW keeps a wide or large
-// tile from being aimed at a cell it cannot fit in.
-function cellAtPoint(grid, clientX, clientY, spanW) {
-  var m = gridMetrics(grid);
-  if (!m.cols.length) {
+// below the last row means "the row after it" — the grid can always grow that
+// far. spanW keeps a wide or large tile from being aimed at a cell it cannot
+// fit in.
+function cellAtPoint(metrics, clientX, clientY, spanW) {
+  if (!metrics.cols.length) {
     return null;
   }
-  var dx = clientX - m.rect.left - m.padLeft;
-  var dy = clientY - m.rect.top - m.padTop;
-  var col = Math.round(dx / (m.cols[0] + m.gapX));
-  col = Math.max(0, Math.min(col, m.cols.length - spanW));
+  var dx = clientX - metrics.rect.left - metrics.padLeft;
+  var dy = clientY - metrics.rect.top - metrics.padTop;
+  var col = Math.round(dx / (metrics.cols[0] + metrics.gapX));
+  col = Math.max(0, Math.min(col, metrics.cols.length - spanW));
   var row = 0;
   var offset = 0;
-  for (var i = 0; i < m.rows.length; i++) {
-    if (dy < offset + m.rows[i]) {
+  for (var i = 0; i < metrics.rows.length; i++) {
+    if (dy < offset + metrics.rows[i]) {
       break;
     }
-    offset += m.rows[i] + m.gapY;
+    offset += metrics.rows[i] + metrics.gapY;
     row = i + 1;
   }
   return { col: col, row: row };
 }
 
-// Pixel box of a cell, for the drop ghost. Absolute rather than a grid item of
-// its own, so marking a cell never changes the layout it is marking.
-function cellBox(grid, col, row, w, h) {
-  var m = gridMetrics(grid);
-  var offset = m.padTop;
-  for (var i = 0; i < row && i < m.rows.length; i++) {
-    offset += m.rows[i] + m.gapY;
-  }
-  var rowH = m.rows.length && row < m.rows.length ? m.rows[row] : (m.rows[0] || 108);
-  return {
-    left: m.padLeft + col * (m.cols[0] + m.gapX),
-    top: offset,
-    width: w * m.cols[0] + (w - 1) * m.gapX,
-    height: h * rowH + (h - 1) * m.gapY
-  };
-}
-
-// Where the tile would land. It is drawn as a ghost in the grid and, once the
-// gesture commits, as the tile itself — the grid is the layout, so a tile
-// takes the cell under the pointer and whatever was there fills in behind it.
+// Where the tile would land. The cell comes from the geometry captured when
+// the drag began, not from the layout as it stands: moving the tile changes
+// that layout — rows appear, their heights change — and measuring against a
+// moving target made the cell under a still pointer drift with every step, so
+// the tile chased its own tail and could never be taken any further.
+// The ghost is then placed by the grid itself, in the same cell as the tile
+// that is already there, so where it is drawn and where the tile lands cannot
+// disagree.
 function reorderToPointer(grid, pos) {
   var client = tracker.toClient(pos.x, pos.y);
   var span = tileSpan(pinSize(drag.appId));
-  var cell = cellAtPoint(grid, client.x, client.y, span[0]);
+  var cell = cellAtPoint(drag.metrics, client.x, client.y, span[0]);
   if (!cell) {
     return;
   }
@@ -418,12 +410,17 @@ function showGhost(grid, cell, span) {
   if (!ghost) {
     ghost = document.createElement('div');
     ghost.className = 'start-tile-ghost';
+    ghost.innerHTML = '<span class="start-tile-ghost-box"></span>';
   }
-  var box = cellBox(grid, cell.col, cell.row, span[0], span[1]);
-  ghost.style.left = box.left + 'px';
-  ghost.style.top = box.top + 'px';
-  ghost.style.width = box.width + 'px';
-  ghost.style.height = box.height + 'px';
+  // The ghost is a grid item of the target cell, not a box measured by hand: the
+  // grid places it exactly where it places the tile that has just moved there.
+  ghost.style.gridColumn = (cell.col + 1) + ' / span ' + span[0];
+  ghost.style.gridRow = (cell.row + 1) + ' / span ' + span[1];
+  var node = tileNodes[drag ? drag.appId : ''];
+  var box = ghost.firstChild;
+  if (box && node) {
+    box.style.height = node.offsetHeight + 'px';
+  }
   if (ghost.parentNode !== grid) {
     grid.appendChild(ghost);
   }

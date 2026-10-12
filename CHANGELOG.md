@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.3.2] - The drop target stops running away from the pointer
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- `cellBox`, the hand-measured pixel box for the ghost
+
+### Changed
+
+- `starttiles.js`: the cell under the pointer is worked out from the grid geometry captured when the drag **begins**, not from the layout as it stands. Moving a tile changes that layout — rows appear and their heights change — so measuring the live one made the cell under a still pointer drift with every step, and the tile chased it and could never be taken any further
+- The drop ghost is now a grid item of the target cell rather than a measured box, so the grid places it exactly where it places the tile that just moved there and the two cannot disagree
+
+### Fixed
+
+- A tile could be moved roughly one cell and no further, because its drop target kept moving away as the tile moved
+
 ## [1.3.1] - The drop ghost stops outliving its drag
 
 2026-10-12

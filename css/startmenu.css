@@ -524,12 +524,22 @@
   overflow-x: hidden;
 }
 
-/* Where a dragged tile would land. Drawn out of the flow, so marking a cell
-   never moves the layout it is marking. */
+/* Where a dragged tile would land. A grid item of the target cell, so the grid
+   places it exactly where it places the tile; zero-height itself, so marking a
+   cell never changes the layout it is marking. */
 .start-tile-ghost {
-  position: absolute;
+  position: relative;
   z-index: 1;
+  height: 0;
+  align-self: start;
   pointer-events: none;
+}
+
+.start-tile-ghost-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
   border: 2px dashed rgba(0, 120, 215, 0.65);
   border-radius: 2px;
   background: rgba(0, 120, 215, 0.08);
