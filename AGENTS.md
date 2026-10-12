@@ -36,6 +36,7 @@ Root/
                     Each app: app.js (entry) + app.css (scoped) + optional assets.
     global/         Shared constants, helpers, utils only. No app or system logic here.
   assets/           Static binary assets only: icons, wallpapers, fonts, sounds. No code.
+  sw.js             Service worker: network-first cache busting (the site has no build step to hash filenames)
   .nojekyll         Required for GitHub Pages (serve files as-is, allow underscore dirs).
   .gitignore        OS/editor junk only. Never ignore index.html, css/, js/, assets/.
   AGENTS.md         This file (agent operating instructions).
@@ -80,6 +81,7 @@ Big subsystems are split so no file grows unbounded:
 6. No external network calls at runtime (offline-capable, except GitHub Pages hosting itself).
 7. Icons come from the real Windows 10 sets in `assets/win10-shell-icons/` (build 21343 Imageres.dll / Shell32.dll). Reference extracted PNGs by constant in `js/global/constants.js` — never draw a new approximation when a real icon exists. Extract with Python + PIL: `Image.open(ico).convert("RGBA")`, crop to the alpha bbox, square it, resize to 128px.
 8. Windows that open a modal dialog must consume Enter/Escape themselves and stop the keydown there, so a single global shortcut handler can never fire a second time behind the dialog.
+9. Never add cache-busting query strings by hand (`?v=…`): with no build step they only cover the files `index.html` names, not the module graph those files import. `sw.js` is the cache busting — it answers every request network-first with `cache: 'reload'`, so a device always runs what Pages serves now. Bump `CACHE_VERSION` there only when the caching strategy itself changes.
 
 ## 4. Coding Conventions
 

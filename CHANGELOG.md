@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.0.1] - Always run the code Pages is serving
+
+2026-10-12
+
+### Added
+
+- `sw.js`: a service worker that answers every request network-first with `cache: 'reload'`, falling back to the last good copy when the network is gone. It skips the browser's HTTP cache, so a device can never run a stale `js/core/*.js` or `css/*.css` — unchanged files still come back as cheap 304s
+- Worker registration in `js/boot/boot.js`: resolves `sw.js` against the module URL (so it works from a domain root or the `/win10sim/` subpath) and registers with `updateViaCache: 'none'`, so a change to the caching strategy itself lands without waiting for the browser's background update check
+- Offline as a side effect: with the worker installed, a load with no network boots the OS from the last copy instead of failing
+
+### Removed
+
+- None
+
+### Changed
+
+- `AGENTS.md`: the repository structure lists `sw.js`, and §3 records that the worker — not hand-written `?v=` query strings, which would only cover the files `index.html` names and not the module graph they import — is the cache busting
+
+### Fixed
+
+- Devices kept running an old cached copy of the simulator for as long as the browser's cache allowed, so fixes reached phones and desktops late or not at all
+
 ## [1.0.0] - The emulated cursor is the only pointer
 
 2026-10-12

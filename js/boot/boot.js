@@ -102,7 +102,33 @@ function showLockScreen(stage, cursor) {
   }
 }
 
+// Cache busting: register the root service worker, which answers every
+// request from the network first so a device always runs the code Pages is
+// serving now (see sw.js). Registered from the entry rather than inline in
+// index.html, and resolved against this module so it lands the same whether
+// the site sits on a domain root or a project subpath. updateViaCache 'none'
+// stops the browser serving the worker's own script out of its HTTP cache, so
+// a strategy change lands without waiting for the background update check.
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    // Opening index.html straight off disk (file://) has no workers; the site
+    // still runs, just without the cache busting.
+    return;
+  }
+  try {
+    navigator.serviceWorker.register(new URL('../sw.js', import.meta.url), {
+      updateViaCache: 'none'
+    }).catch(function () {
+      // A refused worker (private mode, storage denied) must never keep the
+      // simulator from booting.
+    });
+  } catch (err) {
+    // Same: the cache busting is best-effort, the OS is the product.
+  }
+}
+
 function init() {
+  registerServiceWorker();
   var stage = document.getElementById('monitor-stage');
   if (!stage) {
     return;
