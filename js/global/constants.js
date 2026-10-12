@@ -18,16 +18,35 @@ export const BOOT_FLICKER_MS = 100;
 export const BOOT_SPINNER_GONE_MS = 8000;
 export const BOOT_LOCK_MS = 8200;
 
-// Emulated hardware cursor: OS pointer is hidden over the monitor and these
-// assets are the only visible cursor, driven by captured mouse movement.
-export const CURSOR_IDLE_SRC = 'assets/cursor-idle.svg';
-export const CURSOR_LINK_SRC = 'assets/cursor-linkselect.svg';
-export const CURSOR_TEXT_SRC = 'assets/cursor-text.svg';
+// Emulated hardware cursor: the OS pointer is hidden over the monitor and these
+// assets are the only visible cursor, driven by the emulated cursor's position.
+//
+// The artwork is this machine's own Windows cursor set — the default (Aero)
+// cursors a Windows 10 install shows — extracted to 32x32 PNGs by
+// tools/extract_cursors.py, because a browser cannot draw a .cur file. The
+// hotspots are the ones in those files' own headers.
 export const CURSOR_SIZE_PX = 32;
-// Hotspot (click point) inside each 32x32 glyph: arrow tip / fingertip / beam middle.
-export const CURSOR_IDLE_HOTSPOT = [11, 6];
-export const CURSOR_LINK_HOTSPOT = [14, 7];
-export const CURSOR_TEXT_HOTSPOT = [16, 16];
+export const CURSOR_IDLE_SRC = 'assets/cursor/arrow.png';
+export const CURSOR_LINK_SRC = 'assets/cursor/hand.png';
+export const CURSOR_TEXT_SRC = 'assets/cursor/text.png';
+export const CURSOR_MOVE_SRC = 'assets/cursor/move.png';
+export const CURSOR_RESIZE_EW_SRC = 'assets/cursor/resize-ew.png';
+export const CURSOR_RESIZE_NS_SRC = 'assets/cursor/resize-ns.png';
+export const CURSOR_RESIZE_NESW_SRC = 'assets/cursor/resize-nesw.png';
+export const CURSOR_RESIZE_NWSE_SRC = 'assets/cursor/resize-nwse.png';
+export const CURSOR_UNAVAILABLE_SRC = 'assets/cursor/unavailable.png';
+// The loading cursor is animated, so it is drawn one extracted frame at a time.
+export const CURSOR_BUSY_FRAME_COUNT = 18;
+export const CURSOR_BUSY_FRAME_MS = 80;
+// Hotspot (click point) inside each 32x32 glyph, as the source files carry it.
+export const CURSOR_IDLE_HOTSPOT = [0, 0];
+export const CURSOR_LINK_HOTSPOT = [6, 0];
+export const CURSOR_TEXT_HOTSPOT = [15, 16];
+export const CURSOR_MOVE_HOTSPOT = [11, 11];
+export const CURSOR_RESIZE_EW_HOTSPOT = [11, 4];
+export const CURSOR_RESIZE_NS_HOTSPOT = [4, 11];
+export const CURSOR_DIAG_HOTSPOT = [8, 8];
+export const CURSOR_BUSY_HOTSPOT = [16, 16];
 
 // Touchpad mode (touch screens): one finger drag moves the cursor
 // relatively, a quick tap left-clicks, two fingers drag to scroll.

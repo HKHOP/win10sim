@@ -4,10 +4,23 @@ import {
   CURSOR_IDLE_SRC,
   CURSOR_LINK_SRC,
   CURSOR_TEXT_SRC,
+  CURSOR_MOVE_SRC,
+  CURSOR_RESIZE_EW_SRC,
+  CURSOR_RESIZE_NS_SRC,
+  CURSOR_RESIZE_NESW_SRC,
+  CURSOR_RESIZE_NWSE_SRC,
+  CURSOR_UNAVAILABLE_SRC,
+  CURSOR_BUSY_FRAME_COUNT,
+  CURSOR_BUSY_FRAME_MS,
   CURSOR_SIZE_PX,
   CURSOR_IDLE_HOTSPOT,
   CURSOR_LINK_HOTSPOT,
   CURSOR_TEXT_HOTSPOT,
+  CURSOR_MOVE_HOTSPOT,
+  CURSOR_RESIZE_EW_HOTSPOT,
+  CURSOR_RESIZE_NS_HOTSPOT,
+  CURSOR_DIAG_HOTSPOT,
+  CURSOR_BUSY_HOTSPOT,
   MOUSE_SENSITIVITY,
   POST_LOCK_IGNORE_MS,
   MAX_MOUSE_DELTA_PX,
@@ -91,6 +104,45 @@ export function isRawDevicePress(event) {
   return !!document.pointerLockElement;
 }
 
+// One entry per cursor the OS can be wearing: the artwork and where its click
+// point sits inside it. Both come out of the source .cur files' own headers.
+var CURSOR_ART = {
+  idle: { src: CURSOR_IDLE_SRC, hotspot: CURSOR_IDLE_HOTSPOT },
+  link: { src: CURSOR_LINK_SRC, hotspot: CURSOR_LINK_HOTSPOT },
+  text: { src: CURSOR_TEXT_SRC, hotspot: CURSOR_TEXT_HOTSPOT },
+  move: { src: CURSOR_MOVE_SRC, hotspot: CURSOR_MOVE_HOTSPOT },
+  'resize-ew': { src: CURSOR_RESIZE_EW_SRC, hotspot: CURSOR_RESIZE_EW_HOTSPOT },
+  'resize-ns': { src: CURSOR_RESIZE_NS_SRC, hotspot: CURSOR_RESIZE_NS_HOTSPOT },
+  'resize-nesw': { src: CURSOR_RESIZE_NESW_SRC, hotspot: CURSOR_DIAG_HOTSPOT },
+  'resize-nwse': { src: CURSOR_RESIZE_NWSE_SRC, hotspot: CURSOR_DIAG_HOTSPOT },
+  unavailable: { src: CURSOR_UNAVAILABLE_SRC, hotspot: CURSOR_DIAG_HOTSPOT },
+  busy: { hotspot: CURSOR_BUSY_HOTSPOT, animated: true }
+};
+
+// A window's resize grip says which way the edge runs, and Windows answers
+// with the cursor that runs the same way.
+var RESIZE_CURSOR = {
+  n: 'resize-ns',
+  s: 'resize-ns',
+  e: 'resize-ew',
+  w: 'resize-ew',
+  ne: 'resize-nesw',
+  sw: 'resize-nesw',
+  nw: 'resize-nwse',
+  se: 'resize-nwse'
+};
+
+// The emulated cursor in the running session, so the loading ring can be put on
+// from anywhere (app launch) without threading the cursor through.
+var session = null;
+
+// The loading ring, as Windows wears it while something is starting.
+export function setCursorBusy(busy) {
+  if (session) {
+    session.setBusy(busy);
+  }
+}
+
 export function createCursor(stage) {
   var x = Math.floor(DISPLAY_WIDTH / 2);
   var y = Math.floor(DISPLAY_HEIGHT / 2);
@@ -117,16 +169,48 @@ export function createCursor(stage) {
   // monitor is scaled to a fraction, an unscaled cursor would be several times
   // too big next to the taskbar it is pointing at. It scales with the stage.
   var scale = 1;
-  var art = [CURSOR_IDLE_SRC, CURSOR_IDLE_HOTSPOT];
+  var busy = false;
+  var busyFrame = 0;
+  var busyTimer = null;
+
+  function busySrc() {
+    return 'assets/cursor/busy-' + (busyFrame % CURSOR_BUSY_FRAME_COUNT) + '.png';
+  }
 
   function applyCursorArt() {
-    img.src = art[0];
+    var art = CURSOR_ART[state] || CURSOR_ART.idle;
+    var hotspot = art.hotspot;
+    img.src = art.animated ? busySrc() : art.src;
     img.style.width = (CURSOR_SIZE_PX * scale) + 'px';
     img.style.height = (CURSOR_SIZE_PX * scale) + 'px';
     // The hotspot is in emulated pixels too, so the pointer tip stays on the
     // pixel it points at at every stage scale.
-    img.style.marginLeft = (-art[1][0] * scale) + 'px';
-    img.style.marginTop = (-art[1][1] * scale) + 'px';
+    img.style.marginLeft = (-hotspot[0] * scale) + 'px';
+    img.style.marginTop = (-hotspot[1] * scale) + 'px';
+  }
+
+  // The loading ring is an animated cursor, so it is played here rather than
+  // drawn: the frames came out of the .ani one file per frame.
+  function setBusy(on) {
+    if (busy === !!on) {
+      return;
+    }
+    busy = !!on;
+    if (busyTimer) {
+      window.clearInterval(busyTimer);
+      busyTimer = null;
+    }
+    if (busy) {
+      busyFrame = 0;
+      setState('busy');
+      busyTimer = window.setInterval(function () {
+        busyFrame++;
+        applyCursorArt();
+      }, CURSOR_BUSY_FRAME_MS);
+      return;
+    }
+    // Back to whatever the pointer is actually over.
+    updateHover(targetUnderCursor());
   }
 
   function render() {
@@ -157,9 +241,6 @@ export function createCursor(stage) {
       return;
     }
     state = next;
-    art = next === 'link' ? [CURSOR_LINK_SRC, CURSOR_LINK_HOTSPOT]
-      : next === 'text' ? [CURSOR_TEXT_SRC, CURSOR_TEXT_HOTSPOT]
-      : [CURSOR_IDLE_SRC, CURSOR_IDLE_HOTSPOT];
     applyCursorArt();
   }
 
@@ -194,20 +275,37 @@ export function createCursor(stage) {
     }
   }
 
-  function updateHover(target) {
-    if (target && target.closest) {
-      // Text fields win over the generic link state.
-      if (target.closest(TEXT_SELECTOR)) {
-        setState('text');
-        return;
-      }
-      if (target.closest(LINK_SELECTOR)) {
-        setState('link');
-        return;
-      }
-    }
-    setState('idle');
+  // What the pointer is wearing follows what it is over, the way Windows dresses
+// its cursor: a resize grip gets the cursor that runs along that edge, a
+// titlebar gets the move cursor, a text field the beam, a control the hand.
+function updateHover(target) {
+  if (busy) {
+    // Something is starting: the ring outranks whatever is underneath.
+    setState('busy');
+    return;
   }
+  if (target && target.closest) {
+    var grip = target.closest('.win-resize');
+    if (grip && RESIZE_CURSOR[grip.dataset.zone]) {
+      setState(RESIZE_CURSOR[grip.dataset.zone]);
+      return;
+    }
+    if (target.closest('.win-titlebar')) {
+      setState('move');
+      return;
+    }
+    // Text fields win over the generic link state.
+    if (target.closest(TEXT_SELECTOR)) {
+      setState('text');
+      return;
+    }
+    if (target.closest(LINK_SELECTOR)) {
+      setState('link');
+      return;
+    }
+  }
+  setState('idle');
+}
 
   // The capture layer: the browser's pointer stops here and everything the
   // emulated OS can be pressed with is routed from here. It sits outside the
@@ -687,6 +785,12 @@ export function createCursor(stage) {
     syncLockState();
   }
 
+  // The one cursor in the session, so anything in the shell can put the loading
+  // ring on without being handed the cursor itself.
+  session = {
+    setBusy: setBusy
+  };
+
   return {
     element: el,
     getPosition: function () {
@@ -696,6 +800,7 @@ export function createCursor(stage) {
     // device press through its whole lifecycle (drags) and so have to find
     // the target themselves.
     hitTest: hitTestThroughInputLayer,
+    setBusy: setBusy,
     setBooted: setBooted
   };
 }

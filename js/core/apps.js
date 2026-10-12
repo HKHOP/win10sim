@@ -1,6 +1,7 @@
 import { createWindow } from './windowmanager.js';
 import { mountNtfs } from '../apis/ntfs.js';
 import { initStartState, setRegistryHook, noteAppRegistered, recordLaunch } from './startstate.js';
+import { setCursorBusy } from './cursor.js';
 
 // App registry + launcher: each app registers { id, name, icon, launch }.
 // launch receives a context with window creation and shared volume access.
@@ -114,6 +115,9 @@ export function launchApp(id, args) {
   if (!def) {
     return null;
   }
+  // Windows puts the spinning ring on the pointer while an app starts, and
+  // takes it off once the window is there.
+  setCursorBusy(true);
   const context = {
     id: def.id,
     name: def.name,
@@ -129,7 +133,18 @@ export function launchApp(id, args) {
       return createWindow(merged);
     }
   };
-  const result = def.launch(context, args);
+  let result;
+  try {
+    result = def.launch(context, args);
+  } finally {
+    // Two frames: one to put the started window on screen, one to be sure the
+    // ring was seen doing its job before it is taken off.
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        setCursorBusy(false);
+      });
+    });
+  }
   // Win10 counts a launch for Most used as soon as the app starts.
   recordLaunch(id);
   return result;

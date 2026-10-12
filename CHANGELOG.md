@@ -3,6 +3,29 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.5.0] - The real Windows cursors
+
+2026-10-12
+
+### Added
+
+- `tools/extract_cursors.py`: pulls the cursor artwork out of this machine's own `C:\Windows\Cursors` and writes 32x32 PNGs, because a browser cannot draw a `.cur` file. It reads each frame's size and hotspot out of the file's own header, decodes the DIB by hand (bitmap + AND mask, 1/8/16/24/32bpp), and walks the RIFF chunks of an `.ani` for its animated frames
+- The default (Aero) set as the emulated cursor: arrow, hand, I-beam, move, horizontal / vertical / both diagonal resize cursors, the not-allowed ring, and the loading ring as its 18 extracted frames
+- `cursor.js` wears the right one for what the pointer is over, as Windows does: a window's resize grip gets the cursor that runs along that edge, a titlebar the move cursor, a text field the beam, a control the hand
+- The loading ring: launching an app puts it on the pointer for the moment the window takes to appear, played at 80ms a frame
+
+### Removed
+
+- The three hand-drawn cursor SVGs (`cursor-idle.svg`, `cursor-linkselect.svg`, `cursor-text.svg`)
+
+### Changed
+
+- `constants.js`: cursor sources and hotspots now come from the extracted files, not from approximations
+
+### Fixed
+
+- Coloured cursors came out with red and blue swapped: the loading ring was orange instead of Windows blue, and the not-allowed ring blue instead of red. A DIB stores pixels as BGRA and they were being read as RGB; the black-and-white cursors hid the mistake
+
 ## [1.4.1] - The resize edges can actually be grabbed
 
 2026-10-12

@@ -36,6 +36,7 @@ Root/
                     Each app: app.js (entry) + app.css (scoped) + optional assets.
     global/         Shared constants, helpers, utils only. No app or system logic here.
   assets/           Static binary assets only: icons, wallpapers, fonts, sounds. No code.
+  tools/            One-off extraction scripts turning source material on the machine into assets/ (the Windows cursors). Not shipped.
   sw.js             Service worker: network-first cache busting (the site has no build step to hash filenames)
   .nojekyll         Required for GitHub Pages (serve files as-is, allow underscore dirs).
   .gitignore        OS/editor junk only. Never ignore index.html, css/, js/, assets/.
