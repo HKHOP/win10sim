@@ -406,22 +406,29 @@
 
 /* The closed column is too narrow for the account and the power side by side,
    so they stack the way they do in Win10's icon column — which also stops the
-   row spilling out over the list and tile segments. */
+   row spilling out over the list and tile segments. Stacked, the two need a row
+   taller than the open one (which holds them side by side in 52px) or the
+   account's 30px avatar overruns the power button below it, so the row grows
+   to whatever the two glyphs and the gap between them actually need. */
 .start-menu:not(.rail-open) .start-rail-bottom {
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
-  padding: 0;
+  gap: 8px;
+  height: auto;
+  padding: 10px 0;
 }
 
 .start-menu:not(.rail-open) :is(.start-account, .start-power) {
+  flex: 0 0 auto;
   width: 100%;
+  /* The power glyph is 16px in a 24px box; the account is its 30px avatar plus
+     the padding that keeps the avatar off the row's edges. */
   height: 24px;
   padding: 0;
 }
 
 .start-menu:not(.rail-open) .start-account {
-  flex: 0 0 auto;
+  height: 30px;
   justify-content: center;
 }
 
@@ -436,6 +443,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  height: var(--account-h, 52px);
   padding: 0 6px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }

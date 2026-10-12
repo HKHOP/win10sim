@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.5] - The account and power stop crowding each other
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- The Start column's account row height moved from an inline `height` on the row to a `--account-h` custom property, so the CSS can give the closed column's stacked row a height of its own
+- Closed, the account and the power are separated by 8px in a row that grows to fit them instead of being pinned to the 52px the open row uses side by side
+
+### Fixed
+
+- Closed, the account's 30px avatar did not fit the 24px box the stacked row gave it, so it ran down over the power button below and the two read as one crowded glyph
+
 ## [1.7.4] - The hamburger opens the Start column itself
 
 2026-10-12

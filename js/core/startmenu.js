@@ -770,6 +770,7 @@ export function buildStartMenu(cursor, stage) {
   menuEl.className = 'start-menu';
   menuEl.hidden = true;
   menuEl.style.left = START_LEFT_PX + 'px';
+  menuEl.style.setProperty('--account-h', START_ACCOUNT_H + 'px');
   // The panel and column widths, handed to the CSS that widens both once the
   // column opens.
   menuEl.style.setProperty('--rail-w', START_RAIL_W + 'px');
@@ -821,7 +822,8 @@ export function buildStartMenu(cursor, stage) {
 
   var bottom = document.createElement('div');
   bottom.className = 'start-rail-bottom';
-  bottom.style.height = START_ACCOUNT_H + 'px';
+  // The row's height is set from CSS, off --account-h below, so the closed
+  // column can give its stacked row a height of its own.
 
   var account = document.createElement('button');
   account.type = 'button';
