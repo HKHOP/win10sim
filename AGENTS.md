@@ -16,7 +16,7 @@ This file guides all agents (human + AI) working on this repo. Follow it on ever
 
 - Remote: `https://github.com/HKHOP/win10sim.git` (HTTPS; the local machine's SSH key is not registered with GitHub, so use HTTPS + the stored credential).
 - Branch: `main` only. Pages builds from `main` at the repo root (`.nojekyll` is committed, so files are served as-is).
-- Push after a task completes, alongside the CHANGELOG entry (§6). Do not commit secrets, logs, or editor junk.
+- Push after a task completes, alongside the CHANGELOG entry (§6). This is mandatory: every task must end committed and pushed to `main` (§5.5). Do not commit secrets, logs, or editor junk.
 - `assets/win10-shell-icons/` is the real Windows 10 build-21343 icon library (Imageres.dll + Shell32.dll, ~37 MB). It is source material, not runtime content: only the extracted PNGs under `assets/` and `assets/shell/` are referenced by the app.
 - Enabling or reconfiguring Pages needs the GitHub REST API (`POST /repos/HKHOP/win10sim/pages`); `gh` CLI is not installed on this machine.
 
@@ -97,7 +97,9 @@ Big subsystems are split so no file grows unbounded:
 2. Structure first, logic later: Iteration 1 is structure only. Do not implement simulator logic until asked.
 3. Verify by opening `index.html` directly in a browser (or `npx serve` equivalent is FORBIDDEN — no Node; use VS Code Live Server / Python http.server / GitHub Pages preview if needed). Behaviour is confirmed by the human in the browser; headless DOM-stub harnesses are not a substitute for their feedback.
 4. Keep diffs minimal and categorized — never move files across categories silently; call it out in the changelog under `Changed`.
-5. Push to `main` when a task completes (§1a), so GitHub Pages redeploys.
+5. **Every completed task ends with a commit AND a push.** A task is not finished — and must not be reported as done — until `git status` is clean, the work is committed to `main`, and `git push origin main` has succeeded (§1a). GitHub Pages redeploys from the pushed state, so an un-pushed task is not live.
+   - Commit only after the CHANGELOG entry for that task version is written (§6); the version bump and the code changes belong in the same commit.
+   - Never leave a task committed locally but unpushed. If the push fails, report the failure explicitly instead of claiming completion.
 
 ## 6. CHANGELOG.md Rules (strict)
 

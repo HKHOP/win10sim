@@ -3,6 +3,26 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.19.2] - Mandatory commit and push on task completion
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `AGENTS.md` §5.5: a completed task now explicitly requires both a commit and a push — the work is committed to `main` together with its CHANGELOG entry, and the task is not reported as done until `git push origin main` succeeds, since Pages only serves the pushed state
+
+### Fixed
+
+- None
+
 ## [0.19.1] - Real Win10 shell icons for Notepad and the icon library
 
 2026-10-11
