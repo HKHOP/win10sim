@@ -11,7 +11,7 @@
 import { APP_TILE_SVG } from '../global/icons.js';
 import { getApp, listStartApps, launchApp } from './apps.js';
 import { showContextMenu } from './contextmenu.js';
-import { unpinApp, getPins, setPinSize, movePin, indexOfPin } from './startstate.js';
+import { unpinApp, getPins, setPinSize, movePin, START_TILE_COLS } from './startstate.js';
 import { createPointerTracker } from './pointer.js';
 
 // A drag only counts once the pointer has travelled this far, so a press
@@ -28,6 +28,24 @@ var drag = null;
 
 function tileSizeClass(size) {
   return 'start-tile-' + (size || 'medium');
+}
+
+// How many cells a tile covers: small and medium one, wide two across, large a
+// 2x2 block. Shared with the placement rules in the Start state store.
+function tileSpan(size) {
+  if (size === 'wide') {
+    return [2, 1];
+  }
+  if (size === 'large') {
+    return [2, 2];
+  }
+  return [1, 1];
+}
+
+function placeTile(tile, pin) {
+  var span = tileSpan(pin.size);
+  tile.style.gridColumn = ((pin.col || 0) + 1) + ' / span ' + span[0];
+  tile.style.gridRow = ((pin.row || 0) + 1) + ' / span ' + span[1];
 }
 
 function buildTileArt(entry, pinSize) {
@@ -78,6 +96,9 @@ function buildTile(entry, pin) {
   tile.setAttribute('role', 'button');
   tile.tabIndex = -1;
   tile.setAttribute('aria-label', entry.name);
+  // The tile's cell in the grid: this is the layout, not a packed order, so a
+  // tile can sit in a free cell with a gap beside it.
+  placeTile(tile, pin);
 
   var art = buildTileArt(entry, pin.size);
 
@@ -154,6 +175,9 @@ function onLaunchTile(appId) {
 export function buildTileGrid(cursor, stage) {
   var grid = document.createElement('div');
   grid.className = 'start-tiles';
+  // The store places tiles in cells, so the drawing has to agree with it on how
+  // many there are.
+  grid.style.setProperty('--tile-cols', String(START_TILE_COLS));
   tracker = tracker || createPointerTracker(cursor, stage);
   installGestures(grid);
   return grid;
@@ -178,17 +202,14 @@ export function renderTileGrid(grid) {
       return;
     }
     var tile = buildTile(entry, pin);
-    // A drag in progress survives the rebuild that a reorder triggers: the
-    // tile stays lifted, and stays under the pointer.
-    if (drag && drag.moved && drag.appId === pin.appId) {
-      tile.classList.add('is-dragging');
-      if (drag.lift) {
-        tile.style.translate = drag.lift;
-      }
-    }
     tileNodes[pin.appId] = tile;
     grid.appendChild(tile);
   });
+  // The drop ghost lives in the grid, so a rebuild drops it; put it back for
+  // the rest of the drag (its box is already where it belongs).
+  if (ghost && drag && drag.moved) {
+    grid.appendChild(ghost);
+  }
   refreshLiveTiles(grid);
 }
 
@@ -264,9 +285,6 @@ function beginDrag(grid, target, origin) {
     // Reference rect captured once, so a resize does not chase its own tail
     // as the tile grows.
     ref: tile.getBoundingClientRect(),
-    // Current offset of the lifted tile, kept so a reorder rebuild can put it
-    // back under the pointer.
-    lift: '',
     moved: false
   };
 }
@@ -282,61 +300,125 @@ function onDragMove() {
       return;
     }
     drag.moved = true;
-    // The tile only lifts once the press has actually become a drag: a plain
-    // press must not look like it is already moving one.
-    if (drag.mode === 'move') {
-      liftTile(drag);
-    }
+    // No ghost until the press has actually moved: a plain press must not
+    // leave a drop target behind.
   }
 
   if (drag.mode === 'move') {
-    liftToPointer(drag, pos);
     reorderToPointer(drag.grid, pos);
     return;
   }
   resizeToPointer(drag, pos);
 }
 
-function liftTile(state) {
-  var node = tileNodes[state.appId];
-  if (node) {
-    node.classList.add('is-dragging');
-  }
+// The grid's own geometry, read back from the layout the browser resolved:
+// column widths, row heights and gaps, so cell maths stays true whatever the
+// CSS says the tile sizes are today.
+function gridMetrics(grid) {
+  var styles = window.getComputedStyle(grid);
+  var trackSizes = function (value) {
+    return String(value || '').split(' ').map(parseFloat).filter(function (n) {
+      return !isNaN(n) && n > 0;
+    });
+  };
+  var rect = grid.getBoundingClientRect();
+  return {
+    rect: rect,
+    cols: trackSizes(styles.gridTemplateColumns),
+    rows: trackSizes(styles.gridTemplateRows),
+    gapX: parseFloat(styles.columnGap) || 0,
+    gapY: parseFloat(styles.rowGap) || 0,
+    padLeft: parseFloat(styles.paddingLeft) || 0,
+    padTop: parseFloat(styles.paddingTop) || 0
+  };
 }
 
-// Win10 lifts the tile out of the grid and carries it under the pointer while
-// you drag; the other tiles reflow around it. The offset is measured in
-// client pixels because the stage is CSS-scaled.
-function liftToPointer(state, pos) {
-  var node = tileNodes[state.appId];
-  if (!node) {
-    return;
+// Which cell a point is over. Rows vary in height (a 2x2 tile's row is taller
+// than a plain one), so the row is found by walking the tracks, and a point
+// below the last row means "the next row down". spanW keeps a wide or large
+// tile from being aimed at a cell it cannot fit in.
+function cellAtPoint(grid, clientX, clientY, spanW) {
+  var m = gridMetrics(grid);
+  if (!m.cols.length) {
+    return null;
   }
-  var from = tracker.toClient(state.startX, state.startY);
-  var to = tracker.toClient(pos.x, pos.y);
-  state.lift = (to.x - from.x) + 'px ' + (to.y - from.y) + 'px';
-  node.style.translate = state.lift;
-}
-
-// Insert before the first tile whose centre is to the right of the
-// pointer, which is how Win10's grid feels while you drag across it.
-function reorderToPointer(grid, pos) {
-  var client = tracker.toClient(pos.x, pos.y);
-  var tiles = gridTileNodes(grid);
-  var target = tiles.length;
-  for (var i = 0; i < tiles.length; i++) {
-    var rect = tiles[i].getBoundingClientRect();
-    if (tiles[i].dataset.appId === drag.appId) {
-      continue;
-    }
-    if (client.x < rect.left + rect.width / 2) {
-      target = i;
+  var dx = clientX - m.rect.left - m.padLeft;
+  var dy = clientY - m.rect.top - m.padTop;
+  var col = Math.round(dx / (m.cols[0] + m.gapX));
+  col = Math.max(0, Math.min(col, m.cols.length - spanW));
+  var row = 0;
+  var offset = 0;
+  for (var i = 0; i < m.rows.length; i++) {
+    if (dy < offset + m.rows[i]) {
       break;
     }
+    offset += m.rows[i] + m.gapY;
+    row = i + 1;
   }
-  var current = indexOfPin(drag.appId);
-  if (target !== current) {
-    movePin(drag.appId, target);
+  return { col: col, row: row };
+}
+
+// Pixel box of a cell, for the drop ghost. Absolute rather than a grid item of
+// its own, so marking a cell never changes the layout it is marking.
+function cellBox(grid, col, row, w, h) {
+  var m = gridMetrics(grid);
+  var offset = m.padTop;
+  for (var i = 0; i < row && i < m.rows.length; i++) {
+    offset += m.rows[i] + m.gapY;
+  }
+  var rowH = m.rows.length && row < m.rows.length ? m.rows[row] : (m.rows[0] || 108);
+  return {
+    left: m.padLeft + col * (m.cols[0] + m.gapX),
+    top: offset,
+    width: w * m.cols[0] + (w - 1) * m.gapX,
+    height: h * rowH + (h - 1) * m.gapY
+  };
+}
+
+// Where the tile would land. It is drawn as a ghost in the grid and, once the
+// gesture commits, as the tile itself — the grid is the layout, so a tile
+// takes the cell under the pointer and whatever was there fills in behind it.
+function reorderToPointer(grid, pos) {
+  var client = tracker.toClient(pos.x, pos.y);
+  var span = tileSpan(pinSize(drag.appId));
+  var cell = cellAtPoint(grid, client.x, client.y, span[0]);
+  if (!cell) {
+    return;
+  }
+  movePin(drag.appId, cell.col, cell.row);
+  showGhost(grid, cell, span);
+}
+
+function pinSize(appId) {
+  var pins = getPins();
+  for (var i = 0; i < pins.length; i++) {
+    if (pins[i].appId === appId) {
+      return pins[i].size;
+    }
+  }
+  return 'medium';
+}
+
+var ghost = null;
+
+function showGhost(grid, cell, span) {
+  if (!ghost) {
+    ghost = document.createElement('div');
+    ghost.className = 'start-tile-ghost';
+  }
+  var box = cellBox(grid, cell.col, cell.row, span[0], span[1]);
+  ghost.style.left = box.left + 'px';
+  ghost.style.top = box.top + 'px';
+  ghost.style.width = box.width + 'px';
+  ghost.style.height = box.height + 'px';
+  if (ghost.parentNode !== grid) {
+    grid.appendChild(ghost);
+  }
+}
+
+function hideGhost() {
+  if (ghost && ghost.parentNode) {
+    ghost.parentNode.removeChild(ghost);
   }
 }
 
@@ -353,17 +435,6 @@ function resizeToPointer(state, pos) {
   }
   var large = client.y > ref.top + ref.height / 2;
   setPinSize(state.appId, large ? 'large' : 'medium');
-}
-
-function gridTileNodes(grid) {
-  var out = [];
-  for (var i = 0; i < grid.children.length; i++) {
-    var child = grid.children[i];
-    if (child.classList && child.classList.contains('start-tile')) {
-      out.push(child);
-    }
-  }
-  return out;
 }
 
 // The end of the gesture is where a press becomes something: a press that
@@ -387,13 +458,8 @@ function endDrag(event) {
   var tap = !drag.moved && drag.mode === 'move' &&
     (!event || event.type !== 'touchcancel');
   var appId = drag.appId;
-  var node = tileNodes[appId];
   drag = null;
-  if (node) {
-    // Drop the tile back into its new slot in the grid.
-    node.classList.remove('is-dragging');
-    node.style.translate = '';
-  }
+  hideGhost();
   if (tap) {
     onLaunchTile(appId);
   }

@@ -3,6 +3,34 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.3.0] - The Start tile grid is a grid you fill in
+
+2026-10-12
+
+### Added
+
+- Tiles remember the **cell** they sit in, not just an order: a pin is now `{ appId, size, col, row }`, and a dropped tile takes the cell under the pointer with the free cells around it left free
+- Cell placement in `startstate.js`: `cellTaken`, `firstFreeCell`, `tileOverlapping` and `placePin`. Whatever a drop lands on refills into the first free cell forward, so the grid settles instead of overlapping or drifting
+- A drop ghost (`.start-tile-ghost`) marking the cell a dragged tile would land in, positioned out of the flow so marking a cell never moves the layout
+- `gridMetrics` / `cellAtPoint` in `starttiles.js`: the grid's own column widths, row heights and gaps are read back from the resolved layout, so the cell maths stays true whatever the tile sizes are drawn as — including rows of differing height under a 2x2 tile
+- `START_TILE_COLS`, exported by the state store and handed to the grid as `--tile-cols`, so the placement rules and the drawing agree on how wide the grid is
+
+### Removed
+
+- The lift-under-pointer model (`translate`, `.is-dragging`): the grid *is* the layout now, so the tile sits in the cell it is being dragged to and a ghost shows the target
+- `indexOfPin` is no longer used by the tile grid; the grid addresses pins by cell
+
+### Changed
+
+- `movePin(appId, col, row)` replaces the old index-based reorder, and returns false when nothing moved, so a drag that stays inside one cell costs nothing
+- `setPinSize` places the tile again after resizing: it stays put and anything the bigger tile now covers moves on
+- `pinApp` puts a new tile in the first free cell
+- A Start layout saved before tiles had cells is packed in order on load, which puts every tile back exactly where it was drawn
+
+### Fixed
+
+- Tiles could only be reordered, never placed: the grid always packed them from the top left, so there was no such thing as a free cell to drop into
+
 ## [1.2.0] - F2: the way in without the ceremony
 
 2026-10-12

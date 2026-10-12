@@ -506,17 +506,33 @@
 
 /* --- Tiles -------------------------------------------------------------- */
 
+/* The tile grid is a grid the user fills in: every tile is placed on a cell
+   (starttiles.js sets grid-column/grid-row from the pin), so cells can be left
+   free and filled in any order. Column count comes from the Start state store,
+   so the cell maths and the drawing agree. */
 .start-tiles {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(3, 108px);
+  grid-template-columns: repeat(var(--tile-cols, 3), 108px);
   grid-auto-rows: auto;
   gap: 9px;
   align-content: start;
   padding: 12px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Where a dragged tile would land. Drawn out of the flow, so marking a cell
+   never moves the layout it is marking. */
+.start-tile-ghost {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  border: 2px dashed rgba(0, 120, 215, 0.65);
+  border-radius: 2px;
+  background: rgba(0, 120, 215, 0.08);
 }
 
 .start-tile {
@@ -533,16 +549,6 @@
   outline: none;
 }
 
-/* Lifted while being dragged to a new slot, carried under the pointer. */
-.start-tile.is-dragging {
-  z-index: 5;
-}
-
-.start-tile.is-dragging .start-tile-art {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-  border-color: rgba(0, 120, 215, 0.6);
-}
-
 /* Win10's resize handles on a tile's right and bottom edges. They sit wholly
    outside the tile, and an invisible handle takes no presses at all — a
    transparent grip would otherwise swallow the grab meant for the tile. */
@@ -556,7 +562,6 @@
 
 .start-tile:hover .start-tile-grip,
 .start-tile:focus-visible .start-tile-grip,
-.start-tile.is-dragging .start-tile-grip,
 .start-tile.sim-hover .start-tile-grip {
   opacity: 1;
   pointer-events: auto;
@@ -657,18 +662,11 @@
   display: none;
 }
 
-/* Tile sizes: Win10 small / medium / wide / large. */
+/* Tile sizes: Win10 small / medium / wide / large. How many cells a tile covers
+   is set inline from the pin, so a wide or large tile can also be moved to a
+   free cell rather than only spanning from wherever it was dropped. */
 .start-tile-small .start-tile-art {
   height: 108px;
-}
-
-.start-tile-wide {
-  grid-column: span 2;
-}
-
-.start-tile-large {
-  grid-column: span 2;
-  grid-row: span 2;
 }
 
 .start-tile-large .start-tile-art {
