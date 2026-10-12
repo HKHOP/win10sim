@@ -3,6 +3,51 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.21.0] - Icon column opens on hover, app list becomes its own segment
+
+2026-10-12
+
+### Added
+
+- The column opens its labels on hover: `:has(.start-rail:hover)` for the real pointer and `:has(.start-rail .sim-hover)` for the emulated one, since the frozen OS pointer never fires a real `:hover`
+- A touch fallback — a tap on any column button latches it open with `.rail-latched` (coarse pointers only), and a tap inside the menu off the column, or closing Start, drops the latch
+- `START_RAIL_OPEN_W` (190px) in `js/global/constants.js`: the column's open width, wide enough for its labels and for the account and power fly-outs
+- `--menu-w` / `--rail-w` / `--rail-w-open` / `--list-w` custom properties, so the geometry stays in `constants.js` while the CSS owns the hover behaviour
+
+### Removed
+
+- The hamburger's label-folding job and the `.rail-collapsed` class — the column is glyphs only by default now, and hover (or a tap) is what spells it out
+
+### Changed
+
+- `startmenu.js`: the app list is a segment of the menu in its own right, appended between the column and the tile grid instead of living inside the column
+- `startmenu.js`: the hamburger is now Win10's shortcut between the two column views, with its aria-label naming the view it switches to
+- `startmenu.css`: the panel widens by the column's growth while the column is open, instead of squeezing the segments — the app list stays whole beside it and the tile grid is never clipped; the account and power glyphs stack only while the column is closed, and the fly-outs open beside the closed strip
+
+### Fixed
+
+- The app list was drawn inside the sidebar, so the sidebar and the list were one and the same thing rather than the separate segments Windows documents
+
+## [0.20.2] - Fold the account and power row into the icon strip
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `startmenu.css`: in the folded rail the account and power glyphs stack vertically, as they do in Win10's narrow icon column, and their fly-outs open to the right of the strip over the tiles instead of spilling past the menu's left edge
+
+### Fixed
+
+- With the rail folded to its 48px strip, the account and power buttons still sat side by side and needed roughly 80px, so the row overflowed the strip and drew over the tile grid
+
 ## [0.20.1] - Account and power row stayed at the rail's bottom
 
 2026-10-12

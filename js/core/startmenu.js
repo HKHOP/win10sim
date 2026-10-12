@@ -1,14 +1,17 @@
 // Win10 Start menu: the medium panel anchored over the taskbar's left
-// corner. The left rail is a part of the menu in its own right: the
-// hamburger with the "Start" title, the App list / Pinned apps view picker,
-// the app list itself ("Most used" / "Recently added" / the A-Z list), and
-// the account and power buttons at the bottom. The right pane is the pinned
-// tile grid.
+// corner, in the three segments Windows documents — a narrow icon column at
+// the far left (hamburger, the App list / Pinned apps picker, the account and
+// power buttons), the app list ("Most used" / "Recently added" / A-Z), and
+// the pinned tile grid.
 //
-// The two rail views are Win10's "Show app list" setting: the app list sits
-// beside the tiles, and picking Pinned apps takes it away so the tiles get
-// the rail's width too — the rail folds down to its icon strip, exactly as
-// Win10 does when the list is hidden, and keeps a way back to the list.
+// The icon column is glyphs only: Win10 spells out its labels for anyone
+// whose pointer is over the column, and the emulated pointer needs no mouse,
+// so the column widens on :hover / .sim-hover (see startmenu.css). Tapping a
+// column button on a touch screen latches it open instead.
+//
+// The two column views are Win10's "Show app list" setting: the app list sits
+// beside the tiles, and picking Pinned apps takes it away so the tiles take
+// its width, with the column keeping a way back to the list.
 //
 // Everything the menu lists comes from the app registry (apps/), so any app
 // that registers later shows up here — in the list, in Most used once it has
@@ -24,6 +27,7 @@ import {
   START_LIST_W,
   START_ACCOUNT_H,
   START_RAIL_W,
+  START_RAIL_OPEN_W,
   ACCOUNT_NAME,
   ACCOUNT_PIC_SRC,
   START_ACCOUNT_ROW_ICON_PX
@@ -75,8 +79,8 @@ var runningApps = {};
 var openListeners = [];
 // 'apps' = the app list sits beside the tiles, 'tiles' = pinned apps only.
 var view = 'apps';
-// Whether the rail spells its labels out; the icon strip is the collapsed form.
-var labelsShown = true;
+// Touch has no hover, so a tap on the icon column latches it open instead.
+var coarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
 // Starts listeners for open/close state, so the Start button can light up.
 export function subscribeStartOpen(fn) {
@@ -336,6 +340,7 @@ export function closeStartMenu() {
   }
   open = false;
   hidePopovers();
+  menuEl.classList.remove('rail-latched');
   stopLiveTiles();
   emitOpen();
   window.removeEventListener('mousedown', onOutsidePress, true);
@@ -419,10 +424,10 @@ function onMenuKey(event) {
   visible[next].focus();
 }
 
-// --- Rail views: app list vs pinned apps -----------------------------------
+// --- Icon column: views, and how it opens ---------------------------------
 
-// Win10 names the two rail views after what they show, and remembers the
-// choice; the rail carries the view names because it is the rail's job to
+// Win10 names the two column views after what they show, and remembers the
+// choice; the column carries the view names because it is the column's job to
 // say which view Start is in.
 function viewButton(name, label, glyph) {
   var btn = document.createElement('button');
@@ -442,6 +447,7 @@ function viewButton(name, label, glyph) {
 
   btn.addEventListener('click', function (event) {
     event.stopPropagation();
+    latchRail();
     setView(name);
   });
 
@@ -449,14 +455,11 @@ function viewButton(name, label, glyph) {
   return btn;
 }
 
-// Hiding the app list leaves the rail with nothing but its own controls, so
-// Win10 folds it into the icon strip and hands the width to the tiles.
+// The app list is a segment of its own, so the column only tracks which view
+// is showing and where the list belongs.
 function applyRail() {
-  var expanded = view === 'apps' && labelsShown;
   menuEl.classList.toggle('show-app-list', view === 'apps');
-  menuEl.classList.toggle('rail-collapsed', !expanded);
   listEl.hidden = view !== 'apps';
-  railEl.style.width = (expanded ? START_LIST_W : START_RAIL_W) + 'px';
   Object.keys(viewButtons).forEach(function (name) {
     var active = name === view;
     viewButtons[name].classList.toggle('is-selected', active);
@@ -468,21 +471,19 @@ function applyRail() {
 // applying a value never writes it straight back out.
 function setView(next, persist) {
   view = next === 'tiles' ? 'tiles' : 'apps';
-  labelsShown = view === 'apps';
   applyRail();
   if (persist !== false) {
     setShowAppList(view === 'apps');
   }
 }
 
-// The hamburger only spells the rail out or folds it away while the app list
-// is on show; with the list hidden the rail is already the icon strip.
-function toggleRailLabels() {
-  if (view !== 'apps') {
+// A finger has no hover, so a tap on the column holds it open. The CSS widens
+// the column for :hover / .sim-hover; this is the tap equivalent.
+function latchRail() {
+  if (!coarsePointer) {
     return;
   }
-  labelsShown = !labelsShown;
-  applyRail();
+  menuEl.classList.toggle('rail-latched');
 }
 
 // --- Build ----------------------------------------------------------------
@@ -491,14 +492,17 @@ export function buildStartMenu(cursor, stage) {
   menuEl = document.createElement('div');
   menuEl.className = 'start-menu';
   menuEl.hidden = true;
-  menuEl.style.width = START_W + 'px';
   menuEl.style.left = START_LEFT_PX + 'px';
   menuEl.style.top = START_TOP_PX + 'px';
   menuEl.style.height = menuHeight() + 'px';
+  // The panel and column widths, handed to the CSS that widens both on hover.
+  menuEl.style.setProperty('--menu-w', START_W + 'px');
+  menuEl.style.setProperty('--rail-w', START_RAIL_W + 'px');
+  menuEl.style.setProperty('--rail-w-open', START_RAIL_OPEN_W + 'px');
+  menuEl.style.setProperty('--list-w', START_LIST_W + 'px');
 
   railEl = document.createElement('div');
   railEl.className = 'start-rail';
-  railEl.style.width = START_LIST_W + 'px';
 
   // Win10 pairs the hamburger with the "Start" title — a word the menu had
   // not shown since Windows XP.
@@ -509,11 +513,13 @@ export function buildStartMenu(cursor, stage) {
   hamburger.type = 'button';
   hamburger.className = 'start-hamburger';
   hamburger.innerHTML = HAMBURGER_SVG;
-  hamburger.setAttribute('aria-label', 'Collapse the app list');
+  hamburger.setAttribute('aria-label', 'Show pinned apps');
+  // The hamburger is Win10's shortcut between the two column views.
   hamburger.addEventListener('click', function (event) {
     event.stopPropagation();
-    toggleRailLabels();
-    hamburger.setAttribute('aria-label', labelsShown ? 'Collapse the app list' : 'Expand the app list');
+    latchRail();
+    setView(view === 'apps' ? 'tiles' : 'apps');
+    hamburger.setAttribute('aria-label', view === 'apps' ? 'Show pinned apps' : 'Show app list');
   });
   head.appendChild(hamburger);
 
@@ -530,12 +536,6 @@ export function buildStartMenu(cursor, stage) {
   views.appendChild(viewButton('apps', 'App list', APP_LIST_SVG));
   views.appendChild(viewButton('tiles', 'Pinned apps', TILES_SVG));
   railEl.appendChild(views);
-
-  listEl = document.createElement('div');
-  listEl.className = 'start-list';
-  listEl.tabIndex = -1;
-  listEl.setAttribute('role', 'list');
-  railEl.appendChild(listEl);
 
   var bottom = document.createElement('div');
   bottom.className = 'start-rail-bottom';
@@ -578,6 +578,7 @@ export function buildStartMenu(cursor, stage) {
   });
   account.addEventListener('click', function (event) {
     event.stopPropagation();
+    latchRail();
     togglePopover(accountMenu, account);
   });
 
@@ -592,6 +593,7 @@ export function buildStartMenu(cursor, stage) {
   powerMenu.appendChild(powerItem('Restart', RESTART_SVG, restart));
   power.addEventListener('click', function (event) {
     event.stopPropagation();
+    latchRail();
     togglePopover(powerMenu, power);
   });
 
@@ -609,8 +611,25 @@ export function buildStartMenu(cursor, stage) {
     event.preventDefault();
   });
 
+  // The app list is a segment of the menu, not part of the icon column.
+  listEl = document.createElement('div');
+  listEl.className = 'start-list';
+  listEl.tabIndex = -1;
+  listEl.setAttribute('role', 'list');
+
   menuEl.appendChild(railEl);
+  menuEl.appendChild(listEl);
   menuEl.appendChild(tileGrid);
+
+  // A tap inside the menu but off the column drops the touch latch, so the
+  // column does not stay open after the finger is done with it.
+  menuEl.addEventListener('click', function (event) {
+    if (coarsePointer && menuEl.classList.contains('rail-latched')) {
+      if (!(event.target && event.target.closest && event.target.closest('.start-rail'))) {
+        menuEl.classList.remove('rail-latched');
+      }
+    }
+  });
 
   // The stored "Show app list" choice decides which view Start opens in.
   setView(getShowAppList() ? 'apps' : 'tiles', false);

@@ -91,11 +91,15 @@ export const START_ANIM_CLOSE_MS = 200;
 // taskbar, which paints over its lower edge so the menu really slides out
 // from behind the taskbar.
 export const START_LEFT_PX = 0;
-// Left pane: the app list and the account/power row.
+// Middle pane: the app list, which is a segment of its own beside the icon
+// column rather than part of it.
 export const START_LIST_W = 252;
 export const START_ACCOUNT_H = 52;
-// Collapsed rail (hamburger toggled): icons only, like Win10.
+// Leftmost pane: the icon column, glyphs only until the pointer is on it.
 export const START_RAIL_W = 48;
+// Wide enough for the column's labels and for its fly-out menus, which open
+// inside it.
+export const START_RAIL_OPEN_W = 190;
 // Account identity shown in the menu's account row.
 export const START_ACCOUNT_ROW_ICON_PX = 30;
 
