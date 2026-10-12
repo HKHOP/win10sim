@@ -207,7 +207,7 @@ export function renderTileGrid(grid) {
   });
   // The drop ghost lives in the grid, so a rebuild drops it; put it back for
   // the rest of the drag (its box is already where it belongs).
-  if (ghost && drag && drag.moved) {
+  if (ghostLive && ghost) {
     grid.appendChild(ghost);
   }
   refreshLiveTiles(grid);
@@ -259,6 +259,13 @@ function installGestures(grid) {
   window.addEventListener('mouseup', endDrag);
   window.addEventListener('touchend', endDrag);
   window.addEventListener('touchcancel', endDrag);
+  // A press let go outside the window never delivers a release here, and a
+  // gesture with no release keeps its ghost: drop it.
+  window.addEventListener('blur', function () {
+    if (drag) {
+      cancelTileDrag();
+    }
+  });
 }
 
 function beginDrag(grid, target, origin) {
@@ -400,8 +407,14 @@ function pinSize(appId) {
 }
 
 var ghost = null;
+// The ghost outlives the DOM node it was drawn in (a reorder rebuilds the
+// grid), so what it means to be showing is tracked here rather than inferred
+// from the gesture: a gesture can be cancelled without ever reaching a
+// release, and a ghost left behind would come back with the next render.
+var ghostLive = false;
 
 function showGhost(grid, cell, span) {
+  ghostLive = true;
   if (!ghost) {
     ghost = document.createElement('div');
     ghost.className = 'start-tile-ghost';
@@ -417,9 +430,19 @@ function showGhost(grid, cell, span) {
 }
 
 function hideGhost() {
+  ghostLive = false;
   if (ghost && ghost.parentNode) {
     ghost.parentNode.removeChild(ghost);
   }
+}
+
+// A gesture that never sees its release — the press was let go outside the
+// window, the page lost focus, Start closed — is called off here rather than
+// left running: a live gesture would keep its ghost alive and re-append it to
+// every rebuild, so the drop target would reappear on the next Start.
+export function cancelTileDrag() {
+  drag = null;
+  hideGhost();
 }
 
 // Edge drag snaps to the neighbouring size, like Win10: pulling the right

@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.3.1] - The drop ghost stops outliving its drag
+
+2026-10-12
+
+### Added
+
+- `cancelTileDrag()` in `starttiles.js`: calls off a gesture and its ghost. Closing Start calls it, and so does losing window focus mid-drag
+- A `ghostLive` flag, so "is a drop target showing" is tracked rather than inferred from the gesture state
+
+### Removed
+
+- None
+
+### Changed
+
+- `starttiles.js`: a rebuild re-appends the ghost while it is showing, not while a gesture happens to be live
+
+### Fixed
+
+- A drag target could be left behind as a stray dashed box on the Start grid. A press let go outside the browser window, or the page losing focus, never delivered a release, so the gesture stayed live and every rebuild drew its ghost again — including on the next time Start was opened
+
 ## [1.3.0] - The Start tile grid is a grid you fill in
 
 2026-10-12

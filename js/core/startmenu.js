@@ -61,6 +61,7 @@ import {
   renderTileGrid,
   startLiveTiles,
   stopLiveTiles,
+  cancelTileDrag,
   highlightRunningTiles,
   setTileLaunchHandler
 } from './starttiles.js';
@@ -344,6 +345,9 @@ export function closeStartMenu() {
   open = false;
   hidePopovers();
   menuEl.classList.remove('rail-latched');
+  // Closing mid-drag must not leave a gesture running behind the panel: its
+  // drop target would come back the next time Start renders.
+  cancelTileDrag();
   stopLiveTiles();
   emitOpen();
   window.removeEventListener('mousedown', onOutsidePress, true);
