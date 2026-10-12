@@ -116,6 +116,13 @@ export const TILES_SVG =
   '<rect x="9" y="9" width="5" height="5" fill="#222"/>' +
   '</svg>';
 
+// Fullscreen: the four corner brackets, the glyph a fullscreen toggle uses
+// everywhere.
+export const FULLSCREEN_SVG =
+  '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+  '<path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/>' +
+  '</svg>';
+
 // Power: the circle-and-stalk shape Win10 uses on the Start menu.
 export const START_POWER_SVG =
   '<svg viewBox="0 0 16 16" aria-hidden="true">' +

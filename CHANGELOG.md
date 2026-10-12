@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.1.0] - Fullscreen button for handsets
+
+2026-10-12
+
+### Added
+
+- `js/core/sitechrome.js` + `css/sitechrome.css`: a floating fullscreen button for touch devices. It asks for the screen itself, hides the moment it succeeds, and comes back the moment the site leaves fullscreen
+- `FULLSCREEN_SVG` in `js/global/icons.js`: the four-corner-brackets glyph
+- `index.html` links `sitechrome.css`; `js/boot/boot.js` creates the chrome before the machine boots
+
+### Removed
+
+- None
+
+### Changed
+
+- `cursor.js`: presses that land on `.site-chrome` are left to the browser — not swallowed by the capture layer, not prevented, not routed into the emulated OS — for both mouse and touch
+
+### Fixed
+
+- None
+
 ## [1.0.1] - Always run the code Pages is serving
 
 2026-10-12

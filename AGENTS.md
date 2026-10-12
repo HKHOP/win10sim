@@ -70,6 +70,7 @@ Big subsystems are split so no file grows unbounded:
 | `apps.js` | App registry, launch, Start-menu manifests, launch counting |
 | `power.js` | Shared Sleep / Shut down / Restart actions (sign-in + Start menu) |
 | `cursor.js` | The emulated hardware cursor and the input layer: capture layer, pointer lock, touchpad mode, hit-testing, click routing |
+| `sitechrome.js` | Browser chrome outside the emulated OS: the handset fullscreen button (`.site-chrome`, which `cursor.js` must not route presses for) |
 
 ## 3. Technical Constraints
 

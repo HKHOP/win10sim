@@ -36,6 +36,15 @@ import {
 
 var INPUT_LAYER_CLASS = 'sim-input-layer';
 
+// Browser chrome, not the emulated OS: it sits above the capture layer on
+// purpose, so its presses belong to the browser and must never be swallowed
+// or routed into the OS (see sitechrome.js).
+var CHROME_SELECTOR = '.site-chrome';
+
+function isSiteChrome(target) {
+  return !!(target && target.closest && target.closest(CHROME_SELECTOR));
+}
+
 var LINK_SELECTOR = 'a, button, input, select, textarea, [role="button"]';
 var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input[type="search"], input:not([type])';
 // Elements that carry a .sim-hover twin for their :hover style: the capture
@@ -429,9 +438,10 @@ export function createCursor(stage) {
   // emulated cursor's own press. The engagement click only captures the
   // mouse and never fires the UI underneath.
   window.addEventListener('mousedown', function (event) {
-    if (!event.isTrusted || !booted) {
-      // Our own routed clicks bubbling back never re-enter routing, and
-      // before boot the browser's pointer is the only pointer there is.
+    if (!event.isTrusted || !booted || isSiteChrome(event.target)) {
+      // Our own routed clicks bubbling back never re-enter routing, before
+      // boot the browser's pointer is the only pointer there is, and the
+      // website's own chrome is not ours to press.
       return;
     }
     lastClient = { x: event.clientX, y: event.clientY };
@@ -526,7 +536,9 @@ export function createCursor(stage) {
   // the touchpad steers the emulated cursor and nothing else, so it can never
   // press what sits under the finger.
   window.addEventListener('touchstart', function (event) {
-    if (!booted) {
+    if (!booted || isSiteChrome(event.target)) {
+      // Site chrome taps are taps, not touchpad gestures, so they must not be
+      // swallowed into a cursor move.
       return;
     }
     event.preventDefault();

@@ -1,0 +1,50 @@
+/* Browser chrome around the emulated OS: the fullscreen button a handset
+   needs. Deliberately not OS UI — it sits above the capture layer, outside
+   the emulated monitor, so the emulated cursor can never press it. */
+
+.site-chrome {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  /* Above the capture layer (…3100), below the emulated cursor (…600, which
+     is pointer-events:none and only ever draws). */
+  z-index: 2147483400;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(24, 24, 24, 0.62);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The shell hides the native pointer everywhere; site chrome is the
+     browser's own, so it keeps one. */
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.site-chrome[hidden] {
+  display: none;
+}
+
+.site-chrome svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.site-chrome:hover,
+.site-chrome:focus-visible {
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.site-chrome:active {
+  background: rgba(0, 120, 215, 0.92);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .site-chrome {
+    transition: background 0.12s ease-out;
+  }
+}

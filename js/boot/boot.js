@@ -11,6 +11,7 @@ import {
 import { watchStage } from '../core/stage.js';
 import { createCursor } from '../core/cursor.js';
 import { createDesktop } from '../core/desktop.js';
+import { createSiteChrome } from '../core/sitechrome.js';
 import { createLockLayer } from './lockscreen.js';
 import { createSignInLayer } from './signin.js';
 // App registrations (side effects): taskbar, desktop and Start menu launch
@@ -129,6 +130,10 @@ function registerServiceWorker() {
 
 function init() {
   registerServiceWorker();
+  // The website's own chrome, outside the emulated OS: on a handset, where
+  // the browser's bars eat the screen the stage has to fit into, this is how
+  // you hand that screen back.
+  createSiteChrome();
   var stage = document.getElementById('monitor-stage');
   if (!stage) {
     return;
