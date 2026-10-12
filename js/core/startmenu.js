@@ -33,6 +33,7 @@ import {
   START_TILE_PAD_PX,
   START_TILE_ROW_PX,
   START_MIN_H_PX,
+  START_RESIZE_EDGE_PX,
   ACCOUNT_NAME,
   ACCOUNT_PIC_SRC,
   START_ACCOUNT_ROW_ICON_PX
@@ -119,13 +120,15 @@ function menuHeight() {
 // tile rows. That is what lets a bigger menu mean more tiles rather than a
 // longer scroll.
 function menuWidth(cols, listW) {
-  return START_RAIL_W + listW + START_TILE_PAD_PX * 2 +
+  // The panes are inset by the resize strips, so their room is subtracted here
+  // too: a handle never lands on top of a tile.
+  return START_RAIL_W + listW + START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX +
     cols * START_TILE_CELL_PX + (cols - 1) * START_TILE_GAP_PX;
 }
 
 function menuHeightForRows(rows) {
-  return START_TILE_PAD_PX * 2 + rows * START_TILE_ROW_PX +
-    (rows - 1) * START_TILE_GAP_PX;
+  return START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX +
+    rows * START_TILE_ROW_PX + (rows - 1) * START_TILE_GAP_PX;
 }
 
 // The widest the menu may get: the whole display, less the icon column and one
@@ -158,25 +161,27 @@ function applyStartSize() {
 // pointer is measured against the edge it is dragging, and the result snaps to
 // the nearest whole cell.
 function colsForWidth(px, listW) {
-  var fixed = START_RAIL_W + listW + START_TILE_PAD_PX * 2;
+  var fixed = START_RAIL_W + listW + START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX;
   var raw = (px - fixed + START_TILE_GAP_PX) / (START_TILE_CELL_PX + START_TILE_GAP_PX);
   return Math.max(1, Math.min(Math.round(raw), maxCols(listW)));
 }
 
 function rowsForHeight(px) {
-  var raw = (px - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+  var raw = (px - START_TILE_PAD_PX * 2 - START_RESIZE_EDGE_PX + START_TILE_GAP_PX) /
     (START_TILE_ROW_PX + START_TILE_GAP_PX);
   return Math.max(1, Math.min(Math.round(raw), maxRows()));
 }
 
 function maxCols(listW) {
-  var fit = DISPLAY_WIDTH - START_RAIL_W - listW;
-  return Math.max(1, Math.floor((fit - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+  var fit = DISPLAY_WIDTH - START_RAIL_W - listW -
+    START_TILE_PAD_PX * 2 - START_RESIZE_EDGE_PX;
+  return Math.max(1, Math.floor((fit + START_TILE_GAP_PX) /
     (START_TILE_CELL_PX + START_TILE_GAP_PX)));
 }
 
 function maxRows() {
-  return Math.max(1, Math.floor((menuHeight() - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+  return Math.max(1, Math.floor((menuHeight() - START_TILE_PAD_PX * 2 -
+    START_RESIZE_EDGE_PX + START_TILE_GAP_PX) /
     (START_TILE_ROW_PX + START_TILE_GAP_PX)));
 }
 
@@ -208,6 +213,13 @@ function onResizeMove() {
 }
 
 function endResize() {
+  resize = null;
+}
+
+// A resize that never sees its release — the press was let go outside the
+// window, or Start closed underneath it — would otherwise sit armed, and the
+// next press on an edge would be swallowed by it.
+function cancelResize() {
   resize = null;
 }
 
@@ -470,6 +482,10 @@ export function openStartMenu() {
     return;
   }
   hidePopovers();
+  // Start never opens mid-gesture: an armed resize from a previous session of
+  // the menu would swallow the first press on an edge.
+  cancelResize();
+  cancelTileDrag();
   render();
   menuEl.hidden = false;
   // Force a reflow so the enter animation runs from its start state.
@@ -498,6 +514,7 @@ export function closeStartMenu() {
   menuEl.classList.remove('rail-latched');
   // Closing mid-drag must not leave a gesture running behind the panel: its
   // drop target would come back the next time Start renders.
+  cancelResize();
   cancelTileDrag();
   stopLiveTiles();
   emitOpen();
@@ -670,6 +687,7 @@ export function buildStartMenu(cursor, stage) {
   menuEl.style.setProperty('--tile-cell', START_TILE_CELL_PX + 'px');
   menuEl.style.setProperty('--tile-gap', START_TILE_GAP_PX + 'px');
   menuEl.style.setProperty('--tile-pad', START_TILE_PAD_PX + 'px');
+  menuEl.style.setProperty('--resize-edge', START_RESIZE_EDGE_PX + 'px');
 
   railEl = document.createElement('div');
   railEl.className = 'start-rail';

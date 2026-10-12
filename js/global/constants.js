@@ -111,6 +111,10 @@ export const START_TILE_ROW_PX = 136;
 // How small the Start menu may be dragged: its icon column's own controls plus
 // a couple of rows of tiles.
 export const START_MIN_H_PX = 260;
+// The grab strips on the menu's top and right edges. They are wide in emulated
+// pixels because the whole monitor is scaled down on a small screen, and the
+// panes are inset by the same amount so a handle never covers a control.
+export const START_RESIZE_EDGE_PX = 20;
 // Account identity shown in the menu's account row.
 export const START_ACCOUNT_ROW_ICON_PX = 30;
 

@@ -22,34 +22,63 @@
 
 /* Win10 resizes Start from its top and right edges: the bottom is pinned to the
    taskbar and the left to the screen, so those two are what move. The strips
-   sit over the panel's edge, wide enough to grab on a touch screen. */
+   are wide in emulated pixels because the whole monitor is scaled down on a
+   small screen — a hairline would be a couple of real pixels there. Each edge
+   carries a faint line so the handles can be found at all. */
 .start-resize {
   position: absolute;
   z-index: 4;
   background: transparent;
 }
 
+.start-resize::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 120, 215, 0.35);
+}
+
 .start-resize-x {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 8px;
+  width: 20px;
   cursor: ew-resize;
+}
+
+.start-resize-x::after {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 2px;
 }
 
 .start-resize-y {
   top: 0;
   left: 0;
   right: 0;
-  height: 8px;
+  height: 20px;
   cursor: ns-resize;
+}
+
+.start-resize-y::after {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
 }
 
 .start-resize-x:hover,
 .start-resize-x.sim-hover,
 .start-resize-y:hover,
 .start-resize-y.sim-hover {
-  background: rgba(0, 120, 215, 0.28);
+  background: rgba(0, 120, 215, 0.18);
+}
+
+.start-resize-x:hover::after,
+.start-resize-x.sim-hover::after,
+.start-resize-y:hover::after,
+.start-resize-y.sim-hover::after {
+  background: rgba(0, 120, 215, 0.9);
 }
 
 /* Win10 slides the Start menu out of the taskbar while it fades in, and
@@ -149,6 +178,10 @@
   gap: 10px;
   height: 40px;
   padding: 0;
+  /* Above the top resize strip, so the hamburger stays pressable where the
+     strip runs over the column. */
+  position: relative;
+  z-index: 5;
 }
 
 .start-rail-title {
@@ -265,13 +298,14 @@
 
 /* --- App list column ----------------------------------------------------- */
 
-/* The middle segment: its own column, between the icon column and the tiles. */
+/* The middle segment: its own column, between the icon column and the tiles.
+   Inset on the top and right by the resize strips, as the tile grid is. */
 .start-list {
   flex: 0 0 var(--list-w, 252px);
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 6px;
+  padding: var(--resize-edge, 20px) calc(6px + var(--resize-edge, 20px)) 0 6px;
   outline: none;
 }
 
@@ -552,7 +586,9 @@
   grid-auto-rows: auto;
   gap: var(--tile-gap, 9px);
   align-content: start;
-  padding: var(--tile-pad, 12px);
+  /* Inset on the top and right by the resize strips, so a handle never covers
+     a tile and the snapped size and the room the grid has agree. */
+  padding: calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) var(--tile-pad, 12px) var(--tile-pad, 12px);
   overflow-y: auto;
   overflow-x: hidden;
 }

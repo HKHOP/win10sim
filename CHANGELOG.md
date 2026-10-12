@@ -3,6 +3,30 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.4.1] - The resize edges can actually be grabbed
+
+2026-10-12
+
+### Added
+
+- A faint blue line down the top and right edges of the menu, brighter while the pointer is on one, so the handles can be found at all
+- `START_RESIZE_EDGE_PX` in `constants.js`: the width of the grab strips, shared by the strips, the pane insets and the snapping maths
+
+### Removed
+
+- None
+
+### Changed
+
+- The grab strips are 20 emulated pixels rather than 8: the whole monitor is scaled down on a small screen, where a hairline strip is a couple of real pixels and cannot be caught
+- The tile grid, the app list and the icon column's header are inset by the strips (the strips run over the top and right edges), and the width/height maths subtracts the same amount, so a snapped size still gives the grid exactly the room its columns and rows need — verified for every column count
+- Opening or closing Start cancels a resize in progress
+
+### Fixed
+
+- A resize gesture that never saw its release — the press let go outside the window, or Start closed underneath it — stayed armed and swallowed the next press on an edge, which left the menu looking impossible to resize
+- The handles were thin enough to miss, and the right-hand strip covered the right edge of the rightmost tiles and rows
+
 ## [1.4.0] - The Start menu resizes, snapped to whole tiles
 
 2026-10-12
