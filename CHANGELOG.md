@@ -3,24 +3,52 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
-## [1.9.0] - The .ink file format, and the types the shell knows
+## [1.9.0] - Shortcuts
 
 2026-10-12
 
 ### Added
 
-- `js/apis/ink.js`: the `.ink` document format. Windows stores ink as ISF (Ink Serialized Format), a compact binary layout published as a separate specification - which a static browser app cannot write, since there is no build step here and nothing compiles a binary encoder. So the format implemented is **InkML**, the W3C standard ink markup Windows reads as well: a real ink document, written with brushes (colour, width, opacity) that traces reference, over X / Y / F channels in himetric and pen force
-- Reading and writing ink over the emulated volume, the way every other file works: `readInkFile` / `writeInkFile`
-- File types are now the shell's own record, separate from the apps that open them. `.ink` registers as **Ink File**, media type `application/inkml+xml`, so a file with that extension calls itself an Ink File in Explorer's Type column and Properties whether or not anything has claimed it yet
-- An app may introduce a type it knows about, the way an installer writes a description into HKCR - but it cannot overwrite a type the shell already knows
+- `js/apis/shelllink.js`: the `.lnk` shortcut - what it points at, where to
+  start it, its icon, window state and description. Windows stores a shortcut as
+  a binary Shell Link (MS-SHLLINK); there is no build step here to compile a
+  binary writer and a real Shell Link would mean nothing to anything in this
+  simulator, so a shortcut is a record under the `.lnk` name holding the fields
+  Windows holds
+- **Create shortcut** on a file, a folder or a desktop icon (Alt+Shift+T), writing
+  `name - Shortcut.lnk` beside what it points at. A name already taken gets the
+  next number rather than overwriting the first
+- Opening a shortcut resolves it at that moment: a folder target walks into it,
+  a file target goes to whatever app registered for its type, and an app target
+  starts the app. A target that has gone says so in the message box Windows uses
+  ("Windows can't find ...") instead of doing nothing
+- Shortcuts wear the arrow over their icon, in Explorer and on the desktop, so a
+  link never reads as the thing it points at
+- A shortcut's Properties: target type, location, size, created, modified,
+  start in, shortcut key and description, the fields Windows shows
+- **The desktop now shows the desktop folder.** Everything in
+  `C:\Users\User\Desktop` appears as an icon beside This PC and the Recycle
+  Bin, keeps the slot it was dragged to across a refresh, opens on a double-click
+  and can be deleted from its own menu
+- `.lnk` registers as the **Shortcut** file type, so a shortcut calls itself that
+  in Explorer's Type column and Properties
+- `js/system/events.js`: the shell's event bus. Explorer changes the volume and
+  the desktop re-reads its folder, so a shortcut made in one shows up in the
+  other without either importing the other
 
 ### Removed
 
-- None
+- **The `.ink` ink format from 1.9.0 of the same number.** That version was the
+  wrong feature: "the .ink format" was asked for as the format of a *shortcut*,
+  and it built InkML ink documents instead. The file-type registry it introduced
+  is kept, because shortcuts need it
 
 ### Changed
 
-- None
+- The known folders' artwork moved into `constants.js`, so the desktop and a
+  listing agree on which folder wears which icon
+- The shell's message box moved out of the Explorer app into `js/core/msgbox.js`,
+  because the desktop needs one too and an app may not borrow another app's
 
 ### Fixed
 

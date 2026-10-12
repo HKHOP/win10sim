@@ -2,12 +2,7 @@ import {
   FOLDER_SRC,
   FILE_SRC,
   QUICK_ACCESS_SRC,
-  DESKTOP_FOLDER_SRC,
-  DOWNLOADS_SRC,
-  DOCUMENTS_SRC,
-  PICTURES_SRC,
-  MUSIC_SRC,
-  VIDEOS_SRC,
+  KNOWN_FOLDER_SRC,
   ACCOUNT_NAME
 } from '../../global/constants.js';
 import { getPinned, togglePin, getRecent } from '../../apis/quickaccess.js';
@@ -18,15 +13,8 @@ import { getPinned, togglePin, getRecent } from '../../apis/quickaccess.js';
 // is why it lives here rather than in the shared shell renderers.
 
 // Win10 gives each known folder its own artwork instead of the plain folder
-// glyph, both in the Quick access grid and in any listing of them.
-var KNOWN_FOLDER_ART = {
-  Desktop: DESKTOP_FOLDER_SRC,
-  Downloads: DOWNLOADS_SRC,
-  Documents: DOCUMENTS_SRC,
-  Music: MUSIC_SRC,
-  Pictures: PICTURES_SRC,
-  Videos: VIDEOS_SRC
-};
+// glyph, both in the Quick access grid and in any listing of them; the artwork
+// itself lives with the other shell icons in constants.
 
 // A pin drawn the way Win10 draws it once the folder is in Quick access.
 var PIN_ART_ON =
@@ -35,7 +23,7 @@ var PIN_ART_ON =
   '</svg>';
 
 export function folderArt(name) {
-  return KNOWN_FOLDER_ART[name] || FOLDER_SRC;
+  return KNOWN_FOLDER_SRC[name] || FOLDER_SRC;
 }
 
 export function itemArt(item) {

@@ -86,6 +86,17 @@ export const DOCUMENTS_SRC = 'assets/shell/documents.png';
 export const PICTURES_SRC = 'assets/shell/pictures.png';
 export const MUSIC_SRC = 'assets/shell/music.png';
 export const VIDEOS_SRC = 'assets/shell/videos.png';
+// Which artwork a known folder wears, wherever it is shown. The two views that
+// can show one - a listing and the desktop - read it from here rather than each
+// keeping its own copy.
+export const KNOWN_FOLDER_SRC = {
+  Desktop: DESKTOP_FOLDER_SRC,
+  Downloads: DOWNLOADS_SRC,
+  Documents: DOCUMENTS_SRC,
+  Music: MUSIC_SRC,
+  Pictures: PICTURES_SRC,
+  Videos: VIDEOS_SRC
+};
 // The emulated volume is the system drive: Win10 shows the Windows-logo
 // drive (Imageres_dll_031) for C:, not the plain drive glyph.
 export const DRIVE_SRC = 'assets/shell/system-drive.png';

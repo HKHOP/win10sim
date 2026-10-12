@@ -2,6 +2,9 @@ import {
   DESKTOP_WALLPAPER_SRC,
   THISPC_SRC,
   RECYCLE_BIN_SRC,
+  FOLDER_SRC,
+  FILE_SRC,
+  KNOWN_FOLDER_SRC,
   DISPLAY_WIDTH,
   DISPLAY_HEIGHT,
   TASKBAR_HEIGHT_PX,
@@ -9,7 +12,19 @@ import {
 } from '../global/constants.js';
 import { buildTaskbar } from './taskbar.js';
 import { initWindowSystem } from './windowmanager.js';
-import { launchApp } from './apps.js';
+import { launchApp, getApp, getVolume } from './apps.js';
+import { createWindow } from './windowmanager.js';
+import { showMessageBox } from './msgbox.js';
+import { defaultAppFor, extensionOf } from '../apis/associations.js';
+import {
+  isShortcutName,
+  createFileLink,
+  createShortcutFile,
+  describeLink,
+  readShortcut,
+  targetExists
+} from '../apis/shelllink.js';
+import { on, emit, VOLUME_CHANGED } from '../system/events.js';
 import { showContextMenu } from './contextmenu.js';
 import { buildStartMenu } from './startmenu.js';
 
@@ -17,12 +32,25 @@ import { buildStartMenu } from './startmenu.js';
 // bottom. Click selects, Ctrl+click toggles a multi-selection, dragging
 // empty space draws the blue marquee, and icons drag between grid slots
 // (swapping with any occupant). Positions live only in memory — nothing is
-// saved. Opening icons arrives with real apps.
+// saved.
+//
+// The two shell icons are always here; everything else is the user's Desktop
+// folder, read from the volume and re-read whenever anything changes it, so a
+// shortcut made in Explorer shows up here and opens what it points at.
 
 var DESKTOP_ICONS = [
   { label: 'This PC', src: THISPC_SRC, appId: 'thispc' },
   { label: 'Recycle Bin', src: RECYCLE_BIN_SRC, appId: 'explorer', args: { path: 'recyclebin' } }
 ];
+
+var USER_DESKTOP = 'C:\\Users\\User\\Desktop';
+
+function iconFor(entry) {
+  if (entry.type === 'dir') {
+    return KNOWN_FOLDER_SRC[entry.label] || FOLDER_SRC;
+  }
+  return FILE_SRC;
+}
 
 var SLOT_W = 88;
 var SLOT_H = 96;
@@ -50,7 +78,7 @@ function maxRow() {
 
 function buildDesktopIcon(icon) {
   var el = document.createElement('div');
-  el.className = 'desktop-icon';
+  el.className = 'desktop-icon' + (icon.link ? ' is-shortcut' : '');
   el.tabIndex = 0;
 
   var art = document.createElement('div');
@@ -96,6 +124,156 @@ export function createDesktop(cursor, stage) {
     return entry;
   });
 
+  // ---- the user's Desktop folder ----
+  // Anything here is a real file on C:, so the desktop re-reads it rather than
+  // carrying a second copy of the truth. Entries that are still there keep the
+  // slot the user dragged them into.
+  var volumePromise = null;
+
+  function volume() {
+    if (!volumePromise) {
+      volumePromise = getVolume();
+    }
+    return volumePromise;
+  }
+
+  function labelOf(name, showExtensions) {
+    if (showExtensions !== false) {
+      return name;
+    }
+    var dot = name.lastIndexOf('.');
+    return dot > 0 ? name.slice(0, dot) : name;
+  }
+
+  function desktopEntryFor(entry) {
+    return {
+      place: entry.place,
+      label: labelOf(entry.name),
+      name: entry.name,
+      type: entry.type,
+      src: iconFor(entry),
+      link: isShortcutName(entry.name)
+    };
+  }
+
+  function nextFreeSlot() {
+    var taken = {};
+    entries.forEach(function (entry) {
+      taken[entry.col + ':' + entry.row] = true;
+    });
+    var rows = maxRow() + 1;
+    for (var index = 0; index < rows * 32; index++) {
+      var col = Math.floor(index / rows);
+      var row = index % rows;
+      if (!taken[col + ':' + row]) {
+        return { col: col, row: row };
+      }
+    }
+    return { col: 0, row: 0 };
+  }
+
+  function refreshFromVolume() {
+    volume().then(function (vol) {
+      if (!vol || !vol.available) {
+        return null;
+      }
+      // A profile that has never opened Explorer still has a desktop folder.
+      return vol.makeDir(USER_DESKTOP).catch(function () {}).then(function () {
+        return vol.listDir(USER_DESKTOP);
+      }).then(function (listed) {
+        var seen = [];
+        listed.filter(function (entry) {
+          return String(entry.name).charAt(0) !== '$';
+        }).forEach(function (entry) {
+          var place = USER_DESKTOP + '\\' + entry.name;
+          seen.push(place);
+          var def = desktopEntryFor(entry);
+          var existing = entries.filter(function (candidate) {
+            return candidate.def.place === place;
+          })[0];
+          if (existing) {
+            existing.def = def;
+            rebuildIcon(existing);
+            return;
+          }
+          var slot = nextFreeSlot();
+          var created = {
+            el: buildDesktopIcon(def),
+            def: def,
+            col: slot.col,
+            row: slot.row,
+            selected: false
+          };
+          entries.push(created);
+          icons.appendChild(created.el);
+        });
+        // Anything that has gone from the folder goes from the desktop.
+        entries.slice().forEach(function (entry) {
+          if (entry.def.place && seen.indexOf(entry.def.place) < 0) {
+            icons.removeChild(entry.el);
+            entries.splice(entries.indexOf(entry), 1);
+          }
+        });
+        entries.forEach(function (entry) {
+          entry.row = Math.max(0, Math.min(maxRow(), entry.row));
+        });
+        renderPositions();
+      });
+    }, function () {});
+  }
+
+  // The artwork can change under an entry (a shortcut resolving to a folder, a
+  // renamed file), so the icon node is rebuilt in place rather than replaced.
+  function rebuildIcon(entry) {
+    var fresh = buildDesktopIcon(entry.def);
+    entry.el.className = fresh.className;
+    entry.el.replaceChild(fresh.children[0], entry.el.children[0]);
+    entry.el.children[1].textContent = entry.def.label;
+  }
+
+  // "Create shortcut" on the desktop writes it into the desktop folder, next to
+  // the thing it points at, which is where Windows puts it too.
+  function createDesktopShortcut(entry) {
+    var def = entry.def;
+    if (!def || !def.place) {
+      return;
+    }
+    volume().then(function (vol) {
+      if (!vol || !vol.available) {
+        return null;
+      }
+      var link = createFileLink(def.place, def.type === 'dir');
+      var name = def.name + ' - Shortcut.lnk';
+      return createShortcutFile(vol, link, USER_DESKTOP, name).then(function (made) {
+        emitChange({ kind: 'create', place: made });
+      });
+    }, function () {});
+  }
+
+  function deleteDesktopEntry(entry) {
+    var def = entry.def;
+    if (!def || !def.place) {
+      return;
+    }
+    volume().then(function (vol) {
+      if (!vol || !vol.available) {
+        return null;
+      }
+      return vol.remove(def.place, def.type === 'dir').then(function () {
+        emitChange({ kind: 'delete', place: def.place });
+      });
+    }, function () {});
+  }
+
+  // The desktop creates and deletes on the volume too, so it announces its own
+  // changes rather than waiting to hear them back.
+  function emitChange(detail) {
+    emit(VOLUME_CHANGED, detail);
+  }
+
+  on(VOLUME_CHANGED, refreshFromVolume);
+  refreshFromVolume();
+
   function renderPositions() {
     entries.forEach(function (entry) {
       var s = slotPos(entry.col, entry.row);
@@ -121,7 +299,9 @@ export function createDesktop(cursor, stage) {
 
   function entrySortValue(entry, key) {
     if (key === 'type') {
-      return (entry.def.appId || 'system').toLowerCase();
+      var def = entry.def || {};
+      return (def.type === 'dir' ? 'file folder' : (def.name || def.label || ''))
+        .toLowerCase();
     }
     // Shell icons share one size and no timestamps, so Name is the only
     // meaningful order here; the other keys fall back to it.
@@ -163,11 +343,113 @@ export function createDesktop(cursor, stage) {
   // Double-click (or double-tap) opens icons that have an app behind them.
   var lastTap = null;
 
-  function openEntry(entry) {
-    if (entry.def && entry.def.appId) {
-      launchApp(entry.def.appId, entry.def.args);
+  // The desktop has no app of its own, so the one message box it needs is built
+  // against the window system directly.
+  var shellContext = {
+    createWindow: function (opts) {
+      var merged = Object.assign({ appId: 'explorer' }, opts);
+      return createWindow(merged);
     }
-    // Icons without an app open nothing yet.
+  };
+
+  function openEntry(entry) {
+    var def = entry.def || {};
+    if (def.appId) {
+      launchApp(def.appId, def.args);
+      return;
+    }
+    if (!def.place) {
+      // An icon with neither an app nor a file behind it opens nothing yet.
+      return;
+    }
+    if (def.type === 'dir') {
+      launchApp('explorer', { path: def.place });
+      return;
+    }
+    if (def.link) {
+      openLinkEntry(def);
+      return;
+    }
+    openFileEntry(def);
+  }
+
+  // A shortcut is a name for something else: resolve it now, not now-and-again.
+  function openLinkEntry(def) {
+    volume().then(function (vol) {
+      return readShortcut(vol, def.place).then(function (link) {
+        if (!link) {
+          showMessageBox(shellContext, {
+            message: 'The shortcut \'' + def.label + '\' is not valid.'
+          });
+          return null;
+        }
+        var target = describeLink(link);
+        if (target.kind === 'app') {
+          var app = getApp(target.target.appId);
+          if (!app) {
+            showMessageBox(shellContext, {
+              message: 'Windows can\'t find \'' + target.target.appId + '\'. Make sure you typed the name correctly, and then try again.'
+            });
+            return null;
+          }
+          launchApp(app.id, target.target.args);
+          return null;
+        }
+        return targetExists(vol, link).then(function (there) {
+          if (!there) {
+            showMessageBox(shellContext, {
+              message: 'Windows can\'t find \'' + target.place + '\'. Check the spelling and try again.'
+            });
+            return null;
+          }
+          return vol.stat(target.place).then(function (stat) {
+            if (stat.type === 'dir') {
+              launchApp('explorer', { path: target.place });
+              return null;
+            }
+            return openFileEntry({
+              place: target.place,
+              label: target.label,
+              name: target.label
+            }, vol);
+          }, function () {
+            launchApp('explorer', { path: target.place });
+            return null;
+          });
+        });
+      });
+    }, function () {});
+  }
+
+  // A file on the desktop opens with whatever app registered for its type.
+  function openFileEntry(def, vol) {
+    var ready = vol ? Promise.resolve(vol) : volume();
+    ready.then(function (mounted) {
+      if (!mounted || !mounted.available) {
+        return null;
+      }
+      return mounted.stat(def.place).then(function (stat) {
+        if (stat.type === 'dir') {
+          launchApp('explorer', { path: def.place });
+          return null;
+        }
+        return defaultAppFor(extensionOf(def.name || def.label)).then(function (appId) {
+          if (!appId || !getApp(appId)) {
+            showMessageBox(shellContext, {
+              message: 'There is no app installed that can open \'' + (def.label || def.name) + '\'.'
+            });
+            return null;
+          }
+          launchApp(appId, { path: def.place });
+          return null;
+        });
+      }, function () {
+        showMessageBox(shellContext, {
+          message: 'Windows can\'t find \'' + def.place + '\'. Check the spelling and try again.'
+        });
+        return null;
+      });
+    }, function () {});
   }
 
   function entryFromNode(node) {
@@ -388,11 +670,24 @@ export function createDesktop(cursor, stage) {
   function desktopMenu(x, y, hit) {
     if (hit && hit.entry) {
       var entry = hit.entry;
+      var def = entry.def || {};
+      var onDisk = !!def.place;
       showContextMenu(x, y, [
         { label: 'Open', action: function () { openEntry(entry); } },
         { separator: true },
-        { label: 'Create shortcut', shortcut: 'Alt+Shift+T', disabled: true },
-        { label: 'Delete', shortcut: 'Del', disabled: true },
+        {
+          label: 'Create shortcut',
+          shortcut: 'Alt+Shift+T',
+          // A shortcut to a shortcut is not a thing Windows offers.
+          disabled: !onDisk || !!def.link,
+          action: function () { createDesktopShortcut(entry); }
+        },
+        {
+          label: 'Delete',
+          shortcut: 'Del',
+          disabled: !onDisk,
+          action: function () { deleteDesktopEntry(entry); }
+        },
         { label: 'Rename', shortcut: 'F2', disabled: true },
         { separator: true },
         { label: 'Properties', shortcut: 'Alt+Enter', disabled: true }

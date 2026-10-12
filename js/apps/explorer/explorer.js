@@ -11,6 +11,7 @@ import { SEARCH_SVG } from '../../global/icons.js';
 import { buildRibbon } from './ribbon.js';
 import { showOpenWithDialog } from './openwith.js';
 import { showContextMenu, hideContextMenu } from '../../core/contextmenu.js';
+import { showMessageBox } from '../../core/msgbox.js';
 import { launchApp, getApp } from '../../core/apps.js';
 import {
   extensionOf,
@@ -19,6 +20,16 @@ import {
   setDefaultApp,
   typeFor
 } from '../../apis/associations.js';
+import {
+  isShortcutName,
+  shortcutNameFor,
+  createFileLink,
+  createShortcutFile,
+  describeLink,
+  readShortcut,
+  targetExists
+} from '../../apis/shelllink.js';
+import { emit, VOLUME_CHANGED } from '../../system/events.js';
 import {
   buildQuickAccessGroup,
   buildRecentTabs,
@@ -39,6 +50,7 @@ import { getPinned, noteUsed } from '../../apis/quickaccess.js';
 // folder in it.
 var PROFILE_FOLDERS = ['Desktop', 'Documents', 'Downloads', 'Music', 'Pictures', 'Videos'];
 var USER_BASE = 'C:\\Users\\User';
+var USER_DESKTOP = USER_BASE + '\\Desktop';
 // Shell folder that lives outside the volume: no path segments, no
 // storage backing — the bin is rendered as a virtual root like This PC.
 var RECYCLE_BIN_PLACE = 'recyclebin';
@@ -52,18 +64,6 @@ var SEARCH_DEBOUNCE_MS = 300;
 // Bounds on the recursive walk so a big volume can never freeze the UI.
 var SEARCH_MAX_RESULTS = 300;
 var SEARCH_MAX_VISITS = 4000;
-// Win10 error glyph (red disc, white X) for the address-bar message box.
-var ERROR_SVG =
-  '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-  '<circle cx="16" cy="16" r="13" fill="#e81123"/>' +
-  '<path d="M11 11l10 10M21 11L11 21" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-  '</svg>';
-var INFO_SVG =
-  '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-  '<circle cx="16" cy="16" r="13" fill="#0078d7"/>' +
-  '<path d="M16 8v11" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-  '<circle cx="16" cy="23.5" r="2" fill="#fff"/>' +
-  '</svg>';
 // Deleted items live under the user's bin SID, exactly where NTFS keeps
 // them, so the C:\ root listing has to hide it the way Win10 does.
 var RECYCLE_BIN_ROOT = 'C:\\$Recycle.Bin\\S-1-5-21-1964531255-1331432381-3380043568-1013';
@@ -392,7 +392,7 @@ export async function openExplorer(context, startPath) {
     return launch.then(function (chosen) {
       if (!chosen) {
         // Windows says this much when no app has claimed the type.
-        showMessageBox({
+        showMessageBox(context, {
           title: 'How do you want to open this file?',
           message: ext
             ? 'There is no app installed that can open a .' + ext + ' file.'
@@ -424,11 +424,75 @@ export async function openExplorer(context, startPath) {
     });
   }
 
+  // A shortcut is a name for something else, so opening one resolves it and
+  // opens that instead: a folder walks into it, a file goes to its handler, an
+  // app target starts the app.
+  function openShortcut(item) {
+    return readShortcut(volume, item.place).then(function (link) {
+      if (!link) {
+        showMessageBox(context, {
+          message: 'The shortcut \'' + item.name + '\' is not valid.',
+          buttons: [{ label: 'OK', primary: true }]
+        });
+        return null;
+      }
+      var target = describeLink(link);
+      if (target.kind === 'app') {
+        var def = getApp(target.target.appId);
+        if (!def) {
+          showMessageBox(context, {
+            message: 'Windows can\'t find \'' + target.target.appId + '\'. Make sure you typed the name correctly, and then try again.'
+          });
+          return null;
+        }
+        return launchApp(def.id, target.target.args);
+      }
+      return targetExists(volume, link).then(function (there) {
+        if (!there) {
+          showMessageBox(context, {
+            message: 'Windows can\'t find \'' + target.place + '\'. Check the spelling and try again.'
+          });
+          return null;
+        }
+        return volume.stat(target.place).then(function (stat) {
+          if (stat.type === 'dir') {
+            navigate(target.place);
+            return null;
+          }
+          return openFile({ name: stat.name || target.label, place: target.place, type: 'file' });
+        }, function () {
+          navigate(target.place);
+          return null;
+        });
+      });
+    }, function () {
+      showMessageBox(context, { message: 'Cannot read \'' + item.name + '\'.' });
+      return null;
+    });
+  }
+
+  // "Create shortcut": the same link, written beside what it points at. The
+  // only folder Windows will not write into is one that is not writable, and
+  // then the shortcut goes to the desktop, which is where it would have ended
+  // up in Win10 anyway.
+  function createShortcutFor(item) {
+    var link = createFileLink(item.place, item.type === 'dir');
+    var dir = writableHere() ? state.place : USER_DESKTOP;
+    return createShortcutFile(volume, link, dir, shortcutNameFor(item.name)).then(function (made) {
+      emit(VOLUME_CHANGED, { kind: 'create', place: made });
+      renderContent();
+    }, function () {
+      showMessageBox(context, { message: 'Windows can\'t create the shortcut here.' });
+    });
+  }
+
   function openItem(item, inPlace) {
     if (item.type === 'dir') {
       // Shell pages (Quick access, This PC) carry each row's exact path; a real
       // folder listing resolves the name against where you are standing.
       navigate(item.place || (inPlace + (inPlace.endsWith('\\') ? '' : '\\') + item.name));
+    } else if (isShortcutName(item.name)) {
+      openShortcut(item);
     } else {
       openFile(item);
     }
@@ -871,43 +935,9 @@ export async function openExplorer(context, startPath) {
     }
   }
 
-  // Win10 message box: glyph on the left, text on the right, buttons bottom
-  // right. Used for "cannot find", replace confirmations and folder
-  // properties, exactly like Explorer's own dialogs.
-  function showMessageBox(opts) {
-    var options = opts || {};
-    var dlg = context.createWindow({
-      title: options.title || 'File Explorer',
-      icon: options.icon || EXPLORER_SRC,
-      width: options.width || 440,
-      height: options.height || 176
-    });
-    var box = el('div', 'exp-msgbox');
-    var glyph = el('span', 'exp-msgbox-icon');
-    glyph.innerHTML = options.info ? INFO_SVG : ERROR_SVG;
-    var msg = el('div', 'exp-msgbox-text');
-    msg.textContent = options.message || '';
-    var actions = el('div', 'exp-msgbox-actions');
-    (options.buttons || [{ label: 'OK' }]).forEach(function (spec) {
-      var btn = el('button', 'exp-msgbox-btn' + (spec.primary ? ' is-primary' : ''), spec.label);
-      btn.type = 'button';
-      btn.addEventListener('click', function () {
-        dlg.close();
-        if (spec.action) {
-          spec.action();
-        }
-      });
-      actions.appendChild(btn);
-    });
-    box.appendChild(glyph);
-    box.appendChild(msg);
-    box.appendChild(actions);
-    dlg.body.appendChild(box);
-    return dlg;
-  }
 
   function showPathError(text) {
-    return showMessageBox({
+    return showMessageBox(context, {
       message: "Windows cannot find '" + text + "'. Check the spelling and try again."
     });
   }
@@ -973,6 +1003,7 @@ export async function openExplorer(context, startPath) {
     if (!volume.available) {
       return Promise.resolve();
     }
+    emit(VOLUME_CHANGED, { kind: 'delete', places: places });
     return volume.makeDir(RECYCLE_BIN_ROOT).then(function () {
       return places.reduce(function (chain, place) {
         return chain.then(function () {
@@ -1099,12 +1130,13 @@ export async function openExplorer(context, startPath) {
     var target = joinPath(parent, nextName);
     function apply() {
       volume.move(item.place, target).then(function () {
+        emit(VOLUME_CHANGED, { kind: 'rename', from: item.place, to: target });
         renderContent();
       }, function () {});
     }
     pathExists(target).then(function (taken) {
       if (taken) {
-        showMessageBox({
+        showMessageBox(context, {
           info: true,
           message: 'There is already a file with the same name in this folder.',
           buttons: [
@@ -1166,6 +1198,9 @@ export async function openExplorer(context, startPath) {
   }
 
   async function itemProperties(item) {
+    if (item.type !== 'dir' && isShortcutName(item.name)) {
+      return shortcutProperties(item);
+    }
     var rows = [
       ['Type of file:', item.type === 'dir' ? 'File folder' : typeLabel(item.name, false)],
       ['Location:', parentPath(item.place)],
@@ -1183,6 +1218,32 @@ export async function openExplorer(context, startPath) {
       name: item.name,
       icon: itemArtSrc(item),
       rows: rows
+    });
+  }
+
+  // Win10's shortcut properties: the target and where it points, then the
+  // shortcut's own fields.
+  function shortcutProperties(item) {
+    return readShortcut(volume, item.place).then(function (link) {
+      if (!link) {
+        return itemProperties({ name: item.name, type: 'file', place: item.place });
+      }
+      var target = describeLink(link);
+      var rows = [
+        ['Target type:', target.kind === 'app' ? 'Application' : (target.kind === 'folder' ? 'Folder' : 'File')],
+        ['Location:', parentPath(target.place || item.place)],
+        ['Size:', formatSize(item.size || 0)],
+        ['Created:', formatDate(link.created || item.modified || 0) || '—'],
+        ['Modified:', formatDate(item.modified || 0) || '—'],
+        ['Start in:', link.workingDir || '—'],
+        ['Shortcut key:', link.hotkey || 'None'],
+        ['Description:', link.description || '—']
+      ];
+      return showProperties({
+        name: item.name,
+        icon: itemArtSrc(item),
+        rows: rows
+      });
     });
   }
 
@@ -1343,11 +1404,12 @@ export async function openExplorer(context, startPath) {
 
     showContextMenu(x, y, [
       { label: 'Open', action: target, disabled: !canOpen },
-      { label: 'Open with', submenu: openWithSubmenu(item), disabled: item.type === 'dir' },
+      { label: 'Open with', submenu: openWithSubmenu(item), disabled: item.type === 'dir' || isShortcutName(item.name) },
       { separator: true },
       { label: 'Cut', shortcut: 'Ctrl+X', disabled: true },
       { label: 'Copy', shortcut: 'Ctrl+C', disabled: true },
       { separator: true },
+      { label: 'Create shortcut', shortcut: 'Alt+Shift+T', disabled: isShortcutName(item.name), action: function () { createShortcutFor(item); } },
       { label: 'Delete', shortcut: 'Del', action: function () { recycleItems(places); } },
       { label: 'Rename', shortcut: 'F2', disabled: many || !item.place, action: function () { startRename(nodeFor(item), item); } },
       { separator: true },
@@ -1637,10 +1699,17 @@ export async function openExplorer(context, startPath) {
     return node;
   }
 
+  // Win10 draws a small arrow over a shortcut's own icon, so a link reads as a
+  // link and not as the thing it points at. The arrow is part of how the shell
+  // composes an icon rather than an icon of its own, so it is drawn here.
+  function itemArtBadge(item) {
+    return item && item.name && isShortcutName(item.name) ? ' exp-item-link' : '';
+  }
+
   function buildTile(item, open) {
     var tile = el('div', 'exp-tile');
     tile.setAttribute('data-key', itemKey(item));
-    var art = el('span', 'exp-tile-art');
+    var art = el('span', 'exp-tile-art' + itemArtBadge(item));
     var img = document.createElement('img');
     img.src = itemArtSrc(item);
     img.alt = '';
@@ -1659,7 +1728,7 @@ export async function openExplorer(context, startPath) {
     var row = el('div', 'exp-detail-row');
     row.setAttribute('data-key', itemKey(item));
     var name = el('span', 'exp-detail-name');
-    var art = el('span', 'exp-detail-art');
+    var art = el('span', 'exp-detail-art' + itemArtBadge(item));
     var img = document.createElement('img');
     img.src = itemArtSrc(item);
     img.alt = '';
@@ -1685,7 +1754,7 @@ export async function openExplorer(context, startPath) {
   }
 
   function buildListRow(item, open) {
-    var row = el('div', 'exp-list-row');
+    var row = el('div', 'exp-list-row' + itemArtBadge(item));
     row.setAttribute('data-key', itemKey(item));
     var img = document.createElement('img');
     img.src = itemArtSrc(item);

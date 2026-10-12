@@ -82,3 +82,21 @@
 .desktop-marquee.on {
   display: block;
 }
+
+/* A shortcut on the desktop wears the same arrow badge Explorer draws over a
+   link, so the two agree about what a shortcut looks like. */
+.desktop-icon.is-shortcut .desktop-icon-art {
+  position: relative;
+}
+
+.desktop-icon.is-shortcut .desktop-icon-art::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-bottom: 8px solid #f0f0f0;
+  filter: drop-shadow(0 0 1px #000);
+}

@@ -11,7 +11,7 @@ import { createPrefs } from './prefs.js';
 // A file type is not the same thing as the apps that open it. The type is the
 // shell's own record - the name Windows shows in the Type column, and the media
 // type the format goes by - and an app claims it to become a handler. Registering
-// .ink here, for instance, is what makes a .ink file call itself an Ink File
+// .lnk here, for instance, is what makes a shortcut file call itself a Shortcut
 // whether or not anything has claimed it yet.
 
 const store = createPrefs('C:\\$FileTypes.json', function () {
@@ -27,7 +27,7 @@ let types = {};
 // The types the shell knows before any app says anything. Windows has hundreds;
 // these are the ones this build can actually produce a file in.
 const BUILTIN_TYPES = [
-  { ext: 'ink', type: 'Ink File', mediaType: 'application/inkml+xml' }
+  { ext: 'lnk', type: 'Shortcut' }
 ];
 
 BUILTIN_TYPES.forEach(function (entry) { registerFileType(entry); });
