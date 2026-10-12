@@ -1,17 +1,22 @@
 import { createWindow } from './windowmanager.js';
 import { mountNtfs } from '../apis/ntfs.js';
 import { attachQuickAccess } from '../apis/quickaccess.js';
+import { attachAssociations, registerAssociations } from '../apis/associations.js';
+import { APP_PERMISSIONS } from '../global/constants.js';
 import { initStartState, setRegistryHook, noteAppRegistered, recordLaunch } from './startstate.js';
 import { setCursorBusy } from './cursor.js';
 
-// App registry + launcher: each app registers { id, name, icon, launch }.
-// launch receives a context with window creation and shared volume access.
-// The volume mounts lazily on first use so boot never blocks on storage.
+// App registry + launcher: each app registers { id, name, icon, manifest,
+// launch }. The manifest is what the app says about itself - who publishes it,
+// which version, what it may ask of the shell, and which files it opens - and
+// the shell keeps the rest of the book: Start-menu metadata (tile size/colour,
+// the line under the name, whether it shows in the A-Z list), file type
+// associations and launch counts. Apps are discovered through the registry,
+// never hard-coded into the shell.
 //
-// Manifests also carry Start-menu metadata (tile size/colour, the line under
-// the name, whether it shows in the A-Z list), so the Start menu can list
-// every registered app without knowing any of them. Apps are discovered
-// through the registry, never hard-coded into the shell.
+// launch receives a context with window creation and shared volume access. The
+// volume mounts lazily on first use so boot never blocks on storage, and an app
+// only ever gets it if its manifest asked for storage.
 
 const registry = {};
 let volumePromise = null;
@@ -29,8 +34,10 @@ export function getVolume() {
 // and asks this hook what ships pinned so a first boot comes up with the
 // profile's default Start layout.
 initStartState(getVolume);
-// Explorer's Home page reads and writes Quick Access through the same volume.
+// Explorer's Quick access page and the file type table read and write through
+// the same volume.
 attachQuickAccess(getVolume);
+attachAssociations(getVolume);
 setRegistryHook(function () {
   var out = {};
   Object.keys(registry).forEach(function (id) {
@@ -69,18 +76,63 @@ function normalizeStart(def) {
   };
 }
 
+// What the app says about itself. Normalized once, at registration, so every
+// later reader sees the same shape whatever the app left out.
+function normalizeManifest(def) {
+  const declared = def.manifest || {};
+  const permissions = [];
+  (Array.isArray(declared.permissions) ? declared.permissions : []).forEach(function (name) {
+    if (APP_PERMISSIONS[name] && permissions.indexOf(name) < 0) {
+      permissions.push(name);
+    }
+  });
+  const associations = [];
+  (Array.isArray(declared.associations) ? declared.associations : []).forEach(function (group) {
+    if (!group) {
+      return;
+    }
+    const exts = (Array.isArray(group.ext) ? group.ext : [group.ext])
+      .map(function (ext) { return String(ext || '').replace(/^\./, '').toLowerCase(); })
+      .filter(Boolean);
+    if (exts.length === 0) {
+      return;
+    }
+    associations.push({
+      ext: exts,
+      type: group.type || '',
+      role: group.role || 'handler'
+    });
+  });
+  return {
+    publisher: declared.publisher || 'Unknown publisher',
+    version: declared.version || '1.0.0.0',
+    description: declared.description || '',
+    permissions: permissions,
+    associations: associations
+  };
+}
+
 export function registerApp(def) {
   if (!def || !def.id) {
     return;
   }
   def.start = normalizeStart(def);
+  def.manifest = normalizeManifest(def);
   registry[def.id] = def;
+  // The file types this app claims go straight into the shell's table, the way
+  // a registered app writes its own ProgIDs into HKCR.
+  registerAssociations(def.id, def.manifest);
   // A brand new app is really new; one that came with the profile is not.
   noteAppRegistered(def.id);
 }
 
 export function getApp(id) {
   return registry[id] || null;
+}
+
+export function getManifest(id) {
+  const def = registry[id];
+  return def ? def.manifest : null;
 }
 
 export function hasApp(id) {
@@ -113,18 +165,39 @@ export function listStartApps() {
     });
 }
 
+// A volume an app gets when its manifest never asked for storage: the same
+// shape as the real one, but unavailable, so an app's own "no storage" path
+// runs instead of a crash.
+function lockedVolume(appName) {
+  return Promise.resolve({
+    available: false,
+    label: '',
+    reason: appName + ' was not given permission to use your files.'
+  });
+}
+
 export function launchApp(id, args) {
   const def = registry[id];
   if (!def) {
     return null;
   }
+  const manifest = def.manifest;
+  const mayUseFiles = manifest.permissions.indexOf('storage') >= 0;
   // Windows puts the spinning ring on the pointer while an app starts, and
   // takes it off once the window is there.
   setCursorBusy(true);
   const context = {
     id: def.id,
     name: def.name,
-    getVolume: getVolume,
+    manifest: manifest,
+    hasPermission: function (name) {
+      return manifest.permissions.indexOf(name) >= 0;
+    },
+    // The permission is checked here rather than inside the app: an app that
+    // has not asked for storage never reaches the files.
+    getVolume: function () {
+      return mayUseFiles ? getVolume() : lockedVolume(def.name);
+    },
     createWindow: function (opts) {
       const merged = Object.assign({}, opts, { appId: def.id });
       if (!merged.icon && def.icon) {

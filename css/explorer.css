@@ -826,3 +826,146 @@
     flex: 0 0 108px;
   }
 }
+
+/* "How do you want to open this file?" - the apps registered for this file's
+   type, with the default one ticked, and the choice of remembering it. */
+
+.exp-openwith {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 14px;
+  gap: 12px;
+}
+
+.exp-openwith-heading {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #111;
+}
+
+.exp-openwith-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.exp-openwith-art img {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.exp-openwith-file,
+.exp-openwith-type {
+  display: block;
+  line-height: 1.35;
+}
+
+.exp-openwith-type {
+  color: #666;
+  font-size: 11px;
+}
+
+.exp-openwith-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  padding: 2px;
+}
+
+.exp-openwith-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  color: #111;
+  text-align: left;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.exp-openwith-row:hover,
+.exp-openwith-row.sim-hover {
+  background: #e5f1fd;
+}
+
+.exp-openwith-row-on {
+  border-color: #0078d7;
+  background: #cde6ff;
+}
+
+.exp-openwith-row-on:hover,
+.exp-openwith-row-on.sim-hover {
+  background: #bcdcff;
+}
+
+.exp-openwith-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.exp-openwith-app,
+.exp-openwith-publisher {
+  line-height: 1.35;
+}
+
+.exp-openwith-publisher {
+  color: #666;
+  font-size: 11px;
+}
+
+.exp-openwith-default {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #666;
+}
+
+.exp-openwith-remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #111;
+}
+
+.exp-openwith-remember input {
+  accent-color: #0078d7;
+  margin: 0;
+}
+
+.exp-openwith-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.exp-openwith-btn {
+  min-width: 90px;
+  height: 28px;
+  border: 1px solid #adadad;
+  background: #e1e1e1;
+  font-size: 12px;
+  font-family: inherit;
+  color: #111;
+  cursor: pointer;
+}
+
+.exp-openwith-btn:hover,
+.exp-openwith-btn.sim-hover {
+  background: #e5f1fd;
+  border-color: #0078d7;
+}
+
+.exp-openwith-btn.is-primary {
+  border-color: #0078d7;
+}

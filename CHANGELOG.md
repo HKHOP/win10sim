@@ -66,6 +66,32 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - Pressing Recent, Favorites or Shared appended another list instead of replacing the one on screen, so the rows doubled up with every press. Clearing the list asked for "keep removing until the header is first" - which was already true, so it removed nothing
 
+## [1.8.0] - App manifests, permissions, and a real Open with
+
+2026-10-12
+
+### Added
+
+- App manifests: a registered app now declares who publishes it, its version, a description, **what it may ask of the shell**, and **which files it opens**. Explorer, This PC and Notepad all ship one
+- File type associations (`js/apis/associations.js`): the shell's own table of which app claims which extension, in the order they registered - the shape Windows keeps in HKCR. The first app to claim a type is the one a double-click opens it with
+- **Files now open.** Double-clicking one launches the app that registered for its type, and a search hit opens the same way. Nothing launched anything before
+- **Open with** on a file's menu: every app registered for the type, plus *Choose another app...*, which opens the "How do you want to open this file?" dialog - the apps with their publishers, the default ticked, and *Always use this app*. A remembered choice is kept per profile, and only counts while that app still claims the type, so it can never point at nothing
+- The Type column and a file's Properties name the type an app gave it when it registered, and say which app will open it (`Opens with:`)
+- `js/apis/prefs.js`: one small per-profile preference file on the volume, with debounced writes. Quick access and the file-type defaults share it now instead of each keeping its own copy
+
+### Removed
+
+- None
+
+### Changed
+
+- Permissions are enforced by the shell, not declared for show: `storage` is checked before an app is handed the volume, so an app whose manifest never asked is never given the files. It gets the same volume shape with storage unavailable, which is the path its "no storage" handling already took
+- An app can ask what it may do: the launch context carries its `manifest` and a `hasPermission(name)` in case a surface is added later
+
+### Fixed
+
+- None
+
 ## [1.7.1] - The wheel scrolls again
 
 2026-10-12

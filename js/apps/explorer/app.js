@@ -10,10 +10,21 @@ import { openExplorer } from './explorer.js';
 export var EXPLORER_APP_ID = 'explorer';
 export var THISPC_APP_ID = 'thispc';
 
+// Explorer is the app that browses the volume, so its manifest asks for storage
+// and claims nothing else. It registers no file types of its own: in Windows
+// the shell opens folders itself and only files come from registered apps.
+var EXPLORER_MANIFEST = {
+  publisher: 'Microsoft Corporation',
+  version: '10.0.18362.1249',
+  description: 'Browse the files and folders stored on this PC.',
+  permissions: ['storage']
+};
+
 registerApp({
   id: EXPLORER_APP_ID,
   name: 'File Explorer',
   icon: EXPLORER_SRC,
+  manifest: EXPLORER_MANIFEST,
   // Start-menu presence: File Explorer ships with the profile, so a used
   // install shows it in Most used labelled as a system app and pins it as
   // a wide tile. Apps that register later with no metadata still appear in
@@ -35,6 +46,7 @@ registerApp({
   // Win10 shows This PC's own icon in the places that name it, but the window
   // it opens is an Explorer window and carries Explorer's icon.
   icon: THISPC_SRC,
+  manifest: EXPLORER_MANIFEST,
   start: {
     subtitle: 'System',
     tile: { size: 'medium', background: '#eef3f7', color: '#eef3f7' }

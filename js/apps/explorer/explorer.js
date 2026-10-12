@@ -9,7 +9,16 @@ import {
 } from '../../global/constants.js';
 import { SEARCH_SVG } from '../../global/icons.js';
 import { buildRibbon } from './ribbon.js';
+import { showOpenWithDialog } from './openwith.js';
 import { showContextMenu, hideContextMenu } from '../../core/contextmenu.js';
+import { launchApp, getApp } from '../../core/apps.js';
+import {
+  extensionOf,
+  handlersFor,
+  defaultAppFor,
+  setDefaultApp,
+  typeFor
+} from '../../apis/associations.js';
 import {
   buildQuickAccessGroup,
   buildRecentTabs,
@@ -195,6 +204,11 @@ function typeLabel(name, isDir) {
   if (isDir) {
     return 'File folder';
   }
+  // A type an app named when it registered wins over the guesswork below.
+  var claimed = typeFor(extensionOf(name));
+  if (claimed) {
+    return claimed;
+  }
   var dot = name.lastIndexOf('.');
   var ext = dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
   if (ext === 'txt') {
@@ -367,12 +381,97 @@ export async function openExplorer(context, startPath) {
     }
   }
 
+  // ---- opening files ----
+  // A file goes to the app that registered for its type, the same app a
+  // double-click would use; `appId` overrides that for "Open with".
+  function openFile(item, appId) {
+    var ext = extensionOf(item.name);
+    var launch = appId
+      ? Promise.resolve(appId)
+      : defaultAppFor(ext);
+    return launch.then(function (chosen) {
+      if (!chosen) {
+        // Windows says this much when no app has claimed the type.
+        showMessageBox({
+          title: 'How do you want to open this file?',
+          message: ext
+            ? 'There is no app installed that can open a .' + ext + ' file.'
+            : 'There is no app installed that can open this file.',
+          buttons: [{ label: 'OK', primary: true }]
+        });
+        return null;
+      }
+      if (!getApp(chosen)) {
+        return null;
+      }
+      // Opening a file is what puts it in Quick access's Recent list.
+      noteUsed({ place: item.place, name: item.name, type: 'file' });
+      return launchApp(chosen, { path: item.place });
+    });
+  }
+
+  // Every app that has registered for this file's type, in the shape the
+  // "Open with" submenu and the dialog both want.
+  function handlersForItem(item) {
+    return handlersFor(extensionOf(item.name)).map(function (entry) {
+      var def = getApp(entry.appId);
+      return {
+        appId: entry.appId,
+        name: def ? def.name : entry.appId,
+        icon: def ? def.icon : '',
+        publisher: def && def.manifest ? def.manifest.publisher : 'Unknown publisher'
+      };
+    });
+  }
+
   function openItem(item, inPlace) {
     if (item.type === 'dir') {
       // Shell pages (Quick access, This PC) carry each row's exact path; a real
       // folder listing resolves the name against where you are standing.
       navigate(item.place || (inPlace + (inPlace.endsWith('\\') ? '' : '\\') + item.name));
+    } else {
+      openFile(item);
     }
+  }
+
+  // "Choose another app": the same dialog Windows puts behind it, listing
+  // everyone registered for the type and offering to remember the choice.
+  function chooseAnotherApp(item) {
+    var handlers = handlersForItem(item);
+    if (handlers.length === 0) {
+      return;
+    }
+    defaultAppFor(extensionOf(item.name)).then(function (current) {
+      showOpenWithDialog(context, {
+        path: item.place,
+        name: item.name,
+        type: typeFor(extensionOf(item.name)),
+        handlers: handlers,
+        defaultAppId: current,
+        onAccept: function (appId, always) {
+          if (always) {
+            setDefaultApp(extensionOf(item.name), appId);
+          }
+          openFile(item, appId);
+        }
+      });
+    });
+  }
+
+  function openWithSubmenu(item) {
+    var handlers = handlersForItem(item);
+    if (handlers.length === 0) {
+      return [{ label: 'No apps are installed', disabled: true }];
+    }
+    var items = handlers.map(function (handler) {
+      return {
+        label: handler.name,
+        action: function () { openFile(item, handler.appId); }
+      };
+    });
+    items.push({ separator: true });
+    items.push({ label: 'Choose another app...', action: function () { chooseAnotherApp(item); } });
+    return items;
   }
 
   function setView(view) {
@@ -1066,17 +1165,24 @@ export async function openExplorer(context, startPath) {
     return dlg;
   }
 
-  function itemProperties(item) {
-    var icon = itemArtSrc(item);
-    showProperties({
+  async function itemProperties(item) {
+    var rows = [
+      ['Type of file:', item.type === 'dir' ? 'File folder' : typeLabel(item.name, false)],
+      ['Location:', parentPath(item.place)],
+      ['Size:', item.type === 'dir' ? '0 bytes' : formatSize(item.size || 0)],
+      ['Modified:', formatDate(item.modified || 0) || '—']
+    ];
+    if (item.type !== 'dir') {
+      // Win10 names the app that will open the file, and which app that is
+      // comes from whichever app registered for the type.
+      var appId = await defaultAppFor(extensionOf(item.name));
+      var def = appId ? getApp(appId) : null;
+      rows.splice(3, 0, ['Opens with:', def ? def.name : 'Notepad']);
+    }
+    return showProperties({
       name: item.name,
-      icon: icon,
-      rows: [
-        ['Type of file:', item.type === 'dir' ? 'File folder' : typeLabel(item.name, false)],
-        ['Location:', parentPath(item.place)],
-        ['Size:', item.type === 'dir' ? '0 bytes' : formatSize(item.size || 0)],
-        ['Modified:', formatDate(item.modified || 0) || '—']
-      ]
+      icon: itemArtSrc(item),
+      rows: rows
     });
   }
 
@@ -1160,7 +1266,9 @@ export async function openExplorer(context, startPath) {
     if (item.type === 'dir') {
       navigate(item.place);
     } else {
-      revealFile(item.place);
+      // A search hit opens with the app that registered for its type, the same
+      // as double-clicking the file in a listing.
+      openFile(item);
     }
   }
 
@@ -1229,11 +1337,13 @@ export async function openExplorer(context, startPath) {
     var many = places.length > 1;
     var target = item.type === 'dir'
       ? function () { openItem(item, state.place); }
-      : function () { revealFile(item.place); };
+      : function () { openFile(item); };
+    // Win10 greys Open out on a file nothing has claimed.
+    var canOpen = item.type === 'dir' || handlersForItem(item).length > 0;
 
     showContextMenu(x, y, [
-      { label: 'Open', action: target },
-      { label: 'Open with', submenu: [{ label: 'No apps are installed', disabled: true }], disabled: item.type === 'dir' },
+      { label: 'Open', action: target, disabled: !canOpen },
+      { label: 'Open with', submenu: openWithSubmenu(item), disabled: item.type === 'dir' },
       { separator: true },
       { label: 'Cut', shortcut: 'Ctrl+X', disabled: true },
       { label: 'Copy', shortcut: 'Ctrl+C', disabled: true },

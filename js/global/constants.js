@@ -91,6 +91,13 @@ export const VIDEOS_SRC = 'assets/shell/videos.png';
 export const DRIVE_SRC = 'assets/shell/system-drive.png';
 // Notepad: the real Windows 10 Notepad icon (blue spiral notepad).
 export const NOTEPAD_SRC = 'assets/notepad.png';
+// What a registered app may ask the shell for in its manifest. The shell
+// checks the manifest before it hands an app a surface, so an app that has not
+// asked is never given one: a permission is a promise it keeps rather than a
+// label it carries.
+export const APP_PERMISSIONS = {
+  storage: 'Read and write the files stored on this PC'
+};
 // Notepad window defaults and its editor metrics.
 export const NOTEPAD_DEFAULT_W = 720;
 export const NOTEPAD_DEFAULT_H = 540;
