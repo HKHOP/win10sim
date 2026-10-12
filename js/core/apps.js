@@ -1,5 +1,6 @@
 import { createWindow } from './windowmanager.js';
 import { mountNtfs } from '../apis/ntfs.js';
+import { attachQuickAccess } from '../apis/quickaccess.js';
 import { initStartState, setRegistryHook, noteAppRegistered, recordLaunch } from './startstate.js';
 import { setCursorBusy } from './cursor.js';
 
@@ -28,6 +29,8 @@ export function getVolume() {
 // and asks this hook what ships pinned so a first boot comes up with the
 // profile's default Start layout.
 initStartState(getVolume);
+// Explorer's Home page reads and writes Quick Access through the same volume.
+attachQuickAccess(getVolume);
 setRegistryHook(function () {
   var out = {};
   Object.keys(registry).forEach(function (id) {

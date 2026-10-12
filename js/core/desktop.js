@@ -20,7 +20,7 @@ import { buildStartMenu } from './startmenu.js';
 // saved. Opening icons arrives with real apps.
 
 var DESKTOP_ICONS = [
-  { label: 'This PC', src: THISPC_SRC, appId: 'explorer', args: { path: 'thispc' } },
+  { label: 'This PC', src: THISPC_SRC, appId: 'thispc' },
   { label: 'Recycle Bin', src: RECYCLE_BIN_SRC, appId: 'explorer', args: { path: 'recyclebin' } }
 ];
 

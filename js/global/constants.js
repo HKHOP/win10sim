@@ -74,6 +74,17 @@ export const STORE_SRC = 'assets/Microsoft_Store_logo_light.png';
 // Generic item artwork for Explorer listings.
 export const FOLDER_SRC = 'assets/folder.png';
 export const FILE_SRC = 'assets/file.png';
+// The profile's known folders and Quick Access's Home page, as the real
+// Windows 10 shell draws them: each known folder gets its own icon rather
+// than the plain folder glyph (extracted from Shell32 by
+// tools/extract_icons.py).
+export const HOME_SRC = 'assets/shell/home.png';
+export const DESKTOP_FOLDER_SRC = 'assets/shell/desktop-folder.png';
+export const DOWNLOADS_SRC = 'assets/shell/downloads.png';
+export const DOCUMENTS_SRC = 'assets/shell/documents.png';
+export const PICTURES_SRC = 'assets/shell/pictures.png';
+export const MUSIC_SRC = 'assets/shell/music.png';
+export const VIDEOS_SRC = 'assets/shell/videos.png';
 // The emulated volume is the system drive: Win10 shows the Windows-logo
 // drive (Imageres_dll_031) for C:, not the plain drive glyph.
 export const DRIVE_SRC = 'assets/shell/system-drive.png';

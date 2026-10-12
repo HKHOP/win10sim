@@ -21,6 +21,7 @@ import {
   showFontDialog,
   showAboutDialog
 } from './dialogs.js';
+import { noteUsed } from '../../apis/quickaccess.js';
 
 // Microsoft Notepad, Win10 edition: menu bar, monospace editor, status bar,
 // and the full command set (file I/O on the emulated C: volume, find and
@@ -351,6 +352,8 @@ export function openNotepad(context, args) {
       doc.dirty = false;
       editor.value = (result && result.text) || '';
       doc.recent = pushRecent(doc.recent, path);
+      // Opening a file is also what puts it in Explorer's Recent list.
+      noteUsed({ place: path, name: baseName(path), type: 'file' });
       updateTitle();
       refreshStatus();
     }).catch(function () {
@@ -394,6 +397,7 @@ function writeFile(path, then) {
     doc.path = finalPath;
     doc.dirty = false;
     doc.recent = pushRecent(doc.recent, finalPath);
+    noteUsed({ place: finalPath, name: baseName(finalPath), type: 'file' });
     updateTitle();
     if (then) {
       then();

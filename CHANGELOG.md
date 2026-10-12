@@ -3,6 +3,32 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.6.0] - This PC, and a Home to land on
+
+2026-10-12
+
+### Added
+
+- `This PC` as its own app: it opens the machine's own page, while launching File Explorer lands on Home. Windows keeps both inside one program, so the This PC window still carries File Explorer's icon and title, and This PC has its own entry in the Start menu's app list
+- The Home page Explorer opens on, laid out the way Win10 lays it out: a collapsible Quick access grid of the profile's pinned folders (artwork, name, "Stored locally", and a pin that takes one back out), then the Recent / Favorites / Shared tabs, then the folders and the drives
+- `js/apis/quickaccess.js`: the pinned folders and the recently used list behind Home, kept per profile in one hidden file on C: (`$QuickAccess.json`) the way Windows keeps them in the registry. Opening a folder or a file lands in Recent, and opening it again moves it back to the top instead of listing it twice
+- `tools/extract_icons.py`, and the seven shell icons it takes out of this machine's Windows 10 set: Home, plus Desktop / Downloads / Documents / Music / Pictures / Videos, which now wear their own artwork everywhere they appear instead of the plain folder glyph
+- The nav pane gained Home at the top and a This PC group, and its Quick access list now follows the pins
+
+### Removed
+
+- None
+
+### Changed
+
+- Launching File Explorer opens Home instead of This PC; the desktop's This PC icon opens This PC through the new app
+- Typing `Home` or `Quick access` into the address bar goes there, and Up from Home lands on This PC
+- Notepad's Open and Save also record the file in Explorer's Recent list
+
+### Fixed
+
+- None
+
 ## [1.5.0] - The real Windows cursors
 
 2026-10-12

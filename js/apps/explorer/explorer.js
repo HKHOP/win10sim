@@ -10,6 +10,14 @@ import {
 import { SEARCH_SVG } from '../../global/icons.js';
 import { buildRibbon } from './ribbon.js';
 import { showContextMenu, hideContextMenu } from '../../core/contextmenu.js';
+import {
+  buildQuickAccessGroup,
+  buildRecentTabs,
+  folderArt,
+  homeArt,
+  itemArt as homeItemArt
+} from './home.js';
+import { getPinned, noteUsed } from '../../apis/quickaccess.js';
 
 // File Explorer content: editable address bar (typed paths, recent
 // places), working search, nav pane, browsable tiles / list / details,
@@ -22,6 +30,10 @@ var USER_BASE = 'C:\\Users\\User';
 // Shell folder that lives outside the volume: no path segments, no
 // storage backing — the bin is rendered as a virtual root like This PC.
 var RECYCLE_BIN_PLACE = 'recyclebin';
+// Home is what File Explorer opens on, the way Win10 lands on Quick Access
+// rather than on a drive. This PC stays a separate page: Explorer treats them
+// as different places, and the address bar and title say so.
+var HOME_PLACE = 'home';
 var SEARCH_DEBOUNCE_MS = 300;
 // Bounds on the recursive walk so a big volume can never freeze the UI.
 var SEARCH_MAX_RESULTS = 300;
@@ -48,6 +60,9 @@ function displayPath(place) {
   if (place === 'thispc') {
     return 'This PC';
   }
+  if (place === HOME_PLACE) {
+    return 'Home';
+  }
   if (place === RECYCLE_BIN_PLACE) {
     return 'Recycle Bin';
   }
@@ -58,6 +73,9 @@ function displayPath(place) {
 function searchScopeLabel(place) {
   if (place === 'thispc') {
     return 'This PC';
+  }
+  if (place === HOME_PLACE) {
+    return 'Home';
   }
   if (place === RECYCLE_BIN_PLACE) {
     return 'Recycle Bin';
@@ -98,6 +116,10 @@ function normalizePlace(raw, from) {
   if (lower === 'this pc' || lower === 'thispc') {
     return 'thispc';
   }
+  // Typing "Home" reaches Quick Access, the way it does in Win10.
+  if (lower === 'home' || lower === 'quick access') {
+    return HOME_PLACE;
+  }
   if (lower === 'recycle bin' || lower === 'recyclebin') {
     return RECYCLE_BIN_PLACE;
   }
@@ -111,7 +133,7 @@ function normalizePlace(raw, from) {
     }
     return text.replace(/\\+$/, '');
   }
-  if (text.indexOf('\\') >= 0 || from === 'thispc' || from === RECYCLE_BIN_PLACE) {
+  if (text.indexOf('\\') >= 0 || from === 'thispc' || from === HOME_PLACE || from === RECYCLE_BIN_PLACE) {
     return null;
   }
   // Bare name: resolved against the folder you are standing in.
@@ -204,6 +226,10 @@ function crumbTrail(place) {
   if (place === RECYCLE_BIN_PLACE) {
     return [{ label: 'Recycle Bin', place: RECYCLE_BIN_PLACE }];
   }
+  if (place === HOME_PLACE) {
+    // Home is not inside This PC: it is its own root in the shell tree.
+    return [{ label: 'Home', place: HOME_PLACE }];
+  }
   var trail = [{ label: 'This PC', place: 'thispc' }];
   if (place !== 'thispc') {
     var parts = place.split('\\').filter(function (p) { return !!p; });
@@ -248,7 +274,7 @@ export async function openExplorer(context, startPath) {
   }
 
   var state = {
-    place: startPath || 'thispc',
+    place: startPath || HOME_PLACE,
     history: [],
     hi: -1,
     view: 'tiles',
@@ -264,7 +290,9 @@ export async function openExplorer(context, startPath) {
   var addressEl, navEl, contentEl, statusEl, ribbonEl;
 
   function setTitle() {
-    if (state.place === 'thispc') {
+    if (state.place === 'thispc' || state.place === HOME_PLACE) {
+      // Both are shell pages inside explorer.exe, and Win10 titles the window
+      // after the program for each of them.
       win.setTitle('File Explorer');
     } else if (state.place === RECYCLE_BIN_PLACE) {
       win.setTitle('Recycle Bin');
@@ -285,6 +313,15 @@ export async function openExplorer(context, startPath) {
     state.selected = {};
     setTitle();
     render();
+    // Opening something lands it in Quick Access's Recent list, the way
+    // Win10 records every place you visit.
+    if (place !== HOME_PLACE && place !== 'thispc' && place !== RECYCLE_BIN_PLACE) {
+      noteUsed({
+        place: place,
+        name: leafName(place),
+        type: 'dir'
+      });
+    }
   }
 
   function itemKey(item) {
@@ -327,7 +364,9 @@ export async function openExplorer(context, startPath) {
 
   function openItem(item, inPlace) {
     if (item.type === 'dir') {
-      navigate(inPlace === 'thispc' ? item.place : inPlace + (inPlace.endsWith('\\') ? '' : '\\') + item.name);
+      // Shell pages (Home, This PC) carry each row's exact path; a real
+      // folder listing resolves the name against where you are standing.
+      navigate(item.place || (inPlace + (inPlace.endsWith('\\') ? '' : '\\') + item.name));
     }
   }
 
@@ -418,6 +457,11 @@ export async function openExplorer(context, startPath) {
     upBtn.setAttribute('aria-label', 'Up');
     upBtn.addEventListener('click', function () {
       if (state.place === 'thispc') {
+        return;
+      }
+      if (state.place === HOME_PLACE) {
+        // Home sits above This PC in the shell tree.
+        navigate('thispc');
         return;
       }
       if (state.place === RECYCLE_BIN_PLACE) {
@@ -637,13 +681,16 @@ export async function openExplorer(context, startPath) {
     if (place === 'thispc') {
       return THISPC_SRC;
     }
+    if (place === HOME_PLACE) {
+      return homeArt();
+    }
     if (place === RECYCLE_BIN_PLACE) {
       return RECYCLE_BIN_SRC;
     }
     if (/^[a-zA-Z]:\\?$/.test(place)) {
       return DRIVE_SRC;
     }
-    return FOLDER_SRC;
+    return folderArt(leafName(place));
   }
 
   function applySearch() {
@@ -675,7 +722,7 @@ export async function openExplorer(context, startPath) {
     }
     var bare = text.indexOf(':') < 0 && text.indexOf('\\') < 0;
     var place = normalizePlace(text, state.place);
-    if (place === 'thispc' || place === RECYCLE_BIN_PLACE) {
+    if (place === 'thispc' || place === HOME_PLACE || place === RECYCLE_BIN_PLACE) {
       exitAddressEdit();
       navigate(place);
       return;
@@ -811,7 +858,8 @@ export async function openExplorer(context, startPath) {
   }
 
   function writableHere() {
-    return state.place !== 'thispc' && state.place !== RECYCLE_BIN_PLACE && !state.query;
+    return state.place !== 'thispc' && state.place !== HOME_PLACE &&
+      state.place !== RECYCLE_BIN_PLACE && !state.query;
   }
 
   // Delete sends items to the Recycle Bin the way Win10 does: the payload is
@@ -1014,7 +1062,7 @@ export async function openExplorer(context, startPath) {
   }
 
   function itemProperties(item) {
-    var icon = item.type === 'dir' ? FOLDER_SRC : FILE_SRC;
+    var icon = itemArtSrc(item);
     showProperties({
       name: item.name,
       icon: icon,
@@ -1030,10 +1078,14 @@ export async function openExplorer(context, startPath) {
   function folderProperties(place) {
     showProperties({
       name: displayPath(place),
-      icon: place === 'thispc' ? THISPC_SRC : (place === RECYCLE_BIN_PLACE ? RECYCLE_BIN_SRC : FOLDER_SRC),
+      icon: place === 'thispc'
+        ? THISPC_SRC
+        : (place === HOME_PLACE
+            ? homeArt()
+            : (place === RECYCLE_BIN_PLACE ? RECYCLE_BIN_SRC : FOLDER_SRC)),
       rows: [
         ['Type of file:', 'File folder'],
-        ['Location:', place === 'thispc' ? 'Desktop' : parentPath(place)],
+        ['Location:', place === 'thispc' || place === HOME_PLACE ? 'Desktop' : parentPath(place)],
         ['Created by:', 'User'],
         ['Modified:', formatDate(Date.now())]
       ]
@@ -1053,7 +1105,8 @@ export async function openExplorer(context, startPath) {
     if (state.place === RECYCLE_BIN_PLACE) {
       return null;
     }
-    if (state.place === 'thispc') {
+    // Home and This PC are shell pages: a search there covers the volume.
+    if (state.place === 'thispc' || state.place === HOME_PLACE) {
       return 'C:\\';
     }
     return state.place;
@@ -1363,49 +1416,96 @@ export async function openExplorer(context, startPath) {
   }
 
   // ---- nav pane ----
-  var NAV_ITEMS = [
-    { header: 'Quick access' },
-    { label: 'Desktop', place: USER_BASE + '\\Desktop', art: FOLDER_SRC },
-    { label: 'Downloads', place: USER_BASE + '\\Downloads', art: FOLDER_SRC },
-    { label: 'Documents', place: USER_BASE + '\\Documents', art: FOLDER_SRC },
-    { label: 'Pictures', place: USER_BASE + '\\Pictures', art: FOLDER_SRC },
-    { label: 'This PC', place: 'thispc', art: THISPC_SRC },
-    { label: 'System (C:)', place: 'C:\\', art: DRIVE_SRC }
-  ];
+  // Home sits at the top on its own, then the pinned folders under Quick
+  // access, then This PC with the drive under it. There is no OneDrive and no
+  // network share in the simulator, so neither group exists here.
+  var navSeq = 0;
 
-  function renderNav() {
-    while (navEl.firstChild) {
-      navEl.removeChild(navEl.firstChild);
-    }
-    NAV_ITEMS.forEach(function (item) {
-      if (item.header) {
-        var header = el('div', 'exp-nav-header');
-        header.textContent = item.header;
-        navEl.appendChild(header);
+  function navItems() {
+    var home = { label: 'Home', place: HOME_PLACE, art: homeArt() };
+    var seq = ++navSeq;
+    getPinned().then(function (pinned) {
+      // A newer render already painted the pane; this answer is stale.
+      if (seq !== navSeq) {
         return;
       }
-      var row = el('button', 'exp-nav-row' + (state.place === item.place ? ' exp-nav-active' : ''));
-      row.type = 'button';
-      var art = el('span', 'exp-nav-art');
-      var img = document.createElement('img');
-      img.src = item.art;
-      img.alt = '';
-      img.draggable = false;
-      art.appendChild(img);
-      var label = el('span', 'exp-nav-label');
-      label.textContent = item.label;
-      row.appendChild(art);
-      row.appendChild(label);
-      row.addEventListener('click', function () {
-        navigate(item.place);
+      // Home leads the list, then the pinned folders under Quick access, then
+      // This PC with the drive under it.
+      var rows = [home, { header: 'Quick access' }];
+      pinned.forEach(function (name) {
+        rows.push({
+          label: name,
+          place: joinPath(USER_BASE, name),
+          art: folderArt(name)
+        });
       });
-      navEl.appendChild(row);
+      rows.push({ header: 'This PC' });
+      rows.push({ label: 'This PC', place: 'thispc', art: THISPC_SRC });
+      rows.push({ label: 'System (C:)', place: 'C:\\', art: DRIVE_SRC });
+      while (navEl.firstChild) {
+        navEl.removeChild(navEl.firstChild);
+      }
+      rows.forEach(function (item) {
+        navEl.appendChild(navRow(item));
+      });
     });
+    return [navRow(home)];
+  }
+
+  function navRow(item) {
+    if (item.header) {
+      var header = el('div', 'exp-nav-header');
+      header.textContent = item.header;
+      return header;
+    }
+    var row = el('button', 'exp-nav-row' + (state.place === item.place ? ' exp-nav-active' : ''));
+    row.type = 'button';
+    var art = el('span', 'exp-nav-art');
+    var img = document.createElement('img');
+    img.src = item.art;
+    img.alt = '';
+    img.draggable = false;
+    art.appendChild(img);
+    var label = el('span', 'exp-nav-label');
+    label.textContent = item.label;
+    row.appendChild(art);
+    row.appendChild(label);
+    row.addEventListener('click', function () {
+      navigate(item.place);
+    });
+    return row;
+  }
+
+  // The pins are stored, so the nav list is painted from them and repainted
+  // whenever Home's grid unpins something.
+  function renderNav() {
+    navItems().forEach(function (node) {
+      navEl.appendChild(node);
+    });
+  }
+
+  // What the Home view needs from this window: how to open a folder, where
+  // the profile lives, and how to repaint after a pin changes. `alive` tells a
+  // view that answered late it has already been replaced by a newer page.
+  function homeCtx(seq) {
+    return {
+      openFolder: function (place) { navigate(place); },
+      userBase: function () { return USER_BASE; },
+      stat: function (place) {
+        return volume.stat(place).catch(function () { return null; });
+      },
+      alive: function () { return seq === renderSeq; },
+      // Unpinning changes the nav pane's Quick access list too, so the whole
+      // window repaints.
+      refreshPins: function () { render(); }
+    };
   }
 
   // ---- content ----
   function itemArtSrc(item) {
-    return item.type === 'dir' ? FOLDER_SRC : FILE_SRC;
+    // Known folders carry their own artwork, in listings as well as in the
+    // Quick access grid.
+    return homeItemArt({ name: item.name, type: item.type });
   }
 
   // data-place / data-bin let the context menu resolve an exact path, and
@@ -1590,7 +1690,13 @@ export async function openExplorer(context, startPath) {
         renderItems(contentEl, results, openResult);
       }
       count = results.length;
-    } else if (state.place === 'thispc') {
+    } else if (state.place === 'thispc' || state.place === HOME_PLACE) {
+      // Home and This PC share the folder + drive groups; Home puts the Quick
+      // access grid and its tabs above them.
+      if (state.place === HOME_PLACE) {
+        contentEl.appendChild(buildQuickAccessGroup(homeCtx(seq)));
+        contentEl.appendChild(buildRecentTabs(homeCtx(seq)));
+      }
       var folders = [];
       try {
         var home = await volume.listDir(USER_BASE);
@@ -1605,7 +1711,7 @@ export async function openExplorer(context, startPath) {
         var fg = groupShell('Folders', folders.length, 'folders');
         renderItems(fg.body, sortEntries(folders.map(function (e) {
           return { name: e.name, type: 'dir', size: 0, modified: 0, place: USER_BASE + '\\' + e.name };
-        })), function (item) { openItem(item, 'thispc'); });
+        })), function (item) { openItem(item, state.place); });
         contentEl.appendChild(fg.group);
         count += folders.length;
       }

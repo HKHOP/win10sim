@@ -1,11 +1,14 @@
 import { registerApp } from '../../core/apps.js';
-import { EXPLORER_SRC } from '../../global/constants.js';
+import { EXPLORER_SRC, THISPC_SRC } from '../../global/constants.js';
 import { openExplorer } from './explorer.js';
 
-// File Explorer: browses the emulated C: volume. Registers itself on load;
-// boot imports this module once so taskbar and desktop can launch it.
+// Explorer registers two entries because Windows exposes two places from one
+// program. Launching File Explorer lands on Home, the Quick Access page, while
+// This PC opens the machine's own page; the windows are identical inside
+// explorer.exe, so This PC also shows File Explorer's icon and window title.
 
 export var EXPLORER_APP_ID = 'explorer';
+export var THISPC_APP_ID = 'thispc';
 
 registerApp({
   id: EXPLORER_APP_ID,
@@ -21,7 +24,22 @@ registerApp({
     tile: { size: 'wide', background: '#eef3f7', color: '#eef3f7' }
   },
   launch: function (context, args) {
-    var path = args && args.path ? args.path : 'thispc';
+    var path = args && args.path ? args.path : 'home';
     return openExplorer(context, path);
+  }
+});
+
+registerApp({
+  id: THISPC_APP_ID,
+  name: 'This PC',
+  // Win10 shows This PC's own icon in the places that name it, but the window
+  // it opens is an Explorer window and carries Explorer's icon.
+  icon: THISPC_SRC,
+  start: {
+    subtitle: 'System',
+    tile: { size: 'medium', background: '#eef3f7', color: '#eef3f7' }
+  },
+  launch: function (context) {
+    return openExplorer(context, 'thispc');
   }
 });

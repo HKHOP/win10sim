@@ -65,7 +65,7 @@ var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input
 // only hover the OS gets.
 var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], ' +
   '.desktop-icon, .exp-tile, .exp-list-row, .exp-detail-row, .exp-drive, ' +
-  '.exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item';
+  '.exp-qa-row, .exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item';
 
 var inputLayer = null;
 
