@@ -20,17 +20,17 @@ OUT = os.path.join(ROOT, "assets", "shell")
 SIZE = 128
 
 # Icon file name -> output name. These are the icons Windows 10 draws for the
-# profile's known folders and for Quick Access's Home page, so the shell never
-# has to draw an approximation of one. Desktop and Downloads are the folder
-# icons from Imageres; the rest are Shell32's.
+# profile's known folders and for Quick access (the renamed Favorites, so it
+# keeps the star). Desktop and Downloads are the folder icons from Imageres; the
+# rest are Shell32's.
 WANTED = {
     "imageres/Imageres_dll_174.ico": "desktop-folder",
     "imageres/Imageres_dll_175.ico": "downloads",
+    "shell32/Shell32_dll_044.ico": "quick-access",
     "shell32/Shell32_dll_127.ico": "documents",
     "shell32/Shell32_dll_128.ico": "pictures",
     "shell32/Shell32_dll_129.ico": "music",
     "shell32/Shell32_dll_130.ico": "videos",
-    "shell32/Shell32_dll_151.ico": "home",
 }
 
 

@@ -3,6 +3,33 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.0] - The command bar, the way Windows 10 draws it
+
+2026-10-12
+
+### Added
+
+- The File tab is Backstage now: instead of another ribbon it takes over the whole command area with the places and commands this window can go (Quick access, This PC, Quick access settings, File Explorer Options, Pin to Quick access, Properties), the chosen one spelled out on the right, and a Back arrow that returns to the ribbon you came from
+- Win10's two command shapes: a large tile (icon above, label below) for the command a group leads with, and a small button (icon beside the label) for everything else, with the group's name captioned underneath and a hairline between groups
+- The groups Windows 10 puts on each tab - Computer: Clipboard (tall Paste beside Copy / Move to / Delete), Organize, Windows, Help. View: Navigation pane, Layout (the four icon sizes over the four views, in a four-across grid), Current view, Show/hide, Options
+- The File tab wears the blue backstage button Windows 10 gives it, and the ribbon tab you are on takes a white tab with a blue edge
+- Properties in the ribbon (and in Backstage) opens the current folder's own properties sheet
+- Quick access's star, from the Favorites icon it inherited, extracted by `tools/extract_icons.py`
+
+### Removed
+
+- The Win11 house icon that stood in for the Home page: on a Windows 10 shell that page is Quick access, and the star is what names it
+
+### Changed
+
+- The page File Explorer opens on is now called **Quick access** everywhere Windows 10 says so: the nav pane, the address bar, the breadcrumbs and the search box. Typing `Quick access` or `Home` still reaches it
+- The nav pane leads with the Quick access star, then the pinned folders, then This PC with the drive under it - no second "Quick access" heading under its own row
+- The ribbon is about 70px tall instead of swallowing the top of the window, with Win10's metrics: a 22px tab row, 15px icons on small commands and 30px on tiles, 11px labels
+
+### Fixed
+
+- None
+
 ## [1.6.1] - The right folder icons, and no 3D Objects
 
 2026-10-12

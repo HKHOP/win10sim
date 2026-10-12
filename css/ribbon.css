@@ -1,28 +1,36 @@
-/* Explorer ribbon: tabs, quick-access bar, grouped command buttons. */
+/* Explorer ribbon: the Win10 command bar under the title bar - tab row, then
+   the tab's groups with their captions along the bottom. Sizes follow Win10's
+   metrics so the bar takes ~70px rather than swallowing the window. */
 
 .exp-ribbon {
   flex: 0 0 auto;
-  background: #f0f0f0;
+  background: #f3f3f3;
   border-bottom: 1px solid #d4d4d4;
   user-select: none;
 }
 
+/* Tab row: quick-access buttons, then File / Computer / View. In Win10 the
+   File tab is always the blue backstage button; the ribbon tabs beside it are
+   plain until the one you are looking at takes a white tab and a blue edge. */
+
 .ribbon-top {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px 0;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 4px;
+  background: #f3f3f3;
 }
 
 .ribbon-qat {
   display: flex;
-  gap: 2px;
-  padding-right: 8px;
+  align-items: center;
+  gap: 1px;
+  padding-right: 6px;
 }
 
 .ribbon-qat-btn {
-  width: 26px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border: 0;
   padding: 0;
   background: transparent;
@@ -38,36 +46,49 @@
 }
 
 .ribbon-qat-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
 .ribbon-tabs {
   display: flex;
-  gap: 2px;
+  align-items: stretch;
 }
 
 .ribbon-tab {
-  border: 1px solid transparent;
-  border-bottom: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
   background: transparent;
   font-size: 12px;
   font-family: inherit;
-  color: #222;
-  padding: 5px 14px;
+  color: #333;
+  padding: 0 12px;
   cursor: pointer;
+  min-width: 68px;
 }
 
 .ribbon-tab:hover,
 .ribbon-tab.sim-hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .ribbon-tab-active {
   background: #fff;
-  border-color: #d4d4d4;
-  color: #0078d7;
+  border-bottom-color: #0078d7;
+  color: #000;
+}
+
+/* File is the backstage door, not a tab like the others. */
+.ribbon-tab-file {
+  background: #0078d7;
+  color: #fff;
+  min-width: 54px;
+}
+
+.ribbon-tab-file:hover,
+.ribbon-tab-file.sim-hover {
+  background: #106ebe;
 }
 
 .ribbon-collapse,
@@ -76,21 +97,28 @@
   background: transparent;
   cursor: pointer;
   color: #555;
-  font-size: 13px;
-  width: 26px;
-  height: 22px;
+  width: 24px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ribbon-help {
+.ribbon-collapse {
   margin-left: auto;
 }
 
+.ribbon-collapse:hover,
+.ribbon-collapse.sim-hover,
+.ribbon-help:hover,
+.ribbon-help.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.ribbon-collapse svg,
 .ribbon-help svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
@@ -98,14 +126,19 @@
   transform: rotate(180deg);
 }
 
+/* Ribbon body: groups side by side, each captioned underneath. Win10's bar is
+   about 70px tall; min-height keeps that floor without clipping a group whose
+   stack happens to run a button taller. */
+
 .ribbon-body {
   display: flex;
   align-items: stretch;
-  gap: 2px;
   background: #fff;
   border-top: 1px solid #d4d4d4;
-  padding: 4px 6px 2px;
-  min-height: 88px;
+  padding: 2px 2px 0;
+  min-height: 70px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .exp-ribbon.ribbon-collapsed .ribbon-body {
@@ -115,7 +148,8 @@
 .ribbon-group {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e0e0e0;
+  justify-content: space-between;
+  border-right: 1px solid #d9d9d9;
   padding: 0 6px;
 }
 
@@ -124,20 +158,48 @@
 }
 
 .ribbon-items {
-  flex: 1;
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1px 4px;
+  padding-top: 2px;
+}
+
+.ribbon-items-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* Clipboard: the tall Paste tile beside a stack of the rest. */
+.ribbon-items-clip {
+  align-items: stretch;
+  gap: 4px;
+}
+
+.ribbon-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Layout: four across, the icon sizes over the four views. */
+.ribbon-items-layout {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 0 8px;
   align-content: flex-start;
-  gap: 1px;
-  max-width: 300px;
 }
 
 .ribbon-caption {
   font-size: 11px;
-  color: #555;
+  line-height: 1.2;
+  color: #666;
   text-align: center;
   padding: 2px 0 1px;
+  white-space: nowrap;
 }
+
+/* Small command: icon beside the label. */
 
 .ribbon-btn {
   border: 1px solid transparent;
@@ -145,47 +207,206 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  height: 20px;
+  padding: 0 5px;
   font-size: 11px;
   font-family: inherit;
-  color: #222;
-  padding: 3px 5px;
+  color: #333;
   white-space: nowrap;
 }
 
-.ribbon-btn:hover,
+.ribbon-btn:hover:not(:disabled),
 .ribbon-btn.sim-hover {
-  border-color: #b8d6fb;
+  border-color: #cce4f9;
   background: #e5f1fd;
 }
 
+.ribbon-btn:disabled {
+  color: #a0a0a0;
+  cursor: default;
+}
+
 .ribbon-btn.ribbon-active {
-  border-color: #99c7f5;
+  border-color: #b8d6fb;
   background: #cde6ff;
 }
 
-.ribbon-art {
-  display: flex;
-}
-
-.ribbon-art svg {
-  width: 20px;
-  height: 20px;
+.ribbon-btn .ribbon-art svg {
+  width: 15px;
+  height: 15px;
   display: block;
 }
+
+/* The dropdown half of a split command. */
+.ribbon-caret svg {
+  width: 9px;
+  height: 9px;
+  display: block;
+  margin-left: -2px;
+}
+
+/* Large command: icon above, label below. */
+
+.ribbon-tile {
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 58px;
+  height: 48px;
+  padding: 2px;
+  font-size: 11px;
+  font-family: inherit;
+  color: #333;
+}
+
+.ribbon-tile:hover:not(:disabled),
+.ribbon-tile.sim-hover {
+  border-color: #cce4f9;
+  background: #e5f1fd;
+}
+
+.ribbon-tile:disabled {
+  color: #a0a0a0;
+  cursor: default;
+}
+
+.ribbon-tile.ribbon-active {
+  border-color: #b8d6fb;
+  background: #cde6ff;
+}
+
+.ribbon-tile .ribbon-art svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+
+.ribbon-tile .ribbon-label {
+  max-width: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkbox commands, as the icon sizes and the show/hide list use. */
 
 .ribbon-check {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  height: 20px;
   font-size: 11px;
-  color: #222;
-  padding: 3px 5px;
+  color: #333;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.ribbon-check:hover,
+.ribbon-check.sim-hover {
+  background: #e5f1fd;
 }
 
 .ribbon-check input {
   accent-color: #0078d7;
   margin: 0;
+  width: 13px;
+  height: 13px;
+}
+
+/* Backstage: what the File tab shows instead of a ribbon. */
+
+.ribbon-backstage {
+  display: flex;
+  height: 100%;
+  min-width: 420px;
+}
+
+.ribbon-back-column {
+  flex: 0 0 190px;
+  background: #f3f3f3;
+  border-right: 1px solid #d4d4d4;
+  padding: 4px 0;
+  overflow-y: auto;
+}
+
+.ribbon-back {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 2px;
+}
+
+.ribbon-back:hover,
+.ribbon-back.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.ribbon-back svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.ribbon-back-group {
+  font-size: 11px;
+  color: #666;
+  padding: 6px 10px 2px;
+}
+
+.ribbon-back-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: #333;
+  text-align: left;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.ribbon-back-item:hover:not(:disabled),
+.ribbon-back-item.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ribbon-back-item-on {
+  border-left: 2px solid #0078d7;
+  background: #fff;
+}
+
+.ribbon-back-item:disabled {
+  color: #a0a0a0;
+  cursor: default;
+}
+
+.ribbon-back-detail {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  padding: 14px 18px;
+}
+
+.ribbon-back-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #333;
+}
+
+.ribbon-back-blurb {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  max-width: 380px;
 }

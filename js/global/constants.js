@@ -74,11 +74,12 @@ export const STORE_SRC = 'assets/Microsoft_Store_logo_light.png';
 // Generic item artwork for Explorer listings.
 export const FOLDER_SRC = 'assets/folder.png';
 export const FILE_SRC = 'assets/file.png';
-// The profile's known folders and Quick Access's Home page, as the real
-// Windows 10 shell draws them: each known folder gets its own icon rather
-// than the plain folder glyph (extracted from Shell32 by
+// The profile's known folders and Quick Access, as the real Windows 10 shell
+// draws them: each known folder gets its own icon rather than the plain
+// folder glyph, and Quick access keeps the star it inherited from being
+// called Favorites (extracted from the shell icon set by
 // tools/extract_icons.py).
-export const HOME_SRC = 'assets/shell/home.png';
+export const QUICK_ACCESS_SRC = 'assets/shell/quick-access.png';
 export const DESKTOP_FOLDER_SRC = 'assets/shell/desktop-folder.png';
 export const DOWNLOADS_SRC = 'assets/shell/downloads.png';
 export const DOCUMENTS_SRC = 'assets/shell/documents.png';

@@ -1,7 +1,7 @@
 import {
   FOLDER_SRC,
   FILE_SRC,
-  HOME_SRC,
+  QUICK_ACCESS_SRC,
   DESKTOP_FOLDER_SRC,
   DOWNLOADS_SRC,
   DOCUMENTS_SRC,
@@ -12,10 +12,10 @@ import {
 } from '../../global/constants.js';
 import { getPinned, togglePin, getRecent } from '../../apis/quickaccess.js';
 
-// Explorer's Home page: the Quick access grid of pinned folders and the
-// Recent / Favorites / Shared tabs underneath it, the way Win10 lays Home
-// out. This PC is a different page (Explorer shows drives and folders only),
-// which is why it lives here rather than in the shared shell renderers.
+// Explorer's Quick access page: the grid of pinned folders and the
+// Recent / Favorites / Shared tabs underneath it, the way Win10 lays it out.
+// This PC is a different page (Explorer shows drives and folders only), which
+// is why it lives here rather than in the shared shell renderers.
 
 // Win10 gives each known folder its own artwork instead of the plain folder
 // glyph, both in the Quick access grid and in any listing of them.
@@ -45,8 +45,8 @@ export function itemArt(item) {
   return FILE_SRC;
 }
 
-export function homeArt() {
-  return HOME_SRC;
+export function quickAccessArt() {
+  return QUICK_ACCESS_SRC;
 }
 
 // "3:04 PM", "Yesterday, 3:04 PM" - Win10's Activity column wording.

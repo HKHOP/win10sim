@@ -14,7 +14,7 @@ import {
   buildQuickAccessGroup,
   buildRecentTabs,
   folderArt,
-  homeArt,
+  quickAccessArt,
   itemArt as homeItemArt
 } from './home.js';
 import { getPinned, noteUsed } from '../../apis/quickaccess.js';
@@ -33,9 +33,11 @@ var USER_BASE = 'C:\\Users\\User';
 // Shell folder that lives outside the volume: no path segments, no
 // storage backing — the bin is rendered as a virtual root like This PC.
 var RECYCLE_BIN_PLACE = 'recyclebin';
-// Home is what File Explorer opens on, the way Win10 lands on Quick Access
-// rather than on a drive. This PC stays a separate page: Explorer treats them
-// as different places, and the address bar and title say so.
+// Quick access is what File Explorer opens on, the way Win10 lands on it
+// rather than on a drive. (Win11 renamed this same page "Home"; on a Win10
+// shell it is Quick access, named for the Favorites star it inherited.) This
+// PC stays a separate page: Explorer treats them as different places, and the
+// address bar and title say so.
 var HOME_PLACE = 'home';
 var SEARCH_DEBOUNCE_MS = 300;
 // Bounds on the recursive walk so a big volume can never freeze the UI.
@@ -64,7 +66,7 @@ function displayPath(place) {
     return 'This PC';
   }
   if (place === HOME_PLACE) {
-    return 'Home';
+    return 'Quick access';
   }
   if (place === RECYCLE_BIN_PLACE) {
     return 'Recycle Bin';
@@ -78,7 +80,7 @@ function searchScopeLabel(place) {
     return 'This PC';
   }
   if (place === HOME_PLACE) {
-    return 'Home';
+    return 'Quick access';
   }
   if (place === RECYCLE_BIN_PLACE) {
     return 'Recycle Bin';
@@ -119,7 +121,7 @@ function normalizePlace(raw, from) {
   if (lower === 'this pc' || lower === 'thispc') {
     return 'thispc';
   }
-  // Typing "Home" reaches Quick Access, the way it does in Win10.
+  // Typing "Quick access" reaches it, and so does the newer "Home" name.
   if (lower === 'home' || lower === 'quick access') {
     return HOME_PLACE;
   }
@@ -230,8 +232,8 @@ function crumbTrail(place) {
     return [{ label: 'Recycle Bin', place: RECYCLE_BIN_PLACE }];
   }
   if (place === HOME_PLACE) {
-    // Home is not inside This PC: it is its own root in the shell tree.
-    return [{ label: 'Home', place: HOME_PLACE }];
+    // Quick access is not inside This PC: it is its own root in the tree.
+    return [{ label: 'Quick access', place: HOME_PLACE }];
   }
   var trail = [{ label: 'This PC', place: 'thispc' }];
   if (place !== 'thispc') {
@@ -367,7 +369,7 @@ export async function openExplorer(context, startPath) {
 
   function openItem(item, inPlace) {
     if (item.type === 'dir') {
-      // Shell pages (Home, This PC) carry each row's exact path; a real
+      // Shell pages (Quick access, This PC) carry each row's exact path; a real
       // folder listing resolves the name against where you are standing.
       navigate(item.place || (inPlace + (inPlace.endsWith('\\') ? '' : '\\') + item.name));
     }
@@ -463,7 +465,7 @@ export async function openExplorer(context, startPath) {
         return;
       }
       if (state.place === HOME_PLACE) {
-        // Home sits above This PC in the shell tree.
+        // Quick access sits above This PC in the shell tree.
         navigate('thispc');
         return;
       }
@@ -685,7 +687,7 @@ export async function openExplorer(context, startPath) {
       return THISPC_SRC;
     }
     if (place === HOME_PLACE) {
-      return homeArt();
+      return quickAccessArt();
     }
     if (place === RECYCLE_BIN_PLACE) {
       return RECYCLE_BIN_SRC;
@@ -1084,7 +1086,7 @@ export async function openExplorer(context, startPath) {
       icon: place === 'thispc'
         ? THISPC_SRC
         : (place === HOME_PLACE
-            ? homeArt()
+            ? quickAccessArt()
             : (place === RECYCLE_BIN_PLACE ? RECYCLE_BIN_SRC : FOLDER_SRC)),
       rows: [
         ['Type of file:', 'File folder'],
@@ -1108,7 +1110,7 @@ export async function openExplorer(context, startPath) {
     if (state.place === RECYCLE_BIN_PLACE) {
       return null;
     }
-    // Home and This PC are shell pages: a search there covers the volume.
+    // Quick access and This PC are shell pages: a search there covers the volume.
     if (state.place === 'thispc' || state.place === HOME_PLACE) {
       return 'C:\\';
     }
@@ -1419,22 +1421,22 @@ export async function openExplorer(context, startPath) {
   }
 
   // ---- nav pane ----
-  // Home sits at the top on its own, then the pinned folders under Quick
-  // access, then This PC with the drive under it. There is no OneDrive and no
-  // network share in the simulator, so neither group exists here.
+  // Quick access leads the pane, then the pinned folders, then This PC with
+  // the drive under it. There is no OneDrive and no network share in the
+  // simulator, so neither group exists here.
   var navSeq = 0;
 
   function navItems() {
-    var home = { label: 'Home', place: HOME_PLACE, art: homeArt() };
+    var quickAccess = { label: 'Quick access', place: HOME_PLACE, art: quickAccessArt() };
     var seq = ++navSeq;
     getPinned().then(function (pinned) {
       // A newer render already painted the pane; this answer is stale.
       if (seq !== navSeq) {
         return;
       }
-      // Home leads the list, then the pinned folders under Quick access, then
-      // This PC with the drive under it.
-      var rows = [home, { header: 'Quick access' }];
+      // Quick access leads the list, then the pinned folders, then This PC
+      // with the drive under it.
+      var rows = [quickAccess];
       pinned.forEach(function (name) {
         rows.push({
           label: name,
@@ -1452,7 +1454,7 @@ export async function openExplorer(context, startPath) {
         navEl.appendChild(navRow(item));
       });
     });
-    return [navRow(home)];
+    return [navRow(quickAccess)];
   }
 
   function navRow(item) {
@@ -1480,15 +1482,15 @@ export async function openExplorer(context, startPath) {
   }
 
   // The pins are stored, so the nav list is painted from them and repainted
-  // whenever Home's grid unpins something.
+  // whenever the Quick access grid unpins something.
   function renderNav() {
     navItems().forEach(function (node) {
       navEl.appendChild(node);
     });
   }
 
-  // What the Home view needs from this window: how to open a folder, where
-  // the profile lives, and how to repaint after a pin changes. `alive` tells a
+  // What the Quick access view needs from this window: how to open a folder,
+  // where the profile lives, and how to repaint after a pin changes. `alive` tells a
   // view that answered late it has already been replaced by a newer page.
   function homeCtx(seq) {
     return {
@@ -1694,8 +1696,8 @@ export async function openExplorer(context, startPath) {
       }
       count = results.length;
     } else if (state.place === 'thispc' || state.place === HOME_PLACE) {
-      // Home and This PC share the folder + drive groups; Home puts the Quick
-      // access grid and its tabs above them.
+      // Quick access and This PC share the folder + drive groups; Quick
+      // access puts the pinned-folder grid and its tabs above them.
       if (state.place === HOME_PLACE) {
         contentEl.appendChild(buildQuickAccessGroup(homeCtx(seq)));
         contentEl.appendChild(buildRecentTabs(homeCtx(seq)));
@@ -1827,7 +1829,10 @@ export async function openExplorer(context, startPath) {
     getView: function () { return state.view; },
     onView: function (view) { setView(view); },
     showExtensions: function () { return state.showExtensions; },
-    onToggleExtensions: function (on) { state.showExtensions = on; renderContent(); }
+    onToggleExtensions: function (on) { state.showExtensions = on; renderContent(); },
+    // Both the ribbon's Properties command and Backstage's reach the same
+    // sheet the context menu does.
+    onProperties: function () { folderProperties(state.place); }
   });
   root.appendChild(ribbonEl);
   root.appendChild(addressEl);
