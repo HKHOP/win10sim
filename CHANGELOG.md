@@ -3,6 +3,26 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.20.1] - Account and power row stayed at the rail's bottom
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `startmenu.css`: the rail's bottom row takes `margin-top: auto`, so the account and power buttons stay on the rail's floor instead of riding up under the view picker
+
+### Fixed
+
+- In the Pinned apps view the app list is hidden, which left nothing stretching the rail column, so the account and power buttons jumped up to the top of the rail under the App list / Pinned apps buttons
+
 ## [0.20.0] - Start menu rail as its own view picker
 
 2026-10-12

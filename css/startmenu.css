@@ -327,6 +327,9 @@
 .start-rail-bottom {
   position: relative;
   flex: 0 0 auto;
+  /* The rail's last child, so it stays on the floor even when the app list is
+     hidden and nothing above it is stretching. */
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 4px;
