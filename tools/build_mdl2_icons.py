@@ -69,6 +69,7 @@ GLYPHS = {
     "EASE_OF_ACCESS": (0xE776, "EaseOfAccess"),
     "PEOPLE": (0xE716, "People"),
     "SWITCH_USER": (0xE748, "SwitchUser"),
+    "PC1": (0xE977, "PC1"),
     "MUTE": (0xE74F, "Mute"),
     "CHEVRON_RIGHT": (0xE76C, "ChevronRight"),
     "CHEVRON_LEFT": (0xE76B, "ChevronLeft"),
@@ -76,7 +77,6 @@ GLYPHS = {
     "CHEVRON_UP": (0xE70E, "ChevronUp"),
     "POWER": (0xE7E8, "PowerButton"),
     "CONTACT": (0xE77B, "Contact"),
-    "SWITCH_USER": (0xE748, "SwitchUser"),
     "LOCK": (0xE72E, "Lock"),
     "HOME": (0xE80F, "Home"),
     "FULL_SCREEN": (0xE740, "FullScreen"),
@@ -106,6 +106,15 @@ def load_glyphs():
 
 
 def main():
+    # A duplicate key would silently drop one glyph's export, which is how a
+    # consumer ends up importing a name that is not there. Python will not
+    # warn about it, so check before generating.
+    seen = set()
+    for key in GLYPHS:
+        if key in seen:
+            raise SystemExit("duplicate export name %r in GLYPHS" % key)
+        seen.add(key)
+
     if not os.path.exists(FONT):
         raise SystemExit(
             "SegoeMDL2Assets.svg not found at %s\n"

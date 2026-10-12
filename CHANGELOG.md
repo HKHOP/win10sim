@@ -27,6 +27,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - The window close button's hover colour was set with `stroke: #fff`, which stopped working once the glyph became a filled path; it is now a `color` on the button
+- `PC1` (the monitor glyph used on sign-in and lock screens) was missing from `js/global/mdl2.js` because a duplicate `SWITCH_USER` key in the generator's table silently dropped it — now the generator has a duplicate-key guard that fails the build instead of silently dropping glyphs
 
 ### Notes
 
