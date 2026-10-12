@@ -9,7 +9,7 @@ import {
   WELCOME_CONTENT_HOLD_MS,
   WELCOME_BG_FADE_MS
 } from '../global/constants.js';
-import { MONITOR_SVG, ACCESS_SVG, POWER_SVG, EYE_SVG, ARROW_SVG } from '../global/icons.js';
+import { NETWORK_OFFLINE_SVG, ACCESS_SVG, POWER_SVG, EYE_SVG, ARROW_SVG } from '../global/icons.js';
 import { sleep, shutDown, restart as restartPc } from '../core/power.js';
 
 // Sign-in layer: centered avatar + name, password box with reveal and
@@ -181,7 +181,7 @@ export function createSignInLayer(onInsertDesktop, onFinished) {
   powerWrap.appendChild(powerButton);
 
   statusbar.appendChild(lang);
-  statusbar.appendChild(buildIconButton('status-icon-btn', MONITOR_SVG, 'Network', function () {}));
+  statusbar.appendChild(buildIconButton('status-icon-btn', NETWORK_OFFLINE_SVG, 'Network - Not connected', function () {}));
   statusbar.appendChild(buildIconButton('status-icon-btn', ACCESS_SVG, 'Ease of Access', function () {}));
   statusbar.appendChild(powerWrap);
 

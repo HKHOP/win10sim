@@ -71,10 +71,13 @@
   justify-content: center;
 }
 
+/* The caption glyphs are the real MDL2 outlines, filled with currentColor, so
+   the colour lives here rather than in the path data. */
 .win-cap svg {
   width: 12px;
   height: 12px;
   display: block;
+  color: #222;
 }
 
 .win-cap:hover,
@@ -87,9 +90,9 @@
   background: #e81123;
 }
 
-.win-cap.win-close:hover svg path,
-.win-cap.win-close.sim-hover svg path {
-  stroke: #fff;
+.win-cap.win-close:hover,
+.win-cap.win-close.sim-hover {
+  color: #fff;
 }
 
 .win-body {

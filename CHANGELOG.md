@@ -3,6 +3,35 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.10.0] - The shell's real icons, and a machine with no network
+
+2026-10-12
+
+### Added
+
+- `js/global/mdll2.js` (generated): 57 glyph outlines taken from the **Segoe MDL2 Assets** font, the icon font Windows 10 actually draws its shell with - Start hamburger, app list, tile grid, power, the four window caption buttons, task view, wifi, volume, Action Center, search, settings, and more
+- `tools/build_mdl2_icons.py`: regenerates `js/global/mdl2.js` from `assets/win10-shell-icons/SegoeMDL2Assets.svg`. Every codepoint carries the name Microsoft documents for it, and the build **fails loudly** if a codepoint is not in the font rather than emitting a near-miss
+- `assets/win10-shell-icons/SegoeMDL2Assets.svg` + `SegoeMDL2-LICENSE.md` (MIT) and `assets/win10-shell-icons/README-mdl2.md`
+- `NETWORK_OFFLINE_SVG` / `GLOBE_SVG`: the globe Win10 shows when there is no network
+
+### Removed
+
+- Every hand-drawn monochrome glyph in `js/global/icons.js` that MDL2 actually provides (21 in all): hamburger, app list, tiles, power, account, shut down, restart, the four caption buttons, search, task view, chevron, wifi, volume, Action Center bell, the sign-in monitor/power/accessibility cluster, and the app-list forward arrow
+- The colour baked into glyph paths (`stroke="#222"`, `fill="#222"`, `stroke="#fff"`)
+
+### Changed
+
+- Shell glyphs are now filled with `currentColor` and coloured by the surface that uses them, so one glyph serves both the light taskbar and the dark lock and sign-in screens instead of the colour being frozen into the artwork
+- The simulated machine now reports **no network** on all three surfaces that showed one - the taskbar tray, the sign-in status bar and the lock screen. The tray icon is the globe and the accessible name is "Network - Not connected", which is what Win10 shows when nothing is connected; the wifi arcs claimed a connection that does not exist
+
+### Fixed
+
+- The window close button's hover colour was set with `stroke: #fff`, which stopped working once the glyph became a filled path; it is now a `color` on the button
+
+### Notes
+
+Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and each says so in a comment: the Sleep moon, the fullscreen corner brackets, and the lock-screen eye.
+
 ## [1.9.0] - Shortcuts
 
 2026-10-12
@@ -73,7 +102,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - The split insets put the tiles under the menu's right resize strip, so the last column of tiles ran out past the panel edge where the handle is drawn
-- The app list reserved the right resize strip inside itself as well, opening a dead gutter roughly 26px wide between the list and the first column of tiles - the huge left padding the split was meant to reduce
+- The app list reserved the right resize strip inside itself as well, opening a dead gutter roughly 26px wide between the list and the first column of tiles - the "huge left padding" the split was meant to reduce
 
 ## [1.7.7] - The Start column stops opening itself
 
@@ -96,7 +125,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - The Start icon column opened by itself with the pointer nowhere near it. Moving off the strip during the 2s dwell cleared the manual-dismissal flag but left the timer armed, so it fired and opened the column after the pointer had already gone somewhere else
-- Opening Start and leaving the pointer still could arm the dwell at all, from the Start button's own position under the column - the same phantom open, two seconds after every open
+- Opening Start and leaving the pointer still could arm the dwell at all, from the Start button's own position under the column — the same phantom open, two seconds after every open
 
 ## [1.7.6] - Start tiles move down as well as across
 

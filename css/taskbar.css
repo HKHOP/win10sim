@@ -63,6 +63,7 @@
   width: 17px;
   height: 17px;
   display: block;
+  color: #666;
 }
 
 .task-search-input {
@@ -142,6 +143,7 @@
   width: 17px;
   height: 17px;
   display: block;
+  color: #222;
 }
 
 .tray-lang {

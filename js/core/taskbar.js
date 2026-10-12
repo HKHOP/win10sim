@@ -9,7 +9,7 @@ import {
   SEARCH_SVG,
   TASKVIEW_SVG,
   CHEVRON_SVG,
-  WIFI_SVG,
+  NETWORK_OFFLINE_SVG,
   VOLUME_SVG,
   BELL_SVG
 } from '../global/icons.js';
@@ -165,7 +165,10 @@ export function buildTaskbar() {
   var tray = document.createElement('div');
   tray.className = 'task-tray';
   tray.appendChild(buildTrayButton(CHEVRON_SVG, 'Show hidden icons'));
-  tray.appendChild(buildTrayButton(WIFI_SVG, 'Network'));
+  // The simulated machine has no network: Win10 shows the globe and calls it
+  // "Not connected" rather than drawing wifi arcs, which would claim a
+  // connection that does not exist.
+  tray.appendChild(buildTrayButton(NETWORK_OFFLINE_SVG, 'Network - Not connected'));
   tray.appendChild(buildTrayButton(VOLUME_SVG, 'Volume'));
 
   var lang = document.createElement('div');

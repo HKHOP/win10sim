@@ -205,10 +205,13 @@
   justify-content: center;
 }
 
+/* The rail glyphs are the real Segoe MDL2 outlines, filled with currentColor,
+   so the column's colour comes from here rather than from the path data. */
 .start-hamburger svg {
   width: 16px;
   height: 16px;
   display: block;
+  color: #222;
 }
 
 .start-hamburger:hover,
@@ -272,6 +275,7 @@
   width: 16px;
   height: 16px;
   display: block;
+  color: #222;
 }
 
 .start-rail-view-label {
@@ -503,6 +507,7 @@
   width: 16px;
   height: 16px;
   display: block;
+  color: #222;
 }
 
 .start-power:hover,
@@ -560,6 +565,7 @@
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
+  color: #222;
 }
 
 .start-power-item:hover,
@@ -677,6 +683,7 @@
   width: 48px;
   height: 48px;
   display: block;
+  color: #fff;
 }
 
 .start-tile:hover .start-tile-art,

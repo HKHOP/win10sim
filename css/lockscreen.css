@@ -54,6 +54,7 @@
   width: 22px;
   height: 22px;
   display: block;
+  color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {

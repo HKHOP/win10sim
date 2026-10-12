@@ -1,5 +1,5 @@
 import { LOCK_WALLPAPER_SRC } from '../global/constants.js';
-import { MONITOR_SVG } from '../global/icons.js';
+import { NETWORK_OFFLINE_SVG } from '../global/icons.js';
 
 // Lock screen: opaque wallpaper panel with the big live clock + date
 // (lower-left, like Win10). Any key press, click, or tap dismisses it —
@@ -51,7 +51,7 @@ export function createLockLayer(onDismiss) {
 
   var status = document.createElement('div');
   status.className = 'lock-status';
-  status.innerHTML = MONITOR_SVG;
+  status.innerHTML = NETWORK_OFFLINE_SVG;
 
   layer.appendChild(clock);
   layer.appendChild(status);
