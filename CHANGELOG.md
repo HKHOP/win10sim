@@ -3,6 +3,38 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.0.0] - The emulated cursor is the only pointer
+
+2026-10-12
+
+### Added
+
+- `.sim-input-layer` (`css/cursor.css`): a capture layer over the whole viewport that takes every real press, move, wheel and touch, so the browser's pointer can no longer hover, press or scroll the emulated UI — and the UI's own `:hover` can no longer fire
+- `hitTestThroughInputLayer(clientX, clientY)` and `isRawDevicePress(event)` in `cursor.js`, shared with the surfaces that need them
+- `cursor.hitTest()` and `tracker.hitTest()` for the code that follows a device press through its lifecycle (window moves, icon drags, tile drags) and so must find the target under the emulated cursor themselves
+- Wheel routing: the real wheel now scrolls whatever sits under the emulated cursor, captured or not
+- Hover tracking on touch: dragging a finger over a control hovers it, like a mouse
+- `TOUCH_HOLD_MS` imported into `cursor.js` — it was used but never imported, so every touch hold threw a ReferenceError and touch drag never worked
+
+### Removed
+
+- The native-pointer path: `pointer.js` no longer tracks the browser pointer as a position of its own, the sim cursor no longer parks dimmed while uncaptured, the browser's own pointer glyph is hidden from boot onward, and the `.cursor-live` / `.sim-cursor-parked` styles
+- `contextmenu.js`'s locked-press test, replaced by the shared capture-layer check
+
+### Changed
+
+- `cursor.js`: all device input is listened for at the window (the capture layer while uncaptured, the locked stage while captured) and routed to the emulated cursor; with no capture available the browser pointer steers the cursor absolutely instead of driving the UI itself
+- The capture layer arms with the machine: the BIOS, lock and sign-in screens stay clickable with the browser's own pointer, as before there being no OS to be the pointer of
+- `startmenu.js`, `contextmenu.js`, `snapassist.js` and `windowmenu.js`: a press the device made is no longer read as a press on the UI, so steering the cursor with a finger on the touchpad no longer closes the Start menu, dismisses a context menu or Snap Assist, or commits a guided window move
+- `windowmanager.js` and `starttiles.js`: every real press is hit-tested under the emulated cursor, since it lands on the capture layer or the locked stage and its own target says nothing
+- `desktop.js`: icon hit-testing goes through the cursor's own hit test for the same reason
+- `startmenu.css`: the disabled account/power fly-out rows gained their `.sim-hover` twin, the last hover rule in the app that only answered to a real pointer
+
+### Fixed
+
+- Clicking through the touchpad: a finger on the touchpad reached the UI as a real touch, so Start closed, menus dismissed and windows started dragging under the finger instead of under the cursor
+- Hovering with the browser's mouse highlighted controls the emulated cursor was nowhere near
+
 ## [0.21.3] - Using a Start fly-out no longer closes Start
 
 2026-10-12

@@ -12,24 +12,75 @@ import {
   POST_LOCK_IGNORE_MS,
   MAX_MOUSE_DELTA_PX,
   TOUCH_SENSITIVITY,
+  TOUCH_HOLD_MS,
   TAP_MAX_MS,
   TAP_MAX_MOVE_PX
 } from '../global/constants.js';
 
-// Emulated hardware cursor, driven like a real captured mouse:
-// - Desktop: clicking the stage pointer-locks it (the OS pointer stays
-//   frozen in place); movement deltas steer the simulated cursor and clicks
-//   are routed to whatever sits under it. Esc releases; click re-captures.
-// - Touch: the stage behaves like a laptop touchpad — one finger drags the
-//   cursor relatively, a quick tap left-clicks, two fingers drag to scroll.
+// The emulated hardware cursor is the only pointer in the emulated OS.
+//
+// A capture layer sits over the whole viewport and takes every real press,
+// move, wheel and touch. The browser's pointer therefore never reaches the
+// UI: it cannot hover it, cannot click it, and a finger on the touchpad
+// cannot press what happens to sit under that finger. Input is delivered the
+// only way Win10 delivers it — by routing it to whatever sits under the
+// emulated cursor.
+//
+// - Desktop: clicking captures the pointer (the OS pointer freezes and
+//   movement deltas steer the emulated cursor); if capture is unavailable the
+//   real pointer steers the cursor absolutely, still with no direct UI
+//   interaction. Esc releases; click re-captures.
+// - Touch: the surface behaves like a laptop touchpad — one finger drags the
+//   cursor relatively, a quick tap left-clicks, holding presses and drags,
+//   two fingers scroll what is under the cursor.
+
+var INPUT_LAYER_CLASS = 'sim-input-layer';
 
 var LINK_SELECTOR = 'a, button, input, select, textarea, [role="button"]';
 var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input[type="search"], input:not([type])';
-// Elements that carry a .sim-hover twin for their :hover style, since the
-// frozen OS pointer never triggers real hover while locked.
+// Elements that carry a .sim-hover twin for their :hover style: the capture
+// layer means real :hover never fires on the emulated UI, so the class is the
+// only hover the OS gets.
 var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], ' +
   '.desktop-icon, .exp-tile, .exp-list-row, .exp-detail-row, .exp-drive, ' +
   '.exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item';
+
+var inputLayer = null;
+
+// Hit-testing has to see past the capture layer, which by definition covers
+// everything. Dropping its hit-test for the duration of one lookup is what
+// makes the emulated cursor the only thing that can address the UI.
+export function hitTestThroughInputLayer(clientX, clientY) {
+  var layer = inputLayer || document.querySelector('.' + INPUT_LAYER_CLASS);
+  if (!layer) {
+    return document.elementFromPoint(clientX, clientY);
+  }
+  var wasHitTestable = layer.style.pointerEvents !== 'none';
+  if (wasHitTestable) {
+    layer.style.pointerEvents = 'none';
+  }
+  var found = document.elementFromPoint(clientX, clientY);
+  if (wasHitTestable) {
+    layer.style.pointerEvents = '';
+  }
+  return found;
+}
+
+// True for a press the device made rather than one the emulated cursor
+// delivered: it landed on the capture layer, or the pointer is locked and the
+// press was retargeted at the stage. Surfaces that treat a press as "outside
+// me" ask first — steering the cursor with a finger on the touchpad is not a
+// press on anything, and must never dismiss a menu.
+export function isRawDevicePress(event) {
+  if (!event || !event.isTrusted) {
+    return false;
+  }
+  var target = event.target;
+  if (target && target.closest && target.closest('.' + INPUT_LAYER_CLASS)) {
+    return true;
+  }
+  return !!document.pointerLockElement;
+}
 
 export function createCursor(stage) {
   var x = Math.floor(DISPLAY_WIDTH / 2);
@@ -125,11 +176,23 @@ export function createCursor(stage) {
     setState('idle');
   }
 
+  // The capture layer: the browser's pointer stops here and everything the
+  // emulated OS can be pressed with is routed from here. It sits outside the
+  // stage so the stage's own handlers never see a real press at all, and it
+  // stays out of the way until the machine boots — the BIOS splash, lock and
+  // sign-in screens are clicked with the browser's own pointer, as they are
+  // before any OS exists.
+  inputLayer = document.createElement('div');
+  inputLayer.className = INPUT_LAYER_CLASS;
+  inputLayer.hidden = true;
+  inputLayer.setAttribute('aria-hidden', 'true');
+  (stage.parentNode || document.body).appendChild(inputLayer);
+
   function targetUnderCursor() {
     var c = clientPoint();
-    // The cursor element itself is pointer-events:none, so this resolves
-    // to the simulated UI underneath.
-    return document.elementFromPoint(c.x, c.y);
+    // The cursor element is pointer-events:none too, so this resolves to the
+    // emulated UI underneath.
+    return hitTestThroughInputLayer(c.x, c.y);
   }
 
   function eventOpts(source, c) {
@@ -203,7 +266,7 @@ export function createCursor(stage) {
   // real hit target instead.
   function dispatchContextMenu(source) {
     var c = clientPoint();
-    var target = document.elementFromPoint(c.x, c.y);
+    var target = hitTestThroughInputLayer(c.x, c.y);
     if (!target) {
       return;
     }
@@ -219,10 +282,13 @@ export function createCursor(stage) {
     }));
   }
 
-  // The emulated desktop never shows a browser menu of its own.
-  stage.addEventListener('contextmenu', function (event) {
-    event.preventDefault();
-  });
+  // The emulated desktop never shows a browser menu of its own. Captured at the
+  // window so neither the layer nor the locked stage ever yields one.
+  window.addEventListener('contextmenu', function (event) {
+    if (booted) {
+      event.preventDefault();
+    }
+  }, true);
 
   // --- Pointer lock: the OS pointer freezes, deltas drive the sim cursor. ---
   function isLocked() {
@@ -238,22 +304,15 @@ export function createCursor(stage) {
   }
 
   function syncLockState() {
-    var locked = isLocked();
-    stage.classList.toggle('cursor-live', locked);
-    // Also on the body: context menus live outside the stage, and a locked
-    // session must not reveal the OS pointer over them.
-    document.body.classList.toggle('cursor-live', locked);
-    // Unlocked on a mouse-driven machine: OS pointer works normally and
-    // the sim cursor parks dimmed until the next capture click.
-    el.classList.toggle('sim-cursor-parked', finePointer && !locked);
-    // No cursor at all before boot, or when locking is unavailable
-    // (then the native OS pointer is the real one).
-    el.classList.toggle('sim-cursor-off', !booted || (finePointer && lockUnavailable && !locked));
+    // The layer arms with the machine: before boot there is no emulated OS to
+    // be the only pointer of.
+    inputLayer.hidden = !booted;
+    document.body.classList.toggle('sim-pointer-only', booted);
+    el.classList.toggle('sim-cursor-off', !booted);
     if (hint) {
-      hint.classList.toggle('cursor-hint-hidden', !booted || locked || lockUnavailable);
+      hint.classList.toggle('cursor-hint-hidden', !booted || isLocked() || lockUnavailable);
     }
-    if (!locked) {
-      setState('idle');
+    if (!booted) {
       clearSimHover();
     }
   }
@@ -310,10 +369,27 @@ export function createCursor(stage) {
     syncLockState();
   });
 
+  // Every real move is heard here, whether it landed on the capture layer
+  // (pointer free) or on the locked stage. Either way it only ever steers the
+  // emulated cursor.
   var lastClient = null;
-  stage.addEventListener('mousemove', function (event) {
+  window.addEventListener('mousemove', function (event) {
+    if (!event.isTrusted || !booted) {
+      return;
+    }
+    var rect = stage.getBoundingClientRect();
     if (!isLocked()) {
+      // No capture: the browser pointer steers the cursor absolutely, still
+      // without ever touching the UI itself.
       lastClient = { x: event.clientX, y: event.clientY };
+      if (!rect.width || !rect.height) {
+        return;
+      }
+      x = (event.clientX - rect.left) / rect.width * DISPLAY_WIDTH;
+      y = (event.clientY - rect.top) / rect.height * DISPLAY_HEIGHT;
+      clamp();
+      render();
+      updateHoverTarget();
       return;
     }
     if (Date.now() < ignoreMovesUntil) {
@@ -335,46 +411,55 @@ export function createCursor(stage) {
       // Absurd single-event jump (lock-transition artifact): drop it.
       return;
     }
-    var rect = stage.getBoundingClientRect();
     var toStage = DISPLAY_WIDTH / rect.width;
     x += dx * toStage * MOUSE_SENSITIVITY;
     y += dy * toStage * MOUSE_SENSITIVITY;
     clamp();
     render();
+    updateHoverTarget();
+  }, true);
+
+  function updateHoverTarget() {
     var hovered = targetUnderCursor();
     updateHover(hovered);
     setSimHover(hovered);
-  });
+  }
 
-  // Capture-phase: the engagement click only captures the mouse and never
-  // fires UI underneath (locking retargets the rest of that same gesture,
-  // which would otherwise misdeliver the click).
-  stage.addEventListener('mousedown', function (event) {
-    if (!event.isTrusted) {
-      // Our own routed clicks bubbling back: never re-enter routing.
+  // Capture-phase: the real press is swallowed here and re-delivered as the
+  // emulated cursor's own press. The engagement click only captures the
+  // mouse and never fires the UI underneath.
+  window.addEventListener('mousedown', function (event) {
+    if (!event.isTrusted || !booted) {
+      // Our own routed clicks bubbling back never re-enter routing, and
+      // before boot the browser's pointer is the only pointer there is.
       return;
     }
     lastClient = { x: event.clientX, y: event.clientY };
-    if (!isLocked()) {
-      if (finePointer && !lockUnavailable) {
-        event.stopPropagation();
-        event.preventDefault();
-        requestLock();
-      }
+    // The layer takes the press, so the browser must not also act on it —
+    // least of all move focus off whatever a routed press just focused
+    // (Explorer's address and search boxes need focus to survive a click).
+    event.preventDefault();
+    if (!isLocked() && finePointer && !lockUnavailable) {
+      requestLock();
       return;
     }
-    // Locked: route the click through the simulated cursor, keeping
-    // the real modifier keys so Ctrl+click survives routing.
-    // preventDefault: the real press targets the lock element, so the
-    // browser would move focus off whatever the routed press just focused
-    // (Explorer's address and search boxes need focus to survive the click).
-    event.preventDefault();
+    // Route the press through the emulated cursor, keeping the real modifier
+    // keys so Ctrl+click survives routing.
     if (event.button === 2) {
       dispatchContextMenu(event);
       return;
     }
     synthClick(event);
   }, true);
+
+  // The wheel scrolls whatever is under the emulated cursor, captured or not.
+  window.addEventListener('wheel', function (event) {
+    if (!event.isTrusted || !booted) {
+      return;
+    }
+    event.preventDefault();
+    synthWheel(event.deltaX, event.deltaY);
+  }, { capture: true, passive: false });
 
   // --- Touch: relative touchpad tracking (unchanged by pointer lock). ---
   // Holding one finger still engages a press (like holding a mouse button),
@@ -437,15 +522,23 @@ export function createCursor(stage) {
     }
   }
 
-  stage.addEventListener('touchstart', function (event) {
+  // Touch is caught at the window, before it can reach anything: a finger on
+  // the touchpad steers the emulated cursor and nothing else, so it can never
+  // press what sits under the finger.
+  window.addEventListener('touchstart', function (event) {
+    if (!booted) {
+      return;
+    }
     event.preventDefault();
-    clearSimHover();
     for (var i = 0; i < event.changedTouches.length; i++) {
       fingerDown(event.changedTouches[i]);
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
-  stage.addEventListener('touchmove', function (event) {
+  window.addEventListener('touchmove', function (event) {
+    if (!booted) {
+      return;
+    }
     event.preventDefault();
     var rect = stage.getBoundingClientRect();
     var toStage = DISPLAY_WIDTH / rect.width;
@@ -459,6 +552,9 @@ export function createCursor(stage) {
       y += d.dy * toStage * TOUCH_SENSITIVITY;
       clamp();
       render();
+      // The emulated cursor is the pointer, so the finger hovering a control
+      // hovers it exactly as a mouse would.
+      updateHoverTarget();
       holdMoved += Math.abs(d.dx) + Math.abs(d.dy);
       if (!holdActive && holdTimer && holdMoved >= TAP_MAX_MOVE_PX) {
         // Left the spot: plain cursor move, not a hold.
@@ -484,9 +580,12 @@ export function createCursor(stage) {
         synthWheel(totalX / n, totalY / n);
       }
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   function touchEnd(event) {
+    if (!booted) {
+      return;
+    }
     event.preventDefault();
     var wasTap = tapCandidate &&
       fingerCount === 1 &&
@@ -513,8 +612,12 @@ export function createCursor(stage) {
     }
   }
 
-  stage.addEventListener('touchend', touchEnd, { passive: false });
-  stage.addEventListener('touchcancel', function (event) {
+  window.addEventListener('touchend', touchEnd, { passive: false, capture: true });
+  window.addEventListener('touchcancel', function (event) {
+    if (!booted) {
+      return;
+    }
+    event.preventDefault();
     if (holdActive) {
       synthUp(null);
     }
@@ -524,7 +627,7 @@ export function createCursor(stage) {
       fingerUp(event.changedTouches[i]);
     }
     tapCandidate = null;
-  });
+  }, { passive: false, capture: true });
 
   setState('idle');
   render();
@@ -540,6 +643,10 @@ export function createCursor(stage) {
     getPosition: function () {
       return { x: Math.round(x), y: Math.round(y) };
     },
+    // The element under the emulated cursor, for the surfaces that track a
+    // device press through its whole lifecycle (drags) and so have to find
+    // the target themselves.
+    hitTest: hitTestThroughInputLayer,
     setBooted: setBooted
   };
 }

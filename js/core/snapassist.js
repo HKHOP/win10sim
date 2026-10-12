@@ -6,6 +6,7 @@
 
 import { SNAP_ASSIST_MS, DISPLAY_WIDTH } from '../global/constants.js';
 import { snapZoneRect, oppositeHalf } from './snap.js';
+import { isRawDevicePress } from './cursor.js';
 
 var panel = null;
 var dismissTimer = null;
@@ -31,10 +32,11 @@ function onEscape(event) {
 }
 
 function onOutsidePress(event) {
-  if (document.pointerLockElement && event.isTrusted) {
-    // A locked press is retargeted at the lock element, so its target says
-    // nothing about where the pointer pointed: the routed press right
-    // behind it carries the real target and closes the panel then.
+  // The capture layer takes every device press, so a press that lands on it
+  // (or on the locked stage) says nothing about what was pressed — steering
+  // the emulated cursor past the panel must not dismiss it. The routed press
+  // right behind it carries the real target and closes the panel then.
+  if (isRawDevicePress(event)) {
     return;
   }
   if (panel && panel.contains(event.target)) {

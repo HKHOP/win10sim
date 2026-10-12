@@ -44,6 +44,7 @@ import {
 import { listStartApps, launchApp } from './apps.js';
 import { subscribeWindows } from './windowmanager.js';
 import { showContextMenu, isContextMenuTarget } from './contextmenu.js';
+import { isRawDevicePress } from './cursor.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
   getMostUsed,
@@ -363,11 +364,13 @@ export function closeStartMenu() {
   }, START_ANIM_CLOSE_MS);
 }
 
-// A press outside the panel closes it, Win10 style. The Start button is
-// exempt because it toggles the menu itself, and a locked press is ignored
-// here: the routed press right behind it carries the real target.
+// A press outside the panel closes it, Win10 style. Presses the device made
+// rather than the emulated cursor — the capture layer taking a touchpad
+// gesture, or the locked stage swallowing a captured press — say nothing about
+// what was pressed and are ignored; so is the Start button, which toggles the
+// menu itself.
 function onOutsidePress(event) {
-  if (document.pointerLockElement && event.isTrusted) {
+  if (isRawDevicePress(event)) {
     return;
   }
   var target = event.target;

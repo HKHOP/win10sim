@@ -1,9 +1,10 @@
 // Win10's window (titlebar) system menu: right-press a titlebar or a
 // taskbar button, or press Alt+Space. Move and Size start the same guided
 // keyboard loop Win10 uses — arrows nudge (8px, or 1px with Shift), Enter
-// commits, Escape cancels, any click commits.
+// commits, Escape cancels, a click with the emulated cursor commits.
 
 import { showContextMenu } from './contextmenu.js';
+import { isRawDevicePress } from './cursor.js';
 
 var guided = null;
 
@@ -69,7 +70,13 @@ function endGuided(cancel) {
   }
 }
 
-function endGuidedOnPress() {
+// Only the emulated cursor's press ends the loop and commits the move: a
+// press the device made (a touchpad gesture on the capture layer, the click
+// that captures the pointer) is just steering, and must not commit.
+function endGuidedOnPress(event) {
+  if (isRawDevicePress(event)) {
+    return;
+  }
   endGuided(false);
 }
 

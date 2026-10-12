@@ -1,16 +1,27 @@
-/* Emulated hardware cursor. While pointer-locked, the OS pointer is hidden
-   and only the simulated cursor is visible; unlocked, the OS pointer works
-   normally and the sim cursor parks dimmed. */
+/* The emulated hardware cursor is the only pointer in the emulated OS: a
+   capture layer takes every real press, move and touch, so the browser's
+   pointer can never hover, press or scroll the UI, and the UI's own :hover
+   never fires. Everything the device does is routed to whatever sits under
+   the emulated cursor (cursor.js). */
+
+.sim-input-layer {
+  position: fixed;
+  inset: 0;
+  /* Above every context menu (…3000), below the emulated cursor (…600), so
+     the real pointer is captured everywhere and the cursor stays visible. */
+  z-index: 2147483100;
+  touch-action: none;
+}
 
 #monitor-stage {
   /* The whole stage is a touchpad on touch screens: no browser gestures. */
   touch-action: none;
 }
 
-#monitor-stage.cursor-live,
-#monitor-stage.cursor-live *,
-body.cursor-live,
-body.cursor-live * {
+/* The emulated cursor is the pointer on screen from boot onward, so the
+   browser's own pointer glyph never appears. */
+body.sim-pointer-only,
+body.sim-pointer-only * {
   cursor: none !important;
 }
 
@@ -18,7 +29,7 @@ body.cursor-live * {
   position: fixed;
   left: 0;
   top: 0;
-  /* Above context menus, which are document-level popups. */
+  /* Above the capture layer and context menus, which are document-level. */
   z-index: 2147483600;
   pointer-events: none;
   will-change: transform;
@@ -31,10 +42,6 @@ body.cursor-live * {
 /* Fully hidden until boot finishes. */
 .sim-cursor-off {
   display: none;
-}
-
-.sim-cursor-parked {
-  opacity: 0.35;
 }
 
 .cursor-capture-hint {

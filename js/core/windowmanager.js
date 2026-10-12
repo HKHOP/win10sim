@@ -576,29 +576,19 @@ function windowFromNode(node) {
   return null;
 }
 
-// Trusted presses: native targeting while the pointer is free, and a
-// hit-test under the sim cursor while pointer-locked (a locked press is
-// retargeted at the lock element, so its target says nothing about where
-// the pointer pointed).
+// Trusted presses: the press lifecycle has to be the device's, because a
+// routed click compresses down+up into one instant and a drag would never be
+// seen. The emulated cursor is the only pointer, so every real press is
+// hit-tested under it — captured or not.
 window.addEventListener('mousedown', function (event) {
-  if (!event.isTrusted || !layer) {
-    return;
-  }
-  if (!document.pointerLockElement) {
-    var nativeWin = windowFromNode(event.target);
-    if (nativeWin) {
-      startWindowGesture(nativeWin, event.target, 'real');
-    }
-    return;
-  }
-  if (!cursor) {
+  if (!event.isTrusted || !layer || !cursor) {
     return;
   }
   var point = cursor.getPosition();
   var rect = layer.getBoundingClientRect();
   // Uniform stage scale (the layer is 40px shorter, so height lies).
   var scale = rect.width / DISPLAY_WIDTH;
-  var target = document.elementFromPoint(rect.left + point.x * scale, rect.top + point.y * scale);
+  var target = cursor.hitTest(rect.left + point.x * scale, rect.top + point.y * scale);
   var win = target ? windowFromNode(target) : null;
   if (win) {
     startWindowGesture(win, target, 'real');

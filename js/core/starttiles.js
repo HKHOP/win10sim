@@ -211,9 +211,14 @@ function appEntryFor(appId) {
 
 // --- Dragging: reorder, and resize from an edge -------------------------
 
+// The press lifecycle has to follow the real press: a routed click compresses
+// down+up into one instant, so only a device press can show a drag. The real
+// press says nothing about where the pointer pointed (it lands on the capture
+// layer, or is retargeted at the locked stage), so the target is hit-tested
+// under the emulated cursor.
 function installGestures(grid) {
-  // Routed presses (pointer-lock clicks, touch holds) are provisional: a
-  // real press behind them takes over.
+  // Routed presses (the emulated cursor's own clicks, touch holds) start a
+  // gesture on the spot; a real press behind them takes over.
   grid.addEventListener('mousedown', function (event) {
     if (!event.isTrusted) {
       beginDrag(grid, event.target, 'synthetic');
@@ -224,14 +229,9 @@ function installGestures(grid) {
     if (!event.isTrusted) {
       return;
     }
-    var target = event.target;
-    if (document.pointerLockElement) {
-      // A locked press is retargeted at the lock element, so hit-test the
-      // real element under the sim cursor instead.
-      var pos = tracker.position();
-      var client = tracker.toClient(pos.x, pos.y);
-      target = document.elementFromPoint(client.x, client.y);
-    }
+    var pos = tracker.position();
+    var client = tracker.toClient(pos.x, pos.y);
+    var target = tracker.hitTest(client.x, client.y);
     if (target && grid.contains(target)) {
       beginDrag(grid, target, 'real');
     }

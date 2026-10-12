@@ -8,11 +8,22 @@
 // Submenus open on hover after a one-second dwell (Win10's behaviour) and
 // fold away shortly after the pointer leaves. Hover is read two ways: real
 // `:hover` when the pointer is free, and the `.sim-hover` class the sim
-// cursor toggles while pointer-locked, because a locked pointer never
-// produces a real hover. A press on a parent opens its submenu immediately,
-// which is the fallback for touch.
+// cursor toggles, because the capture layer keeps real hover off the UI
+// entirely. A press on a parent opens its submenu immediately, which is the
+// fallback for touch.
+
+import { isRawDevicePress } from './cursor.js';
 
 var currentMenu = null;
+
+function pressInsideMenus(menus, node) {
+  for (var i = 0; i < menus.length; i++) {
+    if (menus[i].contains(node)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Win10 waits about a second before cascading, so a passing pointer does
 // not flash every submenu open.
@@ -20,13 +31,6 @@ var SUBMENU_OPEN_DELAY_MS = 1000;
 var SUBMENU_CLOSE_DELAY_MS = 400;
 var HOVER_POLL_MS = 120;
 var MENU_OFFSET_PX = 2;
-
-function isLockedPress(event) {
-  // Under pointer lock the real press is retargeted at the lock element,
-  // so its target says nothing about where the sim cursor pointed: only the
-  // routed synthetic press carries the real hit target.
-  return !!document.pointerLockElement && event.isTrusted;
-}
 
 function closeSub(record) {
   if (!record.child) {
@@ -305,17 +309,17 @@ export function showContextMenu(x, y, items, onClose) {
   var menu = buildMenu(items);
 
   function pressInside(event) {
-    var menus = openMenus(menu, []);
-    for (var i = 0; i < menus.length; i++) {
-      if (menus[i].contains(event.target)) {
-        return true;
-      }
-    }
-    return false;
+    return pressInsideMenus(openMenus(menu, []), event.target);
   }
 
   function onPress(event) {
-    if (isLockedPress(event) || pressInside(event)) {
+    if (pressInside(event)) {
+      return;
+    }
+    // A press the device made rather than the emulated cursor: it landed on
+    // the capture layer, or on the locked stage, so it says nothing about
+    // what was pressed and must not dismiss the menu on its own.
+    if (isRawDevicePress(event)) {
       return;
     }
     hideContextMenu();
@@ -383,11 +387,5 @@ export function isContextMenuTarget(node) {
   if (!currentMenu || !node) {
     return false;
   }
-  var menus = openMenus(currentMenu.menu, []);
-  for (var i = 0; i < menus.length; i++) {
-    if (menus[i].contains(node)) {
-      return true;
-    }
-  }
-  return false;
+  return pressInsideMenus(openMenus(currentMenu.menu, []), node);
 }

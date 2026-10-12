@@ -68,7 +68,7 @@ Big subsystems are split so no file grows unbounded:
 | `contextmenu.js` | Win10 popup menus (desktop, Explorer, window system menu) |
 | `apps.js` | App registry, launch, Start-menu manifests, launch counting |
 | `power.js` | Shared Sleep / Shut down / Restart actions (sign-in + Start menu) |
-| `cursor.js` | The emulated hardware cursor, pointer lock, touchpad mode, click routing |
+| `cursor.js` | The emulated hardware cursor and the input layer: capture layer, pointer lock, touchpad mode, hit-testing, click routing |
 
 ## 3. Technical Constraints
 
@@ -88,7 +88,8 @@ Big subsystems are split so no file grows unbounded:
 - Boot order is the dependency order: `global` → `system` → `kernel` → `apis` → `core` → `apps` → `boot` (init last).
 - No circular imports. `apps/` may import from `apis/`, `system/`, `global/` — never from another app directly and never from `boot/`.
 - CSS scoped per component; no global `*` resets beyond the single base file.
-- Pointer lock freezes the OS cursor, so real `:hover` never follows the sim cursor — author every interactive hover as a `:hover, .sim-hover` selector pair (`cursor.js` toggles the class while locked).
+- The capture layer keeps the browser's pointer off the emulated UI entirely, so real `:hover` never fires on it — author every interactive hover as a `:hover, .sim-hover` selector pair (`cursor.js` sets `.sim-hover` from the emulated cursor's position, which is the only pointer there is).
+- Anything that dismisses itself on a press ("outside press" handlers) must ignore `isRawDevicePress(event)`: a press the device made landed on the capture layer or the locked stage and says nothing about what was pressed.
 - Comments explain Windows-behavior emulation choices (e.g. "Win10 taskbar groups by app id"), not restatements of code.
 
 ## 5. Workflow

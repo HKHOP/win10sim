@@ -199,7 +199,7 @@ export function createDesktop(cursor, stage) {
   function entryAtCursor() {
     var rect = stage.getBoundingClientRect();
     var pos = cursor.getPosition();
-    var target = document.elementFromPoint(
+    var target = cursor.hitTest(
       rect.left + pos.x / DISPLAY_WIDTH * rect.width,
       rect.top + pos.y / DISPLAY_HEIGHT * rect.height
     );

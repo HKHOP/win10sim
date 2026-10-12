@@ -499,7 +499,8 @@
   cursor: default;
 }
 
-.start-menu-item.is-disabled:hover {
+.start-menu-item.is-disabled:hover,
+.start-menu-item.is-disabled.sim-hover {
   background: transparent;
 }
 
