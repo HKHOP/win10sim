@@ -779,6 +779,7 @@ export function buildStartMenu(cursor, stage) {
   // The tile grid draws from the same geometry the resize snapping measures,
   // so a snapped menu and the grid inside it cannot disagree.
   menuEl.style.setProperty('--tile-cell', START_TILE_CELL_PX + 'px');
+  menuEl.style.setProperty('--tile-row', START_TILE_ROW_PX + 'px');
   menuEl.style.setProperty('--tile-gap', START_TILE_GAP_PX + 'px');
   menuEl.style.setProperty('--tile-pad', START_TILE_PAD_PX + 'px');
   menuEl.style.setProperty('--resize-edge', START_RESIZE_EDGE_PX + 'px');

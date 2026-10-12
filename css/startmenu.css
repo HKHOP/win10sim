@@ -591,7 +591,15 @@
   min-width: 0;
   display: grid;
   grid-template-columns: repeat(var(--tile-cols, 3), var(--tile-cell, 108px));
-  grid-auto-rows: auto;
+  /* The rows are declared, not left implicit: Win10's grid is a grid of equal
+     cells, the menu's height snapping (menuHeightForRows) already assumes one
+     START_TILE_ROW_PX per row, and a drag reads the resolved row tracks back to
+     find the row under the pointer. Implicit rows resolve to no track list at
+     all, which is what left a dragged tile stuck in the top row. Rows past the
+     ones the menu is sized for (a tile dropped below the last visible row) come
+     from grid-auto-rows, at the same height. */
+  grid-template-rows: repeat(var(--tile-rows, 4), var(--tile-row, 136px));
+  grid-auto-rows: var(--tile-row, 136px);
   gap: var(--tile-gap, 9px);
   align-content: start;
   /* Inset on the top and right by the resize strips, so a handle never covers

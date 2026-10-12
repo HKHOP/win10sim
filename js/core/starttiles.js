@@ -177,9 +177,13 @@ export function buildTileGrid(cursor, stage) {
 export function renderTileGrid(grid) {
   clearTimers();
   tileNodes = {};
-  // The store owns the grid's width (the menu is resized in whole columns), so
-  // the drawing reads it rather than keeping its own count.
-  grid.style.setProperty('--tile-cols', String(getStartSize().cols));
+  // The store owns the grid's size (the menu is resized in whole columns and
+  // rows), so the drawing reads it rather than keeping its own count. The row
+  // count matters to a drag as much as the column count: it is what makes the
+  // grid declare row tracks for the pointer to be measured against.
+  var size = getStartSize();
+  grid.style.setProperty('--tile-cols', String(size.cols));
+  grid.style.setProperty('--tile-rows', String(size.rows));
   while (grid.firstChild) {
     grid.removeChild(grid.firstChild);
   }
@@ -321,7 +325,12 @@ function gridMetrics(grid) {
     gapX: parseFloat(styles.columnGap) || 0,
     gapY: parseFloat(styles.rowGap) || 0,
     padLeft: parseFloat(styles.paddingLeft) || 0,
-    padTop: parseFloat(styles.paddingTop) || 0
+    padTop: parseFloat(styles.paddingTop) || 0,
+    // How far the grid has been scrolled. The grid's own rect does not move
+    // when its content scrolls, so a row that is scrolled up out of the box is
+    // only found again by adding the scroll back in — without it every target
+    // row is read too low by however far the user has scrolled.
+    scrollTop: grid.scrollTop
   };
 }
 
@@ -335,7 +344,7 @@ function cellAtPoint(metrics, clientX, clientY, spanW) {
     return null;
   }
   var dx = clientX - metrics.rect.left - metrics.padLeft;
-  var dy = clientY - metrics.rect.top - metrics.padTop;
+  var dy = clientY - metrics.rect.top - metrics.padTop + (metrics.scrollTop || 0);
   var col = Math.round(dx / (metrics.cols[0] + metrics.gapX));
   col = Math.max(0, Math.min(col, metrics.cols.length - spanW));
   var row = 0;

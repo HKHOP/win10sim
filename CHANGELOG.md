@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.6] - Start tiles move down as well as across
+
+2026-10-12
+
+### Added
+
+- `--tile-rows` (the store's row count) and `--tile-row` (`START_TILE_ROW_PX`), so the grid declares its rows the way it already declared its columns
+
+### Removed
+
+- None
+
+### Changed
+
+- The tile grid's rows are now declared (`grid-template-rows`) at the same height the menu's resize snapping already assumed, instead of being left implicit at `auto`. Rows past the ones the menu is sized for come from `grid-auto-rows` at that same height, so a tile dropped below the last visible row still lands on an equal row
+
+### Fixed
+
+- A pinned tile could not be dragged down at all. The grid declared `grid-template-columns` but never `grid-template-rows`, so the computed `grid-template-rows` resolved to `none` and the drag's row walk had an empty track list to walk — every drop landed in row 0 and only horizontal movement appeared to work
+- A scrolled tile grid targeted rows too low: the grid's own rect does not move when its content scrolls, so the scroll is now added back in before the row is measured
+
 ## [1.7.5] - The account and power stop crowding each other
 
 2026-10-12
