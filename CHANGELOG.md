@@ -3,6 +3,29 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.7] - The Start column stops opening itself
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- The dwell no longer samples the pointer once as Start opens: the Start button sits directly below the column in the same 48px strip, so the pointer that opened the menu was always parked on the column
+- `START_TILE_PAD_PX * 2` as the grid's horizontal inset, replaced by `gridPadX()`
+
+### Changed
+
+- The tile grid's insets are split into `START_TILE_PAD_LEFT_PX` (6px, the tiles sit close against the app list) and `START_TILE_PAD_RIGHT_PX` (18px, clear of the panel edge and the resize strip), handed to the CSS as `--tile-pad-left` / `--tile-pad-right`. Their sum is what the width snapping measures, so a whole-column snap is unchanged
+- Leaving the column now calls off a dwell that is already running
+
+### Fixed
+
+- The Start icon column opened by itself with the pointer nowhere near it. Moving off the strip during the 2s dwell cleared the manual-dismissal flag but left the timer armed, so it fired and opened the column after the pointer had already gone somewhere else
+- Opening Start and leaving the pointer still could arm the dwell at all, from the Start button's own position under the column - the same phantom open, two seconds after every open
+
 ## [1.7.6] - Start tiles move down as well as across
 
 2026-10-12

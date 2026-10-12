@@ -32,6 +32,8 @@ import {
   START_TILE_CELL_PX,
   START_TILE_GAP_PX,
   START_TILE_PAD_PX,
+  START_TILE_PAD_LEFT_PX,
+  START_TILE_PAD_RIGHT_PX,
   START_TILE_ROW_PX,
   START_MIN_H_PX,
   START_RESIZE_EDGE_PX,
@@ -120,10 +122,17 @@ function menuHeight() {
 // to is always a whole number of tile columns and the height a whole number of
 // tile rows. That is what lets a bigger menu mean more tiles rather than a
 // longer scroll.
+// The tile grid's horizontal insets, as one number. The left and right pads are
+// separate so the drawing can be asymmetric, but the width is snapped against
+// their sum — the same total either way round.
+function gridPadX() {
+  return START_TILE_PAD_LEFT_PX + START_TILE_PAD_RIGHT_PX;
+}
+
 function menuWidth(cols, listW) {
   // The panes are inset by the resize strips, so their room is subtracted here
   // too: a handle never lands on top of a tile.
-  return START_RAIL_W + listW + START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX +
+  return START_RAIL_W + listW + gridPadX() +
     cols * START_TILE_CELL_PX + (cols - 1) * START_TILE_GAP_PX;
 }
 
@@ -136,7 +145,7 @@ function menuHeightForRows(rows) {
 // column of tiles.
 function maxMenuWidth(listW) {
   var fit = DISPLAY_WIDTH - START_RAIL_W - listW;
-  var cols = Math.floor((fit - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+  var cols = Math.floor((fit - gridPadX() + START_TILE_GAP_PX) /
     (START_TILE_CELL_PX + START_TILE_GAP_PX));
   return menuWidth(Math.max(1, cols), listW);
 }
@@ -162,7 +171,7 @@ function applyStartSize() {
 // pointer is measured against the edge it is dragging, and the result snaps to
 // the nearest whole cell.
 function colsForWidth(px, listW) {
-  var fixed = START_RAIL_W + listW + START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX;
+  var fixed = START_RAIL_W + listW + gridPadX();
   var raw = (px - fixed + START_TILE_GAP_PX) / (START_TILE_CELL_PX + START_TILE_GAP_PX);
   return Math.max(1, Math.min(Math.round(raw), maxCols(listW)));
 }
@@ -174,8 +183,7 @@ function rowsForHeight(px) {
 }
 
 function maxCols(listW) {
-  var fit = DISPLAY_WIDTH - START_RAIL_W - listW -
-    START_TILE_PAD_PX * 2 - START_RESIZE_EDGE_PX;
+  var fit = DISPLAY_WIDTH - START_RAIL_W - listW - gridPadX();
   return Math.max(1, Math.floor((fit + START_TILE_GAP_PX) /
     (START_TILE_CELL_PX + START_TILE_GAP_PX)));
 }
@@ -500,9 +508,12 @@ export function openStartMenu() {
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onMenuKey, true);
   window.addEventListener('mousemove', onRailPointerMove);
-  // The pointer may already be resting on the column when Start opens, and it
-  // only moves on the next gesture.
-  onRailPointerMove();
+  // Deliberately not sampled once here. Start is opened from the taskbar's
+  // Start button, which sits directly below the column in the same 48px strip,
+  // so the pointer that opened the menu is parked on the column whether or not
+  // the user ever meant to be there — arming a dwell from that position opened
+  // the column on its own a couple of seconds later. The dwell starts from the
+  // first real move onto the strip instead.
   if (view === 'apps' && listEl && listEl.focus) {
     // preventScroll: parking focus must not scroll any ancestor, or the whole
     // emulated screen shifts as the browser scrolls the focused box into view.
@@ -724,7 +735,12 @@ function onRailPointerMove() {
   }
   if (!pointerOnRail()) {
     // The pointer has left the strip, so a column the user closed by hand is
-    // free to open again the next time they dwell on it.
+    // free to open again the next time they dwell on it — and a dwell already
+    // running is called off. Leaving is the whole meaning of the dwell: it is
+    // the pointer resting on the column, so a timer left armed here would open
+    // the column a couple of seconds later with the pointer somewhere else
+    // entirely, which is how it appeared to open on its own.
+    cancelRailDwell();
     railDismissed = false;
     return;
   }
@@ -782,6 +798,8 @@ export function buildStartMenu(cursor, stage) {
   menuEl.style.setProperty('--tile-row', START_TILE_ROW_PX + 'px');
   menuEl.style.setProperty('--tile-gap', START_TILE_GAP_PX + 'px');
   menuEl.style.setProperty('--tile-pad', START_TILE_PAD_PX + 'px');
+  menuEl.style.setProperty('--tile-pad-left', START_TILE_PAD_LEFT_PX + 'px');
+  menuEl.style.setProperty('--tile-pad-right', START_TILE_PAD_RIGHT_PX + 'px');
   menuEl.style.setProperty('--resize-edge', START_RESIZE_EDGE_PX + 'px');
 
   railEl = document.createElement('div');

@@ -603,8 +603,11 @@
   gap: var(--tile-gap, 9px);
   align-content: start;
   /* Inset on the top and right by the resize strips, so a handle never covers
-     a tile and the snapped size and the room the grid has agree. */
-  padding: calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) var(--tile-pad, 12px) var(--tile-pad, 12px);
+     a tile and the snapped size and the room the grid has agree. The left and
+     right insets are separate values (START_TILE_PAD_LEFT_PX /
+     START_TILE_PAD_RIGHT_PX): the tiles sit close against the app list, and
+     the right keeps clear of the panel edge. */
+  padding: calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) var(--tile-pad-right, 18px) var(--tile-pad, 12px) var(--tile-pad-left, 6px);
   overflow-y: auto;
   overflow-x: hidden;
 }
