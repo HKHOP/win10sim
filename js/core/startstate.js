@@ -23,7 +23,10 @@ var state = {
   // appId -> epoch ms the app first appeared in this profile.
   firstSeen: {},
   // [{ appId, size }] in tile order; the tile grid reads this.
-  pins: []
+  pins: [],
+  // Settings > Personalization > Start > "Show app list": when off, Start
+  // shows the tiles alone and the rail offers a way back to the list.
+  showAppList: true
 };
 
 var volumeGetter = null;
@@ -49,7 +52,8 @@ function volume() {
 function snapshot() {
   return {
     launches: state.launches,
-    pins: state.pins
+    pins: state.pins,
+    showAppList: state.showAppList
   };
 }
 
@@ -121,6 +125,9 @@ function mergeState(stored) {
       .map(function (pin) {
         return { appId: pin.appId, size: TILE_SIZES.indexOf(pin.size) >= 0 ? pin.size : 'medium' };
       });
+  }
+  if (typeof stored.showAppList === 'boolean') {
+    state.showAppList = stored.showAppList;
   }
 }
 
@@ -253,6 +260,26 @@ export function getRecentlyAdded(limit) {
     })
     .sort(function (a, b) { return state.firstSeen[b] - state.firstSeen[a]; })
     .slice(0, max);
+}
+
+// App list visibility -------------------------------------------------------
+
+// True when Start opens on the app list beside the tiles (the default).
+export function getShowAppList() {
+  return state.showAppList !== false;
+}
+
+// Win10 remembers the choice across sessions, so this is persisted like the
+// rest of the Start layout.
+export function setShowAppList(show) {
+  var next = show !== false;
+  if (next === state.showAppList) {
+    return;
+  }
+  state.showAppList = next;
+  pendingSave = true;
+  save();
+  emit();
 }
 
 // Tile pins ----------------------------------------------------------------

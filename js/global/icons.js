@@ -100,6 +100,22 @@ export const HAMBURGER_SVG =
   '<path d="M2 4h12M2 8h12M2 12h12" stroke="#222" stroke-width="1.3"/>' +
   '</svg>';
 
+// App list: Win10's "all apps" glyph — a bulleted list.
+export const APP_LIST_SVG =
+  '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+  '<circle cx="3" cy="4" r="1.1" fill="#222"/><circle cx="3" cy="8" r="1.1" fill="#222"/><circle cx="3" cy="12" r="1.1" fill="#222"/>' +
+  '<path d="M6.5 4H14M6.5 8H14M6.5 12H14" stroke="#222" stroke-width="1.3"/>' +
+  '</svg>';
+
+// Pinned apps: the tile-grid glyph, so the rail can name both views.
+export const TILES_SVG =
+  '<svg viewBox="0 0 16 16" aria-hidden="true">' +
+  '<rect x="2" y="2" width="5" height="5" fill="#222"/>' +
+  '<rect x="9" y="2" width="5" height="5" fill="#222"/>' +
+  '<rect x="2" y="9" width="5" height="5" fill="#222"/>' +
+  '<rect x="9" y="9" width="5" height="5" fill="#222"/>' +
+  '</svg>';
+
 // Power: the circle-and-stalk shape Win10 uses on the Start menu.
 export const START_POWER_SVG =
   '<svg viewBox="0 0 16 16" aria-hidden="true">' +

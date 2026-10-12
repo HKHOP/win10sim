@@ -1,7 +1,14 @@
 // Win10 Start menu: the medium panel anchored over the taskbar's left
-// corner. Left rail carries "Most used" / "Recently added" / the A-Z app
-// list, with the account and power row at the bottom; the right pane is the
-// pinned tile grid.
+// corner. The left rail is a part of the menu in its own right: the
+// hamburger with the "Start" title, the App list / Pinned apps view picker,
+// the app list itself ("Most used" / "Recently added" / the A-Z list), and
+// the account and power buttons at the bottom. The right pane is the pinned
+// tile grid.
+//
+// The two rail views are Win10's "Show app list" setting: the app list sits
+// beside the tiles, and picking Pinned apps takes it away so the tiles get
+// the rail's width too — the rail folds down to its icon strip, exactly as
+// Win10 does when the list is hidden, and keeps a way back to the list.
 //
 // Everything the menu lists comes from the app registry (apps/), so any app
 // that registers later shows up here — in the list, in Most used once it has
@@ -12,7 +19,6 @@ import {
   TASKBAR_HEIGHT_PX,
   START_W,
   START_TOP_PX,
-  START_ANIM_MS,
   START_ANIM_CLOSE_MS,
   START_LEFT_PX,
   START_LIST_W,
@@ -22,7 +28,15 @@ import {
   ACCOUNT_PIC_SRC,
   START_ACCOUNT_ROW_ICON_PX
 } from '../global/constants.js';
-import { HAMBURGER_SVG, START_POWER_SVG, SLEEP_SVG, SHUTDOWN_SVG, RESTART_SVG } from '../global/icons.js';
+import {
+  HAMBURGER_SVG,
+  START_POWER_SVG,
+  SLEEP_SVG,
+  SHUTDOWN_SVG,
+  RESTART_SVG,
+  APP_LIST_SVG,
+  TILES_SVG
+} from '../global/icons.js';
 import { listStartApps, launchApp } from './apps.js';
 import { subscribeWindows } from './windowmanager.js';
 import { showContextMenu } from './contextmenu.js';
@@ -33,6 +47,8 @@ import {
   pinApp,
   isPinned,
   unpinApp,
+  getShowAppList,
+  setShowAppList,
   subscribeStartState
 } from './startstate.js';
 import {
@@ -52,10 +68,15 @@ var listEl = null;
 var tileGrid = null;
 var powerMenu = null;
 var accountMenu = null;
+var viewButtons = {};
 var rows = [];
 var open = false;
 var runningApps = {};
 var openListeners = [];
+// 'apps' = the app list sits beside the tiles, 'tiles' = pinned apps only.
+var view = 'apps';
+// Whether the rail spells its labels out; the icon strip is the collapsed form.
+var labelsShown = true;
 
 // Starts listeners for open/close state, so the Start button can light up.
 export function subscribeStartOpen(fn) {
@@ -304,7 +325,7 @@ export function openStartMenu() {
   window.addEventListener('mousedown', onOutsidePress, true);
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onMenuKey, true);
-  if (listEl && listEl.focus) {
+  if (view === 'apps' && listEl && listEl.focus) {
     listEl.focus();
   }
 }
@@ -365,7 +386,8 @@ function onMenuKey(event) {
     return;
   }
   // Arrow keys move the highlight through the app list, Enter launches.
-  if (menuEl.classList.contains('rail-collapsed') && event.key !== 'Enter') {
+  // With the list hidden there is nothing to walk.
+  if (view !== 'apps') {
     return;
   }
   var visible = rows.filter(function (row) {
@@ -397,6 +419,72 @@ function onMenuKey(event) {
   visible[next].focus();
 }
 
+// --- Rail views: app list vs pinned apps -----------------------------------
+
+// Win10 names the two rail views after what they show, and remembers the
+// choice; the rail carries the view names because it is the rail's job to
+// say which view Start is in.
+function viewButton(name, label, glyph) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'start-rail-view';
+  btn.dataset.view = name;
+  btn.setAttribute('aria-pressed', 'false');
+
+  var art = document.createElement('span');
+  art.className = 'start-rail-view-icon';
+  art.innerHTML = glyph;
+  var text = document.createElement('span');
+  text.className = 'start-rail-view-label';
+  text.textContent = label;
+  btn.appendChild(art);
+  btn.appendChild(text);
+
+  btn.addEventListener('click', function (event) {
+    event.stopPropagation();
+    setView(name);
+  });
+
+  viewButtons[name] = btn;
+  return btn;
+}
+
+// Hiding the app list leaves the rail with nothing but its own controls, so
+// Win10 folds it into the icon strip and hands the width to the tiles.
+function applyRail() {
+  var expanded = view === 'apps' && labelsShown;
+  menuEl.classList.toggle('show-app-list', view === 'apps');
+  menuEl.classList.toggle('rail-collapsed', !expanded);
+  listEl.hidden = view !== 'apps';
+  railEl.style.width = (expanded ? START_LIST_W : START_RAIL_W) + 'px';
+  Object.keys(viewButtons).forEach(function (name) {
+    var active = name === view;
+    viewButtons[name].classList.toggle('is-selected', active);
+    viewButtons[name].setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+// `persist` is false when the rail is being synced from stored state, so
+// applying a value never writes it straight back out.
+function setView(next, persist) {
+  view = next === 'tiles' ? 'tiles' : 'apps';
+  labelsShown = view === 'apps';
+  applyRail();
+  if (persist !== false) {
+    setShowAppList(view === 'apps');
+  }
+}
+
+// The hamburger only spells the rail out or folds it away while the app list
+// is on show; with the list hidden the rail is already the icon strip.
+function toggleRailLabels() {
+  if (view !== 'apps') {
+    return;
+  }
+  labelsShown = !labelsShown;
+  applyRail();
+}
+
 // --- Build ----------------------------------------------------------------
 
 export function buildStartMenu(cursor, stage) {
@@ -412,19 +500,36 @@ export function buildStartMenu(cursor, stage) {
   railEl.className = 'start-rail';
   railEl.style.width = START_LIST_W + 'px';
 
+  // Win10 pairs the hamburger with the "Start" title — a word the menu had
+  // not shown since Windows XP.
+  var head = document.createElement('div');
+  head.className = 'start-rail-head';
+
   var hamburger = document.createElement('button');
   hamburger.type = 'button';
   hamburger.className = 'start-hamburger';
   hamburger.innerHTML = HAMBURGER_SVG;
-  hamburger.setAttribute('aria-label', 'Show app list');
+  hamburger.setAttribute('aria-label', 'Collapse the app list');
   hamburger.addEventListener('click', function (event) {
     event.stopPropagation();
-    menuEl.classList.toggle('rail-collapsed');
-    var collapsed = menuEl.classList.contains('rail-collapsed');
-    railEl.style.width = (collapsed ? START_RAIL_W : START_LIST_W) + 'px';
-    hamburger.setAttribute('aria-label', collapsed ? 'Show app list' : 'Show menu');
+    toggleRailLabels();
+    hamburger.setAttribute('aria-label', labelsShown ? 'Collapse the app list' : 'Expand the app list');
   });
-  railEl.appendChild(hamburger);
+  head.appendChild(hamburger);
+
+  var railTitle = document.createElement('span');
+  railTitle.className = 'start-rail-title';
+  railTitle.textContent = 'Start';
+  head.appendChild(railTitle);
+  railEl.appendChild(head);
+
+  var views = document.createElement('div');
+  views.className = 'start-rail-views';
+  views.setAttribute('role', 'group');
+  views.setAttribute('aria-label', 'Start view');
+  views.appendChild(viewButton('apps', 'App list', APP_LIST_SVG));
+  views.appendChild(viewButton('tiles', 'Pinned apps', TILES_SVG));
+  railEl.appendChild(views);
 
   listEl = document.createElement('div');
   listEl.className = 'start-list';
@@ -507,9 +612,16 @@ export function buildStartMenu(cursor, stage) {
   menuEl.appendChild(railEl);
   menuEl.appendChild(tileGrid);
 
+  // The stored "Show app list" choice decides which view Start opens in.
+  setView(getShowAppList() ? 'apps' : 'tiles', false);
+
   // The registry and the Start layout can change underneath the menu, so
   // re-render whenever either does. A closed menu re-renders on open.
-  subscribeStartState(function () {
+  subscribeStartState(function (snapshot) {
+    var wanted = snapshot && snapshot.showAppList === false ? 'tiles' : 'apps';
+    if (wanted !== view) {
+      setView(wanted, false);
+    }
     if (open) {
       render();
     }

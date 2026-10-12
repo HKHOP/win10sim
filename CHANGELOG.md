@@ -3,6 +3,32 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.20.0] - Start menu rail as its own view picker
+
+2026-10-12
+
+### Added
+
+- A rail header carrying the hamburger and the "Start" title, the label Win10 1607 put back next to the hamburger after Windows XP
+- An `App list` / `Pinned apps` view picker under the title, the selected view marked with a pressed background and `aria-pressed`; `App list` is the default view
+- `APP_LIST_SVG` and `TILES_SVG` in `js/global/icons.js`: the bulleted-list and tile-grid glyphs the two rail views are named with
+- A persisted `showAppList` Start setting (Win10's Settings > Personalization > Start > "Show app list"), so Start reopens in the view it was left in
+
+### Removed
+
+- The hamburger's old job of folding the rail's own labels away, which is now the App list / Pinned apps switch
+
+### Changed
+
+- `startmenu.js`: the rail is no longer the app list itself — the list is one view inside a rail that also owns its title, the view picker and the account/power row; picking `Pinned apps` hides the list and folds the rail into its 48px icon strip, handing the freed width to the tile grid, exactly as Win10 behaves when the app list is hidden
+- `startmenu.js`: the hamburger now only spells the rail out or folds it while the app list is showing, and stands down in the Pinned apps view where the `App list` button is the way back; it keeps its own aria-label describing the direction of the toggle
+- Arrow/Enter navigation of the app list is skipped while the list is hidden, and opening Start only parks focus in the list when it is on show
+- `startmenu.css`: new `.start-rail-head`, `.start-rail-title`, `.start-rail-views`, `.start-rail-view` styles, icon-strip rules for the folded rail (including the view labels), and the hamburger's old full-width row replaced by a 24px button inside the header
+
+### Fixed
+
+- Start opened with the app list doubling as the sidebar, so there was no separate rail to hold the Start title, the view picker, and the account/power row
+
 ## [0.19.2] - Mandatory commit and push on task completion
 
 2026-10-12
