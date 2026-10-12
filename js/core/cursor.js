@@ -102,8 +102,6 @@ export function createCursor(stage) {
   el.className = 'sim-cursor';
   var img = document.createElement('img');
   img.className = 'sim-cursor-img';
-  img.style.width = CURSOR_SIZE_PX + 'px';
-  img.style.height = CURSOR_SIZE_PX + 'px';
   img.alt = '';
   img.draggable = false;
   el.appendChild(img);
@@ -114,12 +112,40 @@ export function createCursor(stage) {
   // paint the cursor underneath them.
   document.body.appendChild(el);
 
+  // The glyph is drawn in emulated pixels but lives outside the stage, which
+  // the page scales down to fit the viewport — so on a phone, where the whole
+  // monitor is scaled to a fraction, an unscaled cursor would be several times
+  // too big next to the taskbar it is pointing at. It scales with the stage.
+  var scale = 1;
+  var art = [CURSOR_IDLE_SRC, CURSOR_IDLE_HOTSPOT];
+
+  function applyCursorArt() {
+    img.src = art[0];
+    img.style.width = (CURSOR_SIZE_PX * scale) + 'px';
+    img.style.height = (CURSOR_SIZE_PX * scale) + 'px';
+    // The hotspot is in emulated pixels too, so the pointer tip stays on the
+    // pixel it points at at every stage scale.
+    img.style.marginLeft = (-art[1][0] * scale) + 'px';
+    img.style.marginTop = (-art[1][1] * scale) + 'px';
+  }
+
   function render() {
     // Client coordinates: the cursor is a document-level element now, so it
     // has to follow the stage's on-screen rect instead of its local grid.
-    var c = clientPoint();
-    el.style.transform = 'translate(' + c.x + 'px,' + c.y + 'px)';
+    var rect = stage.getBoundingClientRect();
+    var nextScale = rect.width ? rect.width / DISPLAY_WIDTH : 1;
+    if (nextScale !== scale) {
+      scale = nextScale;
+      applyCursorArt();
+    }
+    el.style.transform = 'translate(' + (rect.left + x / DISPLAY_WIDTH * rect.width) +
+      'px,' + (rect.top + y / DISPLAY_HEIGHT * rect.height) + 'px)';
   }
+
+  // A viewport change rescales the stage under the cursor, so the glyph has to
+  // be re-measured even if the cursor itself never moves.
+  window.addEventListener('resize', render);
+  window.addEventListener('orientationchange', render);
 
   function clamp() {
     x = Math.max(0, Math.min(DISPLAY_WIDTH - 1, x));
@@ -131,12 +157,10 @@ export function createCursor(stage) {
       return;
     }
     state = next;
-    var art = next === 'link' ? [CURSOR_LINK_SRC, CURSOR_LINK_HOTSPOT]
+    art = next === 'link' ? [CURSOR_LINK_SRC, CURSOR_LINK_HOTSPOT]
       : next === 'text' ? [CURSOR_TEXT_SRC, CURSOR_TEXT_HOTSPOT]
       : [CURSOR_IDLE_SRC, CURSOR_IDLE_HOTSPOT];
-    img.src = art[0];
-    img.style.marginLeft = (-art[1][0]) + 'px';
-    img.style.marginTop = (-art[1][1]) + 'px';
+    applyCursorArt();
   }
 
   function clientPoint() {

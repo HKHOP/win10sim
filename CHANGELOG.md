@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.1.1] - The cursor scales with the emulated screen
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `cursor.js`: the cursor glyph is measured against the stage's live on-screen rect, so it shrinks with the emulated monitor on a small viewport, and its hotspot offset scales with it so the pointer tip stays on the pixel it points at
+- `cursor.js`: `resize` and `orientationchange` re-render the cursor, so a viewport change rescales the glyph even if the cursor itself never moves
+
+### Fixed
+
+- The cursor was drawn at a fixed 32 CSS pixels while everything it pointed at was scaled to fit the viewport, so on a phone it was several times too big for the taskbar it hovered
+
 ## [1.1.0] - Fullscreen button for handsets
 
 2026-10-12
