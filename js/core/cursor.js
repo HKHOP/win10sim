@@ -388,20 +388,57 @@ function updateHover(target) {
     synthTap(modifiers);
   }
 
+  // The nearest thing above `node` that can actually move on this axis. A
+  // browser only scrolls a box for a *trusted* wheel event, and every wheel
+  // that reaches the emulated desktop is re-dispatched from here, so the box
+  // under the cursor has to be found and moved by hand.
+  function scrollerFor(node, axis) {
+    var overflow = axis === 'y' ? 'overflowY' : 'overflowX';
+    var extent = axis === 'y' ? 'scrollHeight' : 'scrollWidth';
+    var box = axis === 'y' ? 'clientHeight' : 'clientWidth';
+    while (node && node !== document.body && node !== document.documentElement) {
+      var style = window.getComputedStyle(node);
+      var scrolls = style[overflow] === 'auto' || style[overflow] === 'scroll' ||
+        style[overflow] === 'overlay';
+      if (scrolls && node[extent] > node[box] + 1) {
+        return node;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
   function synthWheel(deltaX, deltaY) {
     var target = targetUnderCursor();
     if (!target) {
       return;
     }
     var c = clientPoint();
-    target.dispatchEvent(new WheelEvent('wheel', {
+    var event = new WheelEvent('wheel', {
       bubbles: true,
       cancelable: true,
       deltaX: deltaX,
       deltaY: deltaY,
       clientX: c.x,
       clientY: c.y
-    }));
+    });
+    target.dispatchEvent(event);
+    // Anything that handled the wheel itself (and said so) has done the work.
+    if (event.defaultPrevented) {
+      return;
+    }
+    if (deltaY) {
+      var vertical = scrollerFor(target, 'y');
+      if (vertical) {
+        vertical.scrollTop += deltaY;
+      }
+    }
+    if (deltaX) {
+      var horizontal = scrollerFor(target, 'x');
+      if (horizontal) {
+        horizontal.scrollLeft += deltaX;
+      }
+    }
   }
 
   // The right button opens a Win10 context menu at the sim cursor. Real
@@ -603,7 +640,10 @@ function updateHover(target) {
       return;
     }
     event.preventDefault();
-    synthWheel(event.deltaX, event.deltaY);
+    // Some wheels report lines rather than pixels; the scroller moves in
+    // pixels, so translate before anything reads the delta.
+    var scale = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? 400 : 1);
+    synthWheel(event.deltaX * scale, event.deltaY * scale);
   }, { capture: true, passive: false });
 
   // --- Touch: relative touchpad tracking (unchanged by pointer lock). ---

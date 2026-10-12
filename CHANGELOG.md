@@ -3,6 +3,26 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.1] - The wheel scrolls again
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- A wheel over the emulated desktop now finds the scroller under the cursor and moves it: the nearest box above the pointer that can move on that axis, in the way the browser moves one for a real wheel. Line-mode deltas are translated to pixels first, so a wheel that reports lines still scrolls a sensible distance
+
+### Fixed
+
+- Nothing scrolled - not a folder listing, not a long Start menu, not a file in Notepad. Every wheel that reaches the emulated desktop is re-dispatched at the element under the pointer, and a browser only carries out a wheel's default action for a *trusted* event, so the re-dispatched one did nothing at all
+
 ## [1.7.0] - The command bar, the way Windows 10 draws it
 
 2026-10-12
