@@ -7,6 +7,12 @@ import { createPrefs } from './prefs.js';
 // app here declares the same thing in its manifest; the shell keeps the list,
 // answers "what opens this?", and remembers a choice the user makes. Only the
 // choices need storing, so that is all this file holds.
+//
+// A file type is not the same thing as the apps that open it. The type is the
+// shell's own record - the name Windows shows in the Type column, and the media
+// type the format goes by - and an app claims it to become a handler. Registering
+// .ink here, for instance, is what makes a .ink file call itself an Ink File
+// whether or not anything has claimed it yet.
 
 const store = createPrefs('C:\\$FileTypes.json', function () {
   return { defaults: {} };
@@ -14,6 +20,38 @@ const store = createPrefs('C:\\$FileTypes.json', function () {
 
 // One record per (app, extension), built from the manifests as apps register.
 let handlers = [];
+
+// The shell's own file types, by extension.
+let types = {};
+
+// The types the shell knows before any app says anything. Windows has hundreds;
+// these are the ones this build can actually produce a file in.
+const BUILTIN_TYPES = [
+  { ext: 'ink', type: 'Ink File', mediaType: 'application/inkml+xml' }
+];
+
+BUILTIN_TYPES.forEach(function (entry) { registerFileType(entry); });
+
+// Declares (or corrects) a file type. Safe to call repeatedly: an app that
+// registers the same type again replaces its own record.
+export function registerFileType(entry) {
+  if (!entry || !entry.ext) {
+    return null;
+  }
+  var clean = String(entry.ext).replace(/^\./, '').toLowerCase();
+  var record = {
+    ext: clean,
+    type: entry.type || '',
+    mediaType: entry.mediaType || ''
+  };
+  types[clean] = record;
+  return record;
+}
+
+export function typeInfoFor(ext) {
+  var clean = String(ext || '').replace(/^\./, '').toLowerCase();
+  return types[clean] || null;
+}
 
 function extensionOf(name) {
   var text = String(name || '');
@@ -42,6 +80,12 @@ export function registerAssociations(appId, manifest) {
       if (!clean) {
         return;
       }
+      // An app may introduce a type it knows about, the way an installer writes
+      // the description into HKCR - but it does not overwrite a type the shell
+      // already knows.
+      if (group.type && !typeInfoFor(clean)) {
+        registerFileType({ ext: clean, type: group.type });
+      }
       handlers.push({
         appId: appId,
         ext: clean,
@@ -65,9 +109,14 @@ export function handlersFor(ext) {
   return handlers.filter(function (entry) { return entry.ext === clean; });
 }
 
-// What Explorer shows in a file's Type column: the name the apps gave the type
-// when they registered it, or '' when nothing has claimed the extension.
+// What Explorer shows in a file's Type column: the shell's own name for the
+// type when it has one, and otherwise the name an app gave it when it claimed
+// the extension.
 export function typeFor(ext) {
+  var known = typeInfoFor(ext);
+  if (known && known.type) {
+    return known.type;
+  }
   var found = handlersFor(ext);
   return found.length ? found[0].type : '';
 }

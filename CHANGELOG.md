@@ -3,6 +3,29 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.9.0] - The .ink file format, and the types the shell knows
+
+2026-10-12
+
+### Added
+
+- `js/apis/ink.js`: the `.ink` document format. Windows stores ink as ISF (Ink Serialized Format), a compact binary layout published as a separate specification - which a static browser app cannot write, since there is no build step here and nothing compiles a binary encoder. So the format implemented is **InkML**, the W3C standard ink markup Windows reads as well: a real ink document, written with brushes (colour, width, opacity) that traces reference, over X / Y / F channels in himetric and pen force
+- Reading and writing ink over the emulated volume, the way every other file works: `readInkFile` / `writeInkFile`
+- File types are now the shell's own record, separate from the apps that open them. `.ink` registers as **Ink File**, media type `application/inkml+xml`, so a file with that extension calls itself an Ink File in Explorer's Type column and Properties whether or not anything has claimed it yet
+- An app may introduce a type it knows about, the way an installer writes a description into HKCR - but it cannot overwrite a type the shell already knows
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- None
+
 ## [1.7.8] - The grid insets, corrected
 
 2026-10-12
