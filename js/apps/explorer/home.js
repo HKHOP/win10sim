@@ -298,34 +298,38 @@ export function buildRecentTabs(ctx) {
     return node;
   }
 
+  // Each paint owns the list until the next one starts: the store and the
+  // folder stats both answer later, and a late answer from a tab you have
+  // already left must not append its rows to the new one.
+  var paintSeq = 0;
+
   function paint() {
-    var keep = head;
-    while (list.firstChild !== keep) {
+    var seq = ++paintSeq;
+    // The header row stays; everything under it is this paint's to rebuild.
+    while (list.firstChild && list.firstChild !== head) {
       list.removeChild(list.firstChild);
+    }
+    function empty(text) {
+      var none = document.createElement('div');
+      none.className = 'exp-empty';
+      none.textContent = text;
+      list.appendChild(none);
     }
     if (active === 'shared') {
       // No homegroup and no network share exists in the simulator, so there is
       // nothing that could ever be shared with this account.
-      var none = document.createElement('div');
-      none.className = 'exp-empty';
-      none.textContent = 'Nothing is shared with you.';
-      list.appendChild(none);
+      empty('Nothing is shared with you.');
       return;
     }
     var source = active === 'favorites' ? getPinned() : getRecent();
     source.then(function (entries) {
-      // The tab may have changed, or the whole page may have moved on, while
-      // the store was answering.
-      if (list.firstChild !== keep || !ctx.alive()) {
+      if (seq !== paintSeq || !ctx.alive()) {
         return;
       }
       if (entries.length === 0) {
-        var none = document.createElement('div');
-        none.className = 'exp-empty';
-        none.textContent = active === 'favorites'
+        empty(active === 'favorites'
           ? 'Pin a folder to see it here.'
-          : 'No items have been opened yet.';
-        list.appendChild(none);
+          : 'No items have been opened yet.');
         return;
       }
       if (active === 'favorites') {
@@ -334,7 +338,7 @@ export function buildRecentTabs(ctx) {
         entries.forEach(function (name) {
           var path = ctx.userBase() + '\\' + name;
           ctx.stat(path).then(function (info) {
-            if (list.firstChild !== keep || !ctx.alive()) {
+            if (seq !== paintSeq || !ctx.alive()) {
               return;
             }
             list.appendChild(row(name, path, info ? info.modified : 0, folderArt(name), true));

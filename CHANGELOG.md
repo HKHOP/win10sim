@@ -46,6 +46,26 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - None
 
+## [1.7.2] - The Quick access tabs stop piling up rows
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- Pressing Recent, Favorites or Shared appended another list instead of replacing the one on screen, so the rows doubled up with every press. Clearing the list asked for "keep removing until the header is first" - which was already true, so it removed nothing
+
 ## [1.7.1] - The wheel scrolls again
 
 2026-10-12
