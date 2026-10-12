@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.8] - The grid insets, corrected
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- The app list's own right inset by a resize strip, which is the panel's edge and only ever ran over the tile grid
+
+### Changed
+
+- `START_TILE_PAD_RIGHT_PX` is 38px, not 18px: the right inset has to clear the 20px resize strip as well as pad the tiles off the edge, and their sum is once again 44px - the same total the single even pad gave - so every snapped menu width is the size it was before the split
+
+### Fixed
+
+- The split insets put the tiles under the menu's right resize strip, so the last column of tiles ran out past the panel edge where the handle is drawn
+- The app list reserved the right resize strip inside itself as well, opening a dead gutter roughly 26px wide between the list and the first column of tiles - the huge left padding the split was meant to reduce
+
 ## [1.7.7] - The Start column stops opening itself
 
 2026-10-12

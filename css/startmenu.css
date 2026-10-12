@@ -300,13 +300,16 @@
 /* --- App list column ----------------------------------------------------- */
 
 /* The middle segment: its own column, between the icon column and the tiles.
-   Inset on the top and right by the resize strips, as the tile grid is. */
+   Inset on the top by the top resize strip, which does run over it. Not inset
+   on the right: the right-hand strip belongs to the panel's own edge, over the
+   tile grid, and reserving it here as well only opened a wide dead gutter
+   between the list and the first column of tiles. */
 .start-list {
   flex: 0 0 var(--list-w, 252px);
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--resize-edge, 20px) calc(6px + var(--resize-edge, 20px)) 0 6px;
+  padding: var(--resize-edge, 20px) 6px 0 6px;
   outline: none;
 }
 
@@ -606,8 +609,8 @@
      a tile and the snapped size and the room the grid has agree. The left and
      right insets are separate values (START_TILE_PAD_LEFT_PX /
      START_TILE_PAD_RIGHT_PX): the tiles sit close against the app list, and
-     the right keeps clear of the panel edge. */
-  padding: calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) var(--tile-pad-right, 18px) var(--tile-pad, 12px) var(--tile-pad-left, 6px);
+     the right clears the panel edge and the resize strip over it. */
+  padding: calc(var(--tile-pad, 12px) + var(--resize-edge, 20px)) var(--tile-pad-right, 38px) var(--tile-pad, 12px) var(--tile-pad-left, 6px);
   overflow-y: auto;
   overflow-x: hidden;
 }

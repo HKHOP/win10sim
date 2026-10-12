@@ -148,11 +148,12 @@ export const START_TILE_CELL_PX = 108;
 export const START_TILE_GAP_PX = 9;
 // The tile grid's insets, split the way the menu is drawn: a narrow gutter on
 // the left, where the tiles sit close against the app list, and a wider one on
-// the right, where the resize strip needs room and the last column of tiles
-// should not sit hard against the panel edge. They replace the single even pad,
-// and their sum is what the width snapping measures.
+// the right. The right one has to clear the resize strip as well as pad the
+// tiles off the panel edge, so it is never smaller than START_RESIZE_EDGE_PX.
+// Their sum is unchanged from the single even pad these replaced, so the width
+// the menu snaps to is the same size it was before the split.
 export const START_TILE_PAD_LEFT_PX = 6;
-export const START_TILE_PAD_RIGHT_PX = 18;
+export const START_TILE_PAD_RIGHT_PX = 38;
 export const START_TILE_PAD_PX = 12;
 // A plain tile's cell height: the artwork, the gap above the name, the name.
 export const START_TILE_ROW_PX = 136;
