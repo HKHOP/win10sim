@@ -6,8 +6,8 @@
 //
 // The icon column is glyphs only: Win10 spells out its labels for anyone
 // whose pointer is over the column, and the emulated pointer needs no mouse,
-// so the column widens on :hover / .sim-hover (see startmenu.css). Tapping a
-// column button on a touch screen latches it open instead.
+// so the column widens while the pointer dwells on it (see startmenu.css).
+// Tapping a column button on a touch screen latches it open instead.
 //
 // The two column views are Win10's "Show app list" setting: the app list sits
 // beside the tiles, and picking Pinned apps takes it away so the tiles take
@@ -28,6 +28,7 @@ import {
   START_ACCOUNT_H,
   START_RAIL_W,
   START_RAIL_OPEN_W,
+  START_RAIL_HOVER_MS,
   START_TILE_CELL_PX,
   START_TILE_GAP_PX,
   START_TILE_PAD_PX,
@@ -498,6 +499,10 @@ export function openStartMenu() {
   window.addEventListener('mousedown', onOutsidePress, true);
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onMenuKey, true);
+  window.addEventListener('mousemove', onRailPointerMove);
+  // The pointer may already be resting on the column when Start opens, and it
+  // only moves on the next gesture.
+  onRailPointerMove();
   if (view === 'apps' && listEl && listEl.focus) {
     // preventScroll: parking focus must not scroll any ancestor, or the whole
     // emulated screen shifts as the browser scrolls the focused box into view.
@@ -511,7 +516,8 @@ export function closeStartMenu() {
   }
   open = false;
   hidePopovers();
-  menuEl.classList.remove('rail-latched');
+  // A dwell still running would open the column over the next Start session.
+  closeRail();
   // Closing mid-drag must not leave a gesture running behind the panel: its
   // drop target would come back the next time Start renders.
   cancelResize();
@@ -521,6 +527,7 @@ export function closeStartMenu() {
   window.removeEventListener('mousedown', onOutsidePress, true);
   window.removeEventListener('touchstart', onOutsidePress, true);
   window.removeEventListener('keydown', onMenuKey, true);
+  window.removeEventListener('mousemove', onRailPointerMove);
   if (REDUCED) {
     menuEl.hidden = true;
     menuEl.classList.remove('start-open');
@@ -661,13 +668,69 @@ function setView(next, persist) {
   }
 }
 
-// A finger has no hover, so a tap on the column holds it open. The CSS widens
-// the column for :hover / .sim-hover; this is the tap equivalent.
-function latchRail() {
-  if (!coarsePointer) {
+// --- Icon column: opens on a dwell, stays open -----------------------------
+
+// The column is a strip of glyphs until the pointer has settled on it, so the
+// open state is one class the CSS draws from. Once open it stays open for the
+// rest of this Start session: the labels are wanted while the pointer is off in
+// the app list or the tiles, and only closing Start puts them away. A touch
+// screen has no hover, so a tap on a column button opens it the same way.
+var railTimer = 0;
+
+function openRail() {
+  menuEl.classList.add('rail-open');
+}
+
+function closeRail() {
+  cancelRailDwell();
+  menuEl.classList.remove('rail-open');
+}
+
+function cancelRailDwell() {
+  if (railTimer) {
+    window.clearTimeout(railTimer);
+    railTimer = 0;
+  }
+}
+
+// The whole strip counts, not just the buttons in it: the column is narrow and
+// its controls are sparse, so a pointer over its bare background is over the
+// column. Real :hover never fires on the emulated UI — the capture layer keeps
+// the browser's pointer off it — so this measures the emulated cursor against
+// the column's own rect instead.
+function pointerOnRail() {
+  if (!tracker || !railEl || resize) {
+    return false;
+  }
+  var pos = tracker.position();
+  var point = tracker.toClient(pos.x, pos.y);
+  var rect = railEl.getBoundingClientRect();
+  return point.x >= rect.left && point.x <= rect.right &&
+    point.y >= rect.top && point.y <= rect.bottom;
+}
+
+// Opening waits out the dwell, so crossing the strip on the way to the tiles
+// leaves it shut. Nothing here closes it again — only Start closing does.
+function onRailPointerMove() {
+  // A touch screen has no hover to measure: its column opens on a tap instead.
+  if (!open || coarsePointer) {
     return;
   }
-  menuEl.classList.toggle('rail-latched');
+  if (!pointerOnRail() || menuEl.classList.contains('rail-open') || railTimer) {
+    return;
+  }
+  railTimer = window.setTimeout(function () {
+    railTimer = 0;
+    openRail();
+  }, START_RAIL_HOVER_MS);
+}
+
+// A finger has no hover, so a tap on the column holds it open instead of the
+// dwell that opens it under a pointer.
+function latchRail() {
+  if (coarsePointer) {
+    openRail();
+  }
 }
 
 // --- Build ----------------------------------------------------------------
@@ -678,7 +741,8 @@ export function buildStartMenu(cursor, stage) {
   menuEl.className = 'start-menu';
   menuEl.hidden = true;
   menuEl.style.left = START_LEFT_PX + 'px';
-  // The panel and column widths, handed to the CSS that widens both on hover.
+  // The panel and column widths, handed to the CSS that widens both once the
+  // column opens.
   menuEl.style.setProperty('--rail-w', START_RAIL_W + 'px');
   menuEl.style.setProperty('--rail-w-open', START_RAIL_OPEN_W + 'px');
   menuEl.style.setProperty('--list-w', START_LIST_W + 'px');
@@ -814,9 +878,9 @@ export function buildStartMenu(cursor, stage) {
   // A tap inside the menu but off the column drops the touch latch, so the
   // column does not stay open after the finger is done with it.
   menuEl.addEventListener('click', function (event) {
-    if (coarsePointer && menuEl.classList.contains('rail-latched')) {
+    if (coarsePointer && menuEl.classList.contains('rail-open')) {
       if (!(event.target && event.target.closest && event.target.closest('.start-rail'))) {
-        menuEl.classList.remove('rail-latched');
+        closeRail();
       }
     }
   });

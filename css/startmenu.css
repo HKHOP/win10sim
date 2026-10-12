@@ -120,9 +120,11 @@
 /* --- Icon column --------------------------------------------------------- */
 
 /* Win10 shows the column's labels to anyone whose pointer is over it, and the
-   frozen OS pointer never triggers a real :hover, so .sim-hover (toggled by
-   cursor.js) counts as hover here too. Touch has neither, so a tap latches
-   the column open with .rail-latched. */
+   frozen OS pointer never triggers a real :hover — so startmenu.js decides from
+   the emulated cursor itself: .rail-open is set once the pointer has dwelt on
+   the column (anywhere in the strip, not only over a button) and stays set
+   until Start closes. Touch has neither, so a tap opens it and a tap off the
+   column closes it again. */
 .start-rail {
   display: flex;
   flex-direction: column;
@@ -134,11 +136,11 @@
 /* The column grows into its open width. The panel widens by the same amount
    instead of squeezing the segments: the app list stays whole beside it, and
    the tile grid is never clipped under the pointer. */
-.start-menu:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched) {
+.start-menu.rail-open {
   width: calc(var(--menu-w, 640px) + var(--rail-w-open, 190px) - var(--rail-w, 48px));
 }
 
-.start-menu:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched) .start-rail {
+.start-menu.rail-open .start-rail {
   flex-basis: var(--rail-w-open, 190px);
 }
 
@@ -153,17 +155,16 @@
   text-overflow: ellipsis;
 }
 
-.start-menu:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched)
-  :is(.start-rail-title, .start-rail-view-label, .start-account-name) {
+.start-menu.rail-open :is(.start-rail-title, .start-rail-view-label, .start-account-name) {
   display: block;
 }
 
-.start-menu:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched) .start-rail-head {
+.start-menu.rail-open .start-rail-head {
   justify-content: flex-start;
   padding: 0 10px 0 12px;
 }
 
-.start-menu:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched) .start-rail-view {
+.start-menu.rail-open .start-rail-view {
   justify-content: flex-start;
   padding: 0 8px;
 }
@@ -406,20 +407,20 @@
 /* The closed column is too narrow for the account and the power side by side,
    so they stack the way they do in Win10's icon column — which also stops the
    row spilling out over the list and tile segments. */
-.start-menu:not(:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched)) .start-rail-bottom {
+.start-menu:not(.rail-open) .start-rail-bottom {
   flex-direction: column;
   justify-content: center;
   gap: 2px;
   padding: 0;
 }
 
-.start-menu:not(:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched)) :is(.start-account, .start-power) {
+.start-menu:not(.rail-open) :is(.start-account, .start-power) {
   width: 100%;
   height: 24px;
   padding: 0;
 }
 
-.start-menu:not(:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched)) .start-account {
+.start-menu:not(.rail-open) .start-account {
   flex: 0 0 auto;
   justify-content: center;
 }
@@ -521,8 +522,7 @@
 
 /* Closed, the strip has no room inside it, so the fly-outs open beside it over
    the app list and tiles instead of spilling off the menu's left edge. */
-.start-menu:not(:is(:has(.start-rail:hover), :has(.start-rail .sim-hover), .rail-latched))
-  :is(.start-power-menu, .start-account-menu) {
+.start-menu:not(.rail-open) :is(.start-power-menu, .start-account-menu) {
   left: 100%;
   right: auto;
   bottom: 0;

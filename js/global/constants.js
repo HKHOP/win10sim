@@ -132,6 +132,9 @@ export const START_RAIL_W = 48;
 // Wide enough for the column's labels and for its fly-out menus, which open
 // inside it.
 export const START_RAIL_OPEN_W = 190;
+// How long the pointer has to rest on the icon column before it opens. A
+// deliberate dwell, not a sweep across the strip on the way to the tiles.
+export const START_RAIL_HOVER_MS = 2000;
 // Start tile grid geometry. The CSS draws from these as custom properties, so
 // the resize snapping and the drawing cannot drift apart.
 export const START_TILE_CELL_PX = 108;

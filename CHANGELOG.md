@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.3] - The Start icon column waits to be sure
+
+2026-10-12
+
+### Added
+
+- `START_RAIL_HOVER_MS` (2s): how long the emulated cursor has to rest on the Start icon column before the column widens and spells out its labels
+- The column is measured against its own rect as the pointer moves, so dwelling anywhere on the strip counts, not only hovering one of its buttons
+
+### Removed
+
+- The `:has(.start-rail:hover)` / `:has(.start-rail .sim-hover)` hover pair and the `.rail-latched` touch class: both are replaced by the single `.rail-open` state, since a real `:hover` never fires on the emulated UI and `.sim-hover` only ever landed on buttons
+
+### Changed
+
+- The column opens only after the dwell and then stays open for the rest of that Start session; closing Start is the only thing that puts the labels away (a tap off the column still closes it on touch, where a tap is the only gesture there is)
+- The dwell is cancelled by a Start resize gesture and by closing the menu, so a column can't open over the next session
+
+### Fixed
+
+- None
+
 ## [1.7.1] - The wheel scrolls again
 
 2026-10-12
