@@ -43,7 +43,7 @@ import {
 } from '../global/icons.js';
 import { listStartApps, launchApp } from './apps.js';
 import { subscribeWindows } from './windowmanager.js';
-import { showContextMenu } from './contextmenu.js';
+import { showContextMenu, isContextMenuTarget } from './contextmenu.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
   getMostUsed,
@@ -330,7 +330,9 @@ export function openStartMenu() {
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onMenuKey, true);
   if (view === 'apps' && listEl && listEl.focus) {
-    listEl.focus();
+    // preventScroll: parking focus must not scroll any ancestor, or the whole
+    // emulated screen shifts as the browser scrolls the focused box into view.
+    listEl.focus({ preventScroll: true });
   }
 }
 
@@ -373,6 +375,11 @@ function onOutsidePress(event) {
     return;
   }
   if (menuEl.contains(target)) {
+    return;
+  }
+  // A tile's or a row's right-click menu hangs off the document body, but it
+  // belongs to Start: picking from it is not pressing outside.
+  if (isContextMenuTarget(target)) {
     return;
   }
   if (target.closest && target.closest('.task-start')) {
@@ -421,7 +428,7 @@ function onMenuKey(event) {
   if (next >= visible.length) {
     next = 0;
   }
-  visible[next].focus();
+  visible[next].focus({ preventScroll: true });
 }
 
 // --- Icon column: views, and how it opens ---------------------------------

@@ -8,6 +8,11 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* clip, unlike hidden, is not a scroll container: on a viewport smaller
+     than the stage the layout box overflows, and a stray focus (Start parking
+     focus in its app list, say) could scroll the whole emulated screen —
+     taskbar and all — out of place. */
+  overflow: clip;
   background: #101010;
 }
 
@@ -17,6 +22,7 @@
   flex: 0 0 auto;
   position: relative;
   overflow: hidden;
+  overflow: clip;
   background: #000;
   transform-origin: center center;
   /* Bezel hint so the fixed grid reads as a monitor on big screens. */

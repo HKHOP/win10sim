@@ -3,6 +3,47 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.21.3] - Using a Start fly-out no longer closes Start
+
+2026-10-12
+
+### Added
+
+- `isContextMenuTarget(node)` in `contextmenu.js`: whether a node belongs to a menu on screen, cascade included, for surfaces that need to tell a menu press from a press outside themselves
+
+### Removed
+
+- None
+
+### Changed
+
+- `startmenu.js`: the outside-press handler now ignores presses that land in a context menu, since those menus hang off the document body rather than the panel
+
+### Fixed
+
+- Right-clicking a Start tile or an app list row and then picking anything from the menu closed the Start menu along with the fly-out
+
+## [0.21.2] - The taskbar stopped jumping when Start opened
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `monitor.css` / `desktop.css`: `#viewport`, `#monitor-stage` and `.desktop` now use `overflow: clip` after `overflow: hidden`, so they stop being scroll containers while keeping the same clipping on browsers that do not know `clip`
+- `startmenu.js`: the app list takes focus with `{ preventScroll: true }` both when Start opens and when the arrow keys walk the list
+
+### Fixed
+
+- The taskbar jumped up and snapped back as Start opened: opening Start parked focus in the app list, and the browser scrolled that box into view — and `overflow: hidden` containers are still scroll containers, so on a viewport smaller than 1366x768 (a phone) it scrolled the stage itself, moving the whole emulated screen and the taskbar pinned to its bottom edge
+
 ## [0.21.1] - Tiles: honest hover, and a tile you can actually pick up
 
 2026-10-12

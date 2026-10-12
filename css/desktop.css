@@ -8,6 +8,9 @@
   background-color: #0078d7;
   user-select: none;
   overflow: hidden;
+  /* Never a scroll container: the taskbar lives in here, so anything that
+     could scroll this box would shift the taskbar off the bottom edge. */
+  overflow: clip;
 }
 
 .desktop-icons {

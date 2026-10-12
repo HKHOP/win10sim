@@ -373,3 +373,21 @@ export function hideContextMenu() {
     open.onClose();
   }
 }
+
+// True when the node belongs to a menu currently on screen. Surfaces that
+// treat a press as "outside" ask first: a tile's right-click fly-out is part
+// of Start, so using it must not count as pressing outside Start. The menus
+// live on the document body, which is why this cannot be a contains() test on
+// the surface that opened them.
+export function isContextMenuTarget(node) {
+  if (!currentMenu || !node) {
+    return false;
+  }
+  var menus = openMenus(currentMenu.menu, []);
+  for (var i = 0; i < menus.length; i++) {
+    if (menus[i].contains(node)) {
+      return true;
+    }
+  }
+  return false;
+}
