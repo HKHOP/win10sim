@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [0.21.1] - Tiles: honest hover, and a tile you can actually pick up
+
+2026-10-12
+
+### Added
+
+- The dragged tile is carried under the pointer while it is being reordered, the way Win10 lifts it out of the grid, with the offset kept across the rebuild a reorder triggers
+
+### Removed
+
+- None
+
+### Changed
+
+- `startmenu.css`: the resize handles moved wholly outside the tile (10px handles instead of 12px straddling the edge) and softened from 45% to 30% blue, so hovering a tile no longer paints a heavy blue bar over its edge
+- `starttiles.js`: ending a drag clears the tile's lift and drop shadow, so it settles back into its new slot
+
+### Fixed
+
+- An invisible resize handle still took presses: `.start-tile-grip` had no `pointer-events` rule, so a transparent grip swallowed hit-tests, and the right-hand grip covered the tile's rightmost 7px — grabbing a tile near its edge began a resize instead of a move, which read as the tile being stuck
+- A dragged tile stayed in its slot and did not follow the pointer, so a reorder looked like nothing happened at all
+
 ## [0.21.0] - Icon column opens on hover, app list becomes its own segment
 
 2026-10-12

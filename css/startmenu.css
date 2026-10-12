@@ -532,21 +532,24 @@
   outline: none;
 }
 
-/* Lifted while being dragged to a new slot. */
+/* Lifted while being dragged to a new slot, carried under the pointer. */
 .start-tile.is-dragging {
-  z-index: 2;
+  z-index: 5;
 }
 
 .start-tile.is-dragging .start-tile-art {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
   border-color: rgba(0, 120, 215, 0.6);
 }
 
-/* Win10's resize handles on a tile's right and bottom edges. */
+/* Win10's resize handles on a tile's right and bottom edges. They sit wholly
+   outside the tile, and an invisible handle takes no presses at all — a
+   transparent grip would otherwise swallow the grab meant for the tile. */
 .start-tile-grip {
   position: absolute;
   z-index: 3;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.1s ease-out;
 }
 
@@ -555,26 +558,27 @@
 .start-tile.is-dragging .start-tile-grip,
 .start-tile.sim-hover .start-tile-grip {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .start-tile-grip-x {
-  right: -5px;
+  right: -10px;
   top: 0;
   bottom: 26px;
-  width: 12px;
+  width: 10px;
   cursor: ew-resize;
-  background: linear-gradient(to right, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.45));
-  border-radius: 0 3px 3px 0;
+  background: linear-gradient(to right, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.3));
+  border-radius: 0 2px 2px 0;
 }
 
 .start-tile-grip-y {
   left: 0;
   right: 0;
-  bottom: -5px;
-  height: 12px;
+  bottom: -10px;
+  height: 10px;
   cursor: ns-resize;
-  background: linear-gradient(to bottom, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.45));
-  border-radius: 0 0 3px 3px;
+  background: linear-gradient(to bottom, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.3));
+  border-radius: 0 0 2px 2px;
 }
 
 .start-tile-art {

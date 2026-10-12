@@ -182,9 +182,13 @@ export function renderTileGrid(grid) {
       return;
     }
     var tile = buildTile(entry, pin);
-    // A drag in progress survives the rebuild that a reorder triggers.
+    // A drag in progress survives the rebuild that a reorder triggers: the
+    // tile stays lifted, and stays under the pointer.
     if (drag && drag.moved && drag.appId === pin.appId) {
       tile.classList.add('is-dragging');
+      if (drag.lift) {
+        tile.style.translate = drag.lift;
+      }
     }
     tileNodes[pin.appId] = tile;
     grid.appendChild(tile);
@@ -264,6 +268,9 @@ function beginDrag(grid, target, origin) {
     // Reference rect captured once, so a resize does not chase its own tail
     // as the tile grows.
     ref: tile.getBoundingClientRect(),
+    // Current offset of the lifted tile, kept so a reorder rebuild can put it
+    // back under the pointer.
+    lift: '',
     moved: false
   };
   if (!grip) {
@@ -285,10 +292,25 @@ function onDragMove() {
   }
 
   if (drag.mode === 'move') {
+    liftToPointer(drag, pos);
     reorderToPointer(drag.grid, pos);
     return;
   }
   resizeToPointer(drag, pos);
+}
+
+// Win10 lifts the tile out of the grid and carries it under the pointer while
+// you drag; the other tiles reflow around it. The offset is measured in
+// client pixels because the stage is CSS-scaled.
+function liftToPointer(state, pos) {
+  var node = tileNodes[state.appId];
+  if (!node) {
+    return;
+  }
+  var from = tracker.toClient(state.startX, state.startY);
+  var to = tracker.toClient(pos.x, pos.y);
+  state.lift = (to.x - from.x) + 'px ' + (to.y - from.y) + 'px';
+  node.style.translate = state.lift;
 }
 
 // Insert before the first tile whose centre is to the right of the
@@ -353,6 +375,12 @@ function endDrag(event) {
     window.setTimeout(function () {
       swallowClick = false;
     }, 250);
+  }
+  var node = tileNodes[drag.appId];
+  if (node) {
+    // Drop the tile back into its new slot in the grid.
+    node.classList.remove('is-dragging');
+    node.style.translate = '';
   }
   drag = null;
 }
