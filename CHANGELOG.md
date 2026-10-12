@@ -3,6 +3,29 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.1.2] - A press can become a drag again
+
+2026-10-12
+
+### Added
+
+- Routed presses that are the echo of a real device press are marked `simEcho` (`cursor.js`), so a surface that follows a press through its lifecycle can tell the echo from the press itself
+
+### Removed
+
+- `starttiles.js`'s `swallowClick`: with the launch decided on release, there is no click left to swallow
+
+### Changed
+
+- `starttiles.js`: a tile launches when its gesture ends up having been a tap, decided in `endDrag` — not on the click, which arrives in the same tick as the press that routed it and therefore always won the race. A press that moved reorders, a press on a resize handle resizes, and a cancelled touch does neither
+- `starttiles.js`: a tile lifts (`is-dragging`) only once the press has actually become a drag, instead of on every press
+- `desktop.js`: echoes are skipped by the mark rather than by the pointer-lock test, so they are skipped whether or not the pointer happens to be captured
+
+### Fixed
+
+- Start tiles could not be dragged at all: clicking one opened the app instantly with no hold, because the launch happened on the routed click before any drag could begin
+- Desktop icons opened on a single click for the same reason — the echo and the real press counted as two taps, so one click read as a double-click
+
 ## [1.1.1] - The cursor scales with the emulated screen
 
 2026-10-12

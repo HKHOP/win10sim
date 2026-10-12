@@ -242,12 +242,25 @@ export function createCursor(stage) {
     };
   }
 
+  // A routed press that is the echo of a real device press is marked as one.
+  // The echo is delivered in the same tick as the press that caused it, and it
+  // arrives BEFORE that press reaches the surfaces that follow a press through
+  // its lifecycle (drags), so without the mark a single physical press reads as
+  // two presses and the echo wins the race: a tile would launch before it could
+  // be dragged anywhere. Those surfaces skip echoes and follow the device press.
+  function markEcho(event, source) {
+    if (source && source.isTrusted) {
+      event.simEcho = true;
+    }
+    return event;
+  }
+
   function synthDown(source) {
     var target = targetUnderCursor();
     if (!target) {
       return;
     }
-    target.dispatchEvent(new MouseEvent('mousedown', eventOpts(source, clientPoint())));
+    target.dispatchEvent(markEcho(new MouseEvent('mousedown', eventOpts(source, clientPoint())), source));
     if (target.focus && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) {
       target.focus();
     }
@@ -259,7 +272,7 @@ export function createCursor(stage) {
     if (!target) {
       return;
     }
-    target.dispatchEvent(new MouseEvent('mouseup', eventOpts(source, clientPoint())));
+    target.dispatchEvent(markEcho(new MouseEvent('mouseup', eventOpts(source, clientPoint())), source));
   }
 
   function synthTap(source) {
@@ -267,7 +280,7 @@ export function createCursor(stage) {
     if (!target) {
       return;
     }
-    target.dispatchEvent(new MouseEvent('click', eventOpts(source, clientPoint())));
+    target.dispatchEvent(markEcho(new MouseEvent('click', eventOpts(source, clientPoint())), source));
     updateHover(target);
   }
 

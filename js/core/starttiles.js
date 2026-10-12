@@ -25,8 +25,6 @@ var tileNodes = {};
 var launchHandler = null;
 var tracker = null;
 var drag = null;
-// Set when a gesture ended in a drag, so the release click does not launch.
-var swallowClick = false;
 
 function tileSizeClass(size) {
   return 'start-tile-' + (size || 'medium');
@@ -97,14 +95,12 @@ function buildTile(entry, pin) {
   }
   buildGrips(tile);
 
+  // A press is not a launch until it is over: the tile launches when the
+  // gesture that press began turns out to have been a tap, not here. A click
+  // arrives in the same tick as the press that routed it — before a drag could
+  // possibly begin — so launching here meant no tile could ever be dragged.
   tile.addEventListener('click', function (event) {
     event.stopPropagation();
-    if (swallowClick) {
-      // The gesture was a drag/reorder, not a launch.
-      swallowClick = false;
-      return;
-    }
-    onLaunchTile(entry.id);
   });
 
   // Right-press opens Win10's tile menu: unpin, resize, live tile on/off.
@@ -215,12 +211,12 @@ function appEntryFor(appId) {
 // down+up into one instant, so only a device press can show a drag. The real
 // press says nothing about where the pointer pointed (it lands on the capture
 // layer, or is retargeted at the locked stage), so the target is hit-tested
-// under the emulated cursor.
+// under the emulated cursor. Its routed echo is marked and skipped: it would be
+// a second press for a gesture that is already running.
 function installGestures(grid) {
-  // Routed presses (the emulated cursor's own clicks, touch holds) start a
-  // gesture on the spot; a real press behind them takes over.
+  // Touch holds, and routed presses that are not echoes, start a gesture.
   grid.addEventListener('mousedown', function (event) {
-    if (!event.isTrusted) {
+    if (!event.isTrusted && !event.simEcho) {
       beginDrag(grid, event.target, 'synthetic');
     }
   });
@@ -273,9 +269,6 @@ function beginDrag(grid, target, origin) {
     lift: '',
     moved: false
   };
-  if (!grip) {
-    tile.classList.add('is-dragging');
-  }
 }
 
 function onDragMove() {
@@ -289,6 +282,11 @@ function onDragMove() {
       return;
     }
     drag.moved = true;
+    // The tile only lifts once the press has actually become a drag: a plain
+    // press must not look like it is already moving one.
+    if (drag.mode === 'move') {
+      liftTile(drag);
+    }
   }
 
   if (drag.mode === 'move') {
@@ -297,6 +295,13 @@ function onDragMove() {
     return;
   }
   resizeToPointer(drag, pos);
+}
+
+function liftTile(state) {
+  var node = tileNodes[state.appId];
+  if (node) {
+    node.classList.add('is-dragging');
+  }
 }
 
 // Win10 lifts the tile out of the grid and carries it under the pointer while
@@ -361,28 +366,37 @@ function gridTileNodes(grid) {
   return out;
 }
 
+// The end of the gesture is where a press becomes something: a press that
+// never moved was a tap and launches the app, one that moved was a reorder or
+// a resize and must not launch anything. Deciding here rather than on the
+// click is what lets a press turn into a drag at all.
 function endDrag(event) {
   if (!drag) {
     return;
   }
-  if (!event.isTrusted && drag.origin === 'real') {
-    // Routed echo of a live real press: wait for the real release.
+  if (event && event.simEcho) {
+    // The echo of a press that is still live: its own release follows.
     return;
   }
-  if (drag.moved) {
-    // The release must not read as a launch.
-    swallowClick = true;
-    window.setTimeout(function () {
-      swallowClick = false;
-    }, 250);
+  if (!event.isTrusted && drag.origin === 'real') {
+    // Routed release of a live real press: wait for the real release.
+    return;
   }
-  var node = tileNodes[drag.appId];
+  // A cancelled touch never launched anything: the gesture ends as neither a
+  // tap nor a reorder.
+  var tap = !drag.moved && drag.mode === 'move' &&
+    (!event || event.type !== 'touchcancel');
+  var appId = drag.appId;
+  var node = tileNodes[appId];
+  drag = null;
   if (node) {
     // Drop the tile back into its new slot in the grid.
     node.classList.remove('is-dragging');
     node.style.translate = '';
   }
-  drag = null;
+  if (tap) {
+    onLaunchTile(appId);
+  }
 }
 
 // --- Live tiles ----------------------------------------------------------

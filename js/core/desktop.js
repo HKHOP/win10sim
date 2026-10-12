@@ -235,13 +235,11 @@ export function createDesktop(cursor, stage) {
         beginPress(hit.entry, !!(event.ctrlKey || event.metaKey), 'real');
       }
     } else {
-      // While pointer-locked, cursor.js routes the real press as a
-      // synthetic down/up pair delivered inside the SAME real mousedown,
-      // i.e. just before the real events land. Counting both halves would
-      // register one physical click as two taps and open icons on a
-      // single click, so the routed echo is dropped and only the real
-      // press lifecycle (which supports drags) counts.
-      if (document.pointerLockElement === stage) {
+      // A routed press that is only the echo of the device press driving this
+      // gesture (cursor.js marks it): counting it would make the echo and the
+      // real press two taps, so one click would read as a double-click and
+      // open the icon.
+      if (event.simEcho) {
         return;
       }
       if (!press && event.target && icons.contains(event.target)) {
@@ -337,6 +335,10 @@ export function createDesktop(cursor, stage) {
 
   window.addEventListener('mouseup', function (event) {
     if (!press) {
+      return;
+    }
+    if (event.simEcho) {
+      // The echo of the press that is still live: its own release follows.
       return;
     }
     if (!event.isTrusted && press.origin === 'real') {
