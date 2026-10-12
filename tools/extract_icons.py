@@ -15,21 +15,22 @@ import os
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHELL32 = os.path.join(ROOT, "assets", "win10-shell-icons", "shell32")
+LIBRARY = os.path.join(ROOT, "assets", "win10-shell-icons")
 OUT = os.path.join(ROOT, "assets", "shell")
 SIZE = 128
 
-# Shell32 file name -> output name. These are the icons Windows 10 draws for
-# the profile's known folders and for Quick Access's Home page, so the shell
-# never has to draw an approximation of one.
+# Icon file name -> output name. These are the icons Windows 10 draws for the
+# profile's known folders and for Quick Access's Home page, so the shell never
+# has to draw an approximation of one. Desktop and Downloads are the folder
+# icons from Imageres; the rest are Shell32's.
 WANTED = {
-    "Shell32_dll_104.ico": "desktop-folder",
-    "Shell32_dll_123.ico": "downloads",
-    "Shell32_dll_127.ico": "documents",
-    "Shell32_dll_128.ico": "pictures",
-    "Shell32_dll_129.ico": "music",
-    "Shell32_dll_130.ico": "videos",
-    "Shell32_dll_151.ico": "home",
+    "imageres/Imageres_dll_174.ico": "desktop-folder",
+    "imageres/Imageres_dll_175.ico": "downloads",
+    "shell32/Shell32_dll_127.ico": "documents",
+    "shell32/Shell32_dll_128.ico": "pictures",
+    "shell32/Shell32_dll_129.ico": "music",
+    "shell32/Shell32_dll_130.ico": "videos",
+    "shell32/Shell32_dll_151.ico": "home",
 }
 
 
@@ -49,7 +50,7 @@ def square(im):
 def main():
     os.makedirs(OUT, exist_ok=True)
     for name, label in sorted(WANTED.items(), key=lambda kv: kv[1]):
-        source = os.path.join(SHELL32, name)
+        source = os.path.join(LIBRARY, *name.split("/"))
         out = square(Image.open(source))
         if out.getchannel("A").getextrema()[0] == 255:
             raise SystemExit(
@@ -57,7 +58,7 @@ def main():
             )
         path = os.path.join(OUT, label + ".png")
         out.save(path)
-        print("%-20s -> assets/shell/%s.png" % (name, label))
+        print("%-30s -> assets/shell/%s.png" % (name, label))
 
 
 if __name__ == "__main__":

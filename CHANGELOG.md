@@ -3,6 +3,26 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.6.1] - The right folder icons, and no 3D Objects
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- `3D Objects` is no longer one of the profile's known folders. Windows dropped it along with the old Shell Experience Host, so a current install has no such folder in it
+
+### Changed
+
+- Desktop and Downloads wear the folder icons Windows 10 actually draws for them (from Imageres) instead of the standalone glyphs, so all six known folders now read as one set
+
+### Fixed
+
+- None
+
 ## [1.6.0] - This PC, and a Home to land on
 
 2026-10-12

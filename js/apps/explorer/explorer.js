@@ -25,7 +25,10 @@ import { getPinned, noteUsed } from '../../apis/quickaccess.js';
 // Click selects (Ctrl toggles, double-click/tap opens); history for
 // back/forward, breadcrumb segments, up, and refresh all work.
 
-var PROFILE_FOLDERS = ['3D Objects', 'Desktop', 'Documents', 'Downloads', 'Music', 'Pictures', 'Videos'];
+// The profile's known folders, minus the ones Windows dropped: 3D Objects went
+// away with the old ShellExperienceHost and a current install has no such
+// folder in it.
+var PROFILE_FOLDERS = ['Desktop', 'Documents', 'Downloads', 'Music', 'Pictures', 'Videos'];
 var USER_BASE = 'C:\\Users\\User';
 // Shell folder that lives outside the volume: no path segments, no
 // storage backing — the bin is rendered as a virtual root like This PC.
