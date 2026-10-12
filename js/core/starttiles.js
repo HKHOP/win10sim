@@ -11,7 +11,7 @@
 import { APP_TILE_SVG } from '../global/icons.js';
 import { getApp, listStartApps, launchApp } from './apps.js';
 import { showContextMenu } from './contextmenu.js';
-import { unpinApp, getPins, setPinSize, movePin, START_TILE_COLS } from './startstate.js';
+import { unpinApp, getPins, setPinSize, movePin, getStartSize } from './startstate.js';
 import { createPointerTracker } from './pointer.js';
 
 // A drag only counts once the pointer has travelled this far, so a press
@@ -166,9 +166,6 @@ function onLaunchTile(appId) {
 export function buildTileGrid(cursor, stage) {
   var grid = document.createElement('div');
   grid.className = 'start-tiles';
-  // The store places tiles in cells, so the drawing has to agree with it on how
-  // many there are.
-  grid.style.setProperty('--tile-cols', String(START_TILE_COLS));
   tracker = tracker || createPointerTracker(cursor, stage);
   installGestures(grid);
   return grid;
@@ -180,6 +177,9 @@ export function buildTileGrid(cursor, stage) {
 export function renderTileGrid(grid) {
   clearTimers();
   tileNodes = {};
+  // The store owns the grid's width (the menu is resized in whole columns), so
+  // the drawing reads it rather than keeping its own count.
+  grid.style.setProperty('--tile-cols', String(getStartSize().cols));
   while (grid.firstChild) {
     grid.removeChild(grid.firstChild);
   }

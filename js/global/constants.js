@@ -82,8 +82,9 @@ export const TASKBAR_HEIGHT_PX = 40;
 
 // Start menu: Win10's medium panel, anchored bottom-left over the taskbar.
 // The reference is a used install, so the panel is tall enough for the
-// "Most used" rows, the A-Z list and four rows of tiles at once.
-export const START_W = 640;
+// "Most used" rows, the A-Z list and four rows of tiles at once. Its width and
+// height are not fixed here: the Start menu is sized in whole grid cells, so
+// it is derived from the tile geometry and the stored column/row count.
 export const START_TOP_PX = 62;
 export const START_ANIM_MS = 240;
 export const START_ANIM_CLOSE_MS = 200;
@@ -100,6 +101,16 @@ export const START_RAIL_W = 48;
 // Wide enough for the column's labels and for its fly-out menus, which open
 // inside it.
 export const START_RAIL_OPEN_W = 190;
+// Start tile grid geometry. The CSS draws from these as custom properties, so
+// the resize snapping and the drawing cannot drift apart.
+export const START_TILE_CELL_PX = 108;
+export const START_TILE_GAP_PX = 9;
+export const START_TILE_PAD_PX = 12;
+// A plain tile's cell height: the artwork, the gap above the name, the name.
+export const START_TILE_ROW_PX = 136;
+// How small the Start menu may be dragged: its icon column's own controls plus
+// a couple of rows of tiles.
+export const START_MIN_H_PX = 260;
 // Account identity shown in the menu's account row.
 export const START_ACCOUNT_ROW_ICON_PX = 30;
 

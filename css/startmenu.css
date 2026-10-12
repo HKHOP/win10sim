@@ -10,6 +10,7 @@
   /* Above windows, below context menus. */
   z-index: 1400;
   width: var(--menu-w, 640px);
+  height: var(--menu-h, 666px);
   background: rgba(243, 243, 243, 0.98);
   border: 1px solid rgba(0, 0, 0, 0.16);
   /* Sits on the taskbar, so only the free edges cast a shadow. */
@@ -17,6 +18,38 @@
   overflow: hidden;
   user-select: none;
   transition: width 0.18s ease-out;
+}
+
+/* Win10 resizes Start from its top and right edges: the bottom is pinned to the
+   taskbar and the left to the screen, so those two are what move. The strips
+   sit over the panel's edge, wide enough to grab on a touch screen. */
+.start-resize {
+  position: absolute;
+  z-index: 4;
+  background: transparent;
+}
+
+.start-resize-x {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.start-resize-y {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.start-resize-x:hover,
+.start-resize-x.sim-hover,
+.start-resize-y:hover,
+.start-resize-y.sim-hover {
+  background: rgba(0, 120, 215, 0.28);
 }
 
 /* Win10 slides the Start menu out of the taskbar while it fades in, and
@@ -515,11 +548,11 @@
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(var(--tile-cols, 3), 108px);
+  grid-template-columns: repeat(var(--tile-cols, 3), var(--tile-cell, 108px));
   grid-auto-rows: auto;
-  gap: 9px;
+  gap: var(--tile-gap, 9px);
   align-content: start;
-  padding: 12px;
+  padding: var(--tile-pad, 12px);
   overflow-y: auto;
   overflow-x: hidden;
 }

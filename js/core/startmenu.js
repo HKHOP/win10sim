@@ -19,8 +19,8 @@
 
 import {
   DISPLAY_HEIGHT,
+  DISPLAY_WIDTH,
   TASKBAR_HEIGHT_PX,
-  START_W,
   START_TOP_PX,
   START_ANIM_CLOSE_MS,
   START_LEFT_PX,
@@ -28,6 +28,11 @@ import {
   START_ACCOUNT_H,
   START_RAIL_W,
   START_RAIL_OPEN_W,
+  START_TILE_CELL_PX,
+  START_TILE_GAP_PX,
+  START_TILE_PAD_PX,
+  START_TILE_ROW_PX,
+  START_MIN_H_PX,
   ACCOUNT_NAME,
   ACCOUNT_PIC_SRC,
   START_ACCOUNT_ROW_ICON_PX
@@ -54,6 +59,8 @@ import {
   unpinApp,
   getShowAppList,
   setShowAppList,
+  getStartSize,
+  setStartSize,
   subscribeStartState
 } from './startstate.js';
 import {
@@ -65,6 +72,7 @@ import {
   highlightRunningTiles,
   setTileLaunchHandler
 } from './starttiles.js';
+import { createPointerTracker } from './pointer.js';
 
 var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
@@ -79,6 +87,8 @@ var rows = [];
 var open = false;
 var runningApps = {};
 var openListeners = [];
+// Where the emulated pointer is, for the resize edges.
+var tracker = null;
 // 'apps' = the app list sits beside the tiles, 'tiles' = pinned apps only.
 var view = 'apps';
 // Touch has no hover, so a tap on the icon column latches it open instead.
@@ -100,6 +110,147 @@ function emitOpen() {
 // like Win10 — the menu never floats above it.
 function menuHeight() {
   return DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX - START_TOP_PX;
+}
+
+// --- Resizing: Win10 lets Start be dragged bigger and snaps it to whole tiles
+
+// The menu is sized in grid cells, and drawn from them, so the width it snaps
+// to is always a whole number of tile columns and the height a whole number of
+// tile rows. That is what lets a bigger menu mean more tiles rather than a
+// longer scroll.
+function menuWidth(cols, listW) {
+  return START_RAIL_W + listW + START_TILE_PAD_PX * 2 +
+    cols * START_TILE_CELL_PX + (cols - 1) * START_TILE_GAP_PX;
+}
+
+function menuHeightForRows(rows) {
+  return START_TILE_PAD_PX * 2 + rows * START_TILE_ROW_PX +
+    (rows - 1) * START_TILE_GAP_PX;
+}
+
+// The widest the menu may get: the whole display, less the icon column and one
+// column of tiles.
+function maxMenuWidth(listW) {
+  var fit = DISPLAY_WIDTH - START_RAIL_W - listW;
+  var cols = Math.floor((fit - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+    (START_TILE_CELL_PX + START_TILE_GAP_PX));
+  return menuWidth(Math.max(1, cols), listW);
+}
+
+// The app list takes its own width only while it is showing; the tile grid is
+// sized for the worst case so it always fits in both views.
+function listWidth() {
+  return view === 'apps' ? START_LIST_W : 0;
+}
+
+function applyStartSize() {
+  var size = getStartSize();
+  var listW = listWidth();
+  var w = Math.min(menuWidth(size.cols, listW), maxMenuWidth(listW));
+  var h = Math.max(START_MIN_H_PX, Math.min(menuHeightForRows(size.rows), menuHeight()));
+  menuEl.style.setProperty('--menu-w', w + 'px');
+  menuEl.style.setProperty('--menu-h', h + 'px');
+  // The bottom edge is pinned to the taskbar, so the top is whatever is left.
+  menuEl.style.top = (DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX - h) + 'px';
+}
+
+// Which column count a dragged width means, and the other way round. The
+// pointer is measured against the edge it is dragging, and the result snaps to
+// the nearest whole cell.
+function colsForWidth(px, listW) {
+  var fixed = START_RAIL_W + listW + START_TILE_PAD_PX * 2;
+  var raw = (px - fixed + START_TILE_GAP_PX) / (START_TILE_CELL_PX + START_TILE_GAP_PX);
+  return Math.max(1, Math.min(Math.round(raw), maxCols(listW)));
+}
+
+function rowsForHeight(px) {
+  var raw = (px - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+    (START_TILE_ROW_PX + START_TILE_GAP_PX);
+  return Math.max(1, Math.min(Math.round(raw), maxRows()));
+}
+
+function maxCols(listW) {
+  var fit = DISPLAY_WIDTH - START_RAIL_W - listW;
+  return Math.max(1, Math.floor((fit - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+    (START_TILE_CELL_PX + START_TILE_GAP_PX)));
+}
+
+function maxRows() {
+  return Math.max(1, Math.floor((menuHeight() - START_TILE_PAD_PX * 2 + START_TILE_GAP_PX) /
+    (START_TILE_ROW_PX + START_TILE_GAP_PX)));
+}
+
+// The gesture. The press has to be the device's own, because a routed press
+// compresses down+up into one instant; the edge being dragged decides which
+// way the size changes, and the Start state store does the snapping.
+var resize = null;
+
+function beginResize(axis) {
+  if (!resize) {
+    resize = { axis: axis };
+  }
+}
+
+function onResizeMove() {
+  if (!resize || !tracker) {
+    return;
+  }
+  var pos = tracker.position();
+  var size = getStartSize();
+  if (resize.axis === 'x') {
+    setStartSize(colsForWidth(pos.x, listWidth()), size.rows);
+  } else {
+    // The menu's bottom edge is pinned, so its height is the distance from the
+    // pointer down to that edge.
+    setStartSize(size.cols, rowsForHeight(DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX - pos.y));
+  }
+  applyStartSize();
+}
+
+function endResize() {
+  resize = null;
+}
+
+function buildResizeHandles() {
+  ['x', 'y'].forEach(function (axis) {
+    var handle = document.createElement('div');
+    handle.className = 'start-resize start-resize-' + axis;
+    handle.dataset.axis = axis;
+    menuEl.appendChild(handle);
+  });
+}
+
+// A press on a handle is the only press in the menu that starts a gesture of
+// its own, so the echoes are dropped here as they are for the tiles: the
+// device press behind them is the one that counts.
+function installResizeGestures() {
+  menuEl.addEventListener('mousedown', function (event) {
+    if (event.simEcho || !event.target || !event.target.closest) {
+      return;
+    }
+    var handle = event.target.closest('.start-resize');
+    if (handle) {
+      beginResize(handle.dataset.axis);
+    }
+  });
+  window.addEventListener('mousedown', function (event) {
+    if (!event.isTrusted || !tracker) {
+      return;
+    }
+    var pos = tracker.position();
+    var client = tracker.toClient(pos.x, pos.y);
+    var target = tracker.hitTest(client.x, client.y);
+    var handle = target && target.closest ? target.closest('.start-resize') : null;
+    if (handle) {
+      beginResize(handle.dataset.axis);
+    }
+  });
+  window.addEventListener('mousemove', onResizeMove);
+  window.addEventListener('touchmove', onResizeMove, { passive: true });
+  window.addEventListener('mouseup', endResize);
+  window.addEventListener('touchend', endResize);
+  window.addEventListener('touchcancel', endResize);
+  window.addEventListener('blur', endResize);
 }
 
 function sectionHeader(text, letter) {
@@ -474,6 +625,8 @@ function viewButton(name, label, glyph) {
 function applyRail() {
   menuEl.classList.toggle('show-app-list', view === 'apps');
   listEl.hidden = view !== 'apps';
+  // The width belongs to the view: the app list's column is in it or it is not.
+  applyStartSize();
   Object.keys(viewButtons).forEach(function (name) {
     var active = name === view;
     viewButtons[name].classList.toggle('is-selected', active);
@@ -503,17 +656,20 @@ function latchRail() {
 // --- Build ----------------------------------------------------------------
 
 export function buildStartMenu(cursor, stage) {
+  tracker = createPointerTracker(cursor, stage);
   menuEl = document.createElement('div');
   menuEl.className = 'start-menu';
   menuEl.hidden = true;
   menuEl.style.left = START_LEFT_PX + 'px';
-  menuEl.style.top = START_TOP_PX + 'px';
-  menuEl.style.height = menuHeight() + 'px';
   // The panel and column widths, handed to the CSS that widens both on hover.
-  menuEl.style.setProperty('--menu-w', START_W + 'px');
   menuEl.style.setProperty('--rail-w', START_RAIL_W + 'px');
   menuEl.style.setProperty('--rail-w-open', START_RAIL_OPEN_W + 'px');
   menuEl.style.setProperty('--list-w', START_LIST_W + 'px');
+  // The tile grid draws from the same geometry the resize snapping measures,
+  // so a snapped menu and the grid inside it cannot disagree.
+  menuEl.style.setProperty('--tile-cell', START_TILE_CELL_PX + 'px');
+  menuEl.style.setProperty('--tile-gap', START_TILE_GAP_PX + 'px');
+  menuEl.style.setProperty('--tile-pad', START_TILE_PAD_PX + 'px');
 
   railEl = document.createElement('div');
   railEl.className = 'start-rail';
@@ -634,6 +790,8 @@ export function buildStartMenu(cursor, stage) {
   menuEl.appendChild(railEl);
   menuEl.appendChild(listEl);
   menuEl.appendChild(tileGrid);
+  buildResizeHandles();
+  installResizeGestures();
 
   // A tap inside the menu but off the column drops the touch latch, so the
   // column does not stay open after the finger is done with it.
@@ -647,6 +805,7 @@ export function buildStartMenu(cursor, stage) {
 
   // The stored "Show app list" choice decides which view Start opens in.
   setView(getShowAppList() ? 'apps' : 'tiles', false);
+  applyStartSize();
 
   // The registry and the Start layout can change underneath the menu, so
   // re-render whenever either does. A closed menu re-renders on open.

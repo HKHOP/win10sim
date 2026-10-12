@@ -3,6 +3,32 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.4.0] - The Start menu resizes, snapped to whole tiles
+
+2026-10-12
+
+### Added
+
+- Start is resizable from its **top and right edges**, like Win10: the bottom stays pinned to the taskbar and the left to the screen edge, and the panel follows the pointer while it is dragged
+- `.start-resize` handles: grab strips on those two edges, wide enough to take on a touch screen, tinted while the pointer is on them
+- The menu's size is stored **in grid cells** (`startCols` / `startRows`) alongside the rest of the Start layout, so it is remembered between sessions like Win10 remembers it
+- `getStartSize()` / `setStartSize()` in `startstate.js`, and `fitPinsToColumns()` to settle the layout when columns are taken away
+- `START_TILE_CELL_PX`, `START_TILE_GAP_PX`, `START_TILE_PAD_PX`, `START_TILE_ROW_PX` and `START_MIN_H_PX` in `constants.js`: the grid geometry the snapping measures, handed to the CSS as custom properties so the snapping and the drawing cannot drift apart
+
+### Removed
+
+- `START_W`: the panel's width is derived from its columns now rather than being a fixed number
+
+### Changed
+
+- `startstate.js`: the grid's column count is the menu's stored width, so a wider menu really is more columns — tiles are placed in it, and the tile grid draws `--tile-cols` from it
+- Widening leaves the layout alone (tiles stay where they were put, new columns open beside them); narrowing pulls the tiles in and repacks them in reading order so none end up on top of another
+- A menu cannot be squeezed narrower than a wide or large tile is wide: the column count stops at the widest tile on the grid
+
+### Fixed
+
+- None
+
 ## [1.3.3] - No resize bars on the tiles
 
 2026-10-12

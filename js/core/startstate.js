@@ -14,8 +14,13 @@ var MAX_MOST_USED = 6;
 var RECENT_DAYS = 7;
 var DAY_MS = 24 * 60 * 60 * 1000;
 var TILE_SIZES = ['small', 'medium', 'wide', 'large'];
-// The Start tile grid is as wide as it is drawn in CSS; both sides read this.
-export var START_TILE_COLS = 3;
+// The Start tile grid as it starts out: three columns and four rows of tiles,
+// which is the size the menu opens at before the user resizes it.
+var DEFAULT_START_COLS = 3;
+var DEFAULT_START_ROWS = 4;
+// Ceilings, so a resize gesture cannot size the menu past the display.
+var MAX_START_COLS = 6;
+var MAX_START_ROWS = 5;
 
 var state = {
   // appId -> launch count (Win10's Most used ordering key).
@@ -24,8 +29,12 @@ var state = {
   lastLaunch: {},
   // appId -> epoch ms the app first appeared in this profile.
   firstSeen: {},
-  // [{ appId, size }] in tile order; the tile grid reads this.
+  // [{ appId, size, col, row }] in tile order; the tile grid reads this.
   pins: [],
+  // The menu's size in grid cells: Win10 lets Start be dragged bigger and
+  // smaller and remembers the size the user left it at.
+  startCols: DEFAULT_START_COLS,
+  startRows: DEFAULT_START_ROWS,
   // Settings > Personalization > Start > "Show app list": when off, Start
   // shows the tiles alone and the rail offers a way back to the list.
   showAppList: true
@@ -55,6 +64,8 @@ function snapshot() {
   return {
     launches: state.launches,
     pins: state.pins,
+    startCols: state.startCols,
+    startRows: state.startRows,
     showAppList: state.showAppList
   };
 }
@@ -142,6 +153,16 @@ function mergeState(stored) {
   if (typeof stored.showAppList === 'boolean') {
     state.showAppList = stored.showAppList;
   }
+  state.startCols = clampInt(stored.startCols, DEFAULT_START_COLS, 1, MAX_START_COLS);
+  state.startRows = clampInt(stored.startRows, DEFAULT_START_ROWS, 1, MAX_START_ROWS);
+}
+
+function clampInt(value, fallback, min, max) {
+  var n = Number(value);
+  if (!isFinite(n)) {
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, Math.round(n)));
 }
 
 // Stamps apps that shipped with the profile as old entries (so a used
@@ -280,6 +301,70 @@ export function getRecentlyAdded(limit) {
     .slice(0, max);
 }
 
+// The Start menu size -------------------------------------------------------
+
+// Win10 snaps the menu to whole tiles as it is dragged and remembers the size
+// between sessions.
+export function getStartSize() {
+  return {
+    cols: gridCols(),
+    rows: clampInt(state.startRows, DEFAULT_START_ROWS, 1, MAX_START_ROWS)
+  };
+}
+
+// The narrowest the grid may be: a wide or large tile needs two columns to sit
+// in at all, so the menu cannot be squeezed past what is on it.
+function minCols() {
+  var widest = 1;
+  state.pins.forEach(function (pin) {
+    widest = Math.max(widest, spanOf(pin.size)[0]);
+  });
+  return widest;
+}
+
+export function setStartSize(cols, rows) {
+  var nextCols = clampInt(cols, DEFAULT_START_COLS, minCols(), MAX_START_COLS);
+  var nextRows = clampInt(rows, DEFAULT_START_ROWS, 1, MAX_START_ROWS);
+  if (nextCols === gridCols() && nextRows === getStartSize().rows) {
+    return false;
+  }
+  var narrowed = nextCols < gridCols();
+  state.startCols = nextCols;
+  state.startRows = nextRows;
+  // Widening leaves the layout alone: the tiles stay where they were put and
+  // the new columns open up beside them. Narrowing takes columns away, so the
+  // tiles are packed back into the grid that is left.
+  fitPinsToColumns(narrowed);
+  pendingSave = true;
+  save();
+  emit();
+  return true;
+}
+
+// Pulls every tile inside the columns that are left, and — when columns were
+// lost — repacks them in reading order so none of them end up on top of
+// another.
+function fitPinsToColumns(reflow) {
+  var cols = gridCols();
+  state.pins.forEach(function (pin) {
+    pin.col = Math.max(0, Math.min(pin.col, cols - spanOf(pin.size)[0]));
+  });
+  if (!reflow) {
+    return;
+  }
+  var order = state.pins.slice().sort(function (a, b) {
+    return (a.row - b.row) || (a.col - b.col);
+  });
+  state.pins = [];
+  order.forEach(function (pin) {
+    var span = spanOf(pin.size);
+    var spot = firstFreeCell(state.pins, 0, 0, span[0], span[1], null);
+    pin.col = Math.min(spot.col, Math.max(0, cols - span[0]));
+    pin.row = spot.row;
+    state.pins.push(pin);
+  });
+}
+
 // App list visibility -------------------------------------------------------
 
 // True when Start opens on the app list beside the tiles (the default).
@@ -314,6 +399,12 @@ var TILE_SPANS = {
 // How far the reflow below may run before we give up looking for room.
 var MAX_PLACEMENT_ROWS = 200;
 
+// How wide the grid is right now: the menu is resized in whole columns, so the
+// grid the user asked for and the grid tiles are placed in are the same one.
+function gridCols() {
+  return clampInt(state.startCols, DEFAULT_START_COLS, 1, MAX_START_COLS);
+}
+
 function spanOf(size) {
   return TILE_SPANS[size] || TILE_SPANS.medium;
 }
@@ -343,12 +434,13 @@ function cellTaken(pins, col, row, w, h, skipAppId) {
 // the column the tile already sits in so a reflow drops it straight down
 // rather than across the grid.
 function firstFreeCell(pins, fromCol, fromRow, w, h, skipAppId) {
+  var cols = gridCols();
   for (var r = Math.max(0, fromRow); r < fromRow + MAX_PLACEMENT_ROWS; r++) {
-    if (fromCol + w <= START_TILE_COLS && !cellTaken(pins, fromCol, r, w, h, skipAppId)) {
+    if (fromCol + w <= cols && !cellTaken(pins, fromCol, r, w, h, skipAppId)) {
       return { col: fromCol, row: r };
     }
-    for (var c = 0; c < START_TILE_COLS; c++) {
-      if (c === fromCol || c + w > START_TILE_COLS) {
+    for (var c = 0; c < cols; c++) {
+      if (c === fromCol || c + w > cols) {
         continue;
       }
       if (!cellTaken(pins, c, r, w, h, skipAppId)) {
@@ -386,7 +478,7 @@ function placePin(pins, pin, col, row) {
   if (pin.col !== col || pin.row !== row) {
     moved = true;
   }
-  pin.col = Math.max(0, Math.min(col, START_TILE_COLS - span[0]));
+  pin.col = Math.max(0, Math.min(col, gridCols() - span[0]));
   pin.row = Math.max(0, row);
   for (var guard = 0; guard < pins.length * 4 + 8; guard++) {
     var hit = tileOverlapping(pins, pin);
