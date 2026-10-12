@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.3.3] - No resize bars on the tiles
+
+2026-10-12
+
+### Added
+
+- None
+
+### Removed
+
+- The tile resize handles (`.start-tile-grip`): the blue gradient bars that appeared down a hovered tile's right edge and under its label, and with them the edge-drag resize they took
+- `starttiles.js`'s `buildGrips`, the grip check in `beginDrag`, and `resizeToPointer`
+
+### Changed
+
+- `starttiles.js`: a tile gesture is always a move now, so the gesture no longer carries a mode
+- Tiles still resize — from the tile menu's Small / Medium / Wide / Large, which is where Win10 puts Resize too
+
+### Fixed
+
+- None
+
 ## [1.3.2] - The drop target stops running away from the pointer
 
 2026-10-12

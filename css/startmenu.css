@@ -559,44 +559,6 @@
   outline: none;
 }
 
-/* Win10's resize handles on a tile's right and bottom edges. They sit wholly
-   outside the tile, and an invisible handle takes no presses at all — a
-   transparent grip would otherwise swallow the grab meant for the tile. */
-.start-tile-grip {
-  position: absolute;
-  z-index: 3;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.1s ease-out;
-}
-
-.start-tile:hover .start-tile-grip,
-.start-tile:focus-visible .start-tile-grip,
-.start-tile.sim-hover .start-tile-grip {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.start-tile-grip-x {
-  right: -10px;
-  top: 0;
-  bottom: 26px;
-  width: 10px;
-  cursor: ew-resize;
-  background: linear-gradient(to right, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.3));
-  border-radius: 0 2px 2px 0;
-}
-
-.start-tile-grip-y {
-  left: 0;
-  right: 0;
-  bottom: -10px;
-  height: 10px;
-  cursor: ns-resize;
-  background: linear-gradient(to bottom, rgba(0, 120, 215, 0), rgba(0, 120, 215, 0.3));
-  border-radius: 0 0 2px 2px;
-}
-
 .start-tile-art {
   position: relative;
   flex: 0 0 auto;

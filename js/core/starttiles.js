@@ -76,18 +76,10 @@ function buildTileArt(entry, pinSize) {
   return art;
 }
 
-// Win10's resize handles: one on the right edge (medium <-> wide) and one
-// along the bottom (medium <-> large). They show on hover like the real
-// ones, and are sized for touch. The grip does not stop the press from
-// reaching the grid: beginDrag checks for a grip first and takes over.
-function buildGrips(tile) {
-  ['x', 'y'].forEach(function (axis) {
-    var grip = document.createElement('div');
-    grip.className = 'start-tile-grip start-tile-grip-' + axis;
-    grip.dataset.axis = axis;
-    tile.appendChild(grip);
-  });
-}
+// Tiles resize from the tile menu (Win10 puts Resize there too) rather than
+// from handles on the tile: handles that appear on hover painted a bar down
+// every tile's edge and under its label, which read as damage to the tile
+// rather than as an affordance.
 
 function buildTile(entry, pin) {
   var tile = document.createElement('div');
@@ -114,7 +106,6 @@ function buildTile(entry, pin) {
   if (label) {
     tile.appendChild(label);
   }
-  buildGrips(tile);
 
   // A press is not a launch until it is over: the tile launches when the
   // gesture that press began turns out to have been a tap, not here. A click
@@ -272,7 +263,6 @@ function beginDrag(grid, target, origin) {
   if (!target || !target.closest) {
     return;
   }
-  var grip = target.closest('.start-tile-grip');
   var tile = target.closest('.start-tile');
   if (!tile) {
     return;
@@ -286,12 +276,8 @@ function beginDrag(grid, target, origin) {
     origin: origin,
     grid: grid,
     appId: appId,
-    mode: grip ? 'size-' + grip.dataset.axis : 'move',
     startX: pos.x,
     startY: pos.y,
-    // Reference rect captured once, so a resize does not chase its own tail
-    // as the tile grows.
-    ref: tile.getBoundingClientRect(),
     // The grid as it stands when the drag begins. Moving a tile changes this
     // layout, so the cell maths reads this instead of the live one and a still
     // pointer keeps meaning the same cell all drag long.
@@ -314,12 +300,7 @@ function onDragMove() {
     // No ghost until the press has actually moved: a plain press must not
     // leave a drop target behind.
   }
-
-  if (drag.mode === 'move') {
-    reorderToPointer(drag.grid, pos);
-    return;
-  }
-  resizeToPointer(drag, pos);
+  reorderToPointer(drag.grid, pos);
 }
 
 // The grid's own geometry, read back from the layout the browser resolved:
@@ -442,25 +423,10 @@ export function cancelTileDrag() {
   hideGhost();
 }
 
-// Edge drag snaps to the neighbouring size, like Win10: pulling the right
-// edge past the middle widens the tile, the bottom edge past the middle
-// makes it large, and pulling back shrinks it again.
-function resizeToPointer(state, pos) {
-  var client = tracker.toClient(pos.x, pos.y);
-  var ref = state.ref;
-  if (state.mode === 'size-x') {
-    var wide = client.x > ref.left + ref.width / 2;
-    setPinSize(state.appId, wide ? 'wide' : 'medium');
-    return;
-  }
-  var large = client.y > ref.top + ref.height / 2;
-  setPinSize(state.appId, large ? 'large' : 'medium');
-}
-
 // The end of the gesture is where a press becomes something: a press that
-// never moved was a tap and launches the app, one that moved was a reorder or
-// a resize and must not launch anything. Deciding here rather than on the
-// click is what lets a press turn into a drag at all.
+// never moved was a tap and launches the app, one that moved was a reorder and
+// must not launch anything. Deciding here rather than on the click is what lets
+// a press turn into a drag at all.
 function endDrag(event) {
   if (!drag) {
     return;
@@ -475,8 +441,7 @@ function endDrag(event) {
   }
   // A cancelled touch never launched anything: the gesture ends as neither a
   // tap nor a reorder.
-  var tap = !drag.moved && drag.mode === 'move' &&
-    (!event || event.type !== 'touchcancel');
+  var tap = !drag.moved && (!event || event.type !== 'touchcancel');
   var appId = drag.appId;
   drag = null;
   hideGhost();
