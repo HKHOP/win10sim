@@ -3,6 +3,28 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.2.0] - F2: the way in without the ceremony
+
+2026-10-12
+
+### Added
+
+- F2 anywhere in the boot sequence drops straight onto the signed-in desktop: the splash, the lock screen and the account are all called off at once. Offered nowhere in the UI — the key is the whole secret
+- `later(fn, ms)` in `boot.js`, so the boot timers are cancelable as a set instead of one by one
+
+### Removed
+
+- None
+
+### Changed
+
+- `boot.js`: the lock root and the lock handle are tracked at module scope so the shortcut can tear the pair down (disposing the lock's clock and listeners) rather than leaving them running behind the desktop
+- `boot.js`: the desktop is built at most once, whichever path gets there first — the secret shortcut or a real sign-in
+
+### Fixed
+
+- None
+
 ## [1.1.2] - A press can become a drag again
 
 2026-10-12

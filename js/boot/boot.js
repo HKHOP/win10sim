@@ -23,6 +23,70 @@ import '../apps/notepad/app.js';
 // (logo and spinner vanish for no reason), a beat of dead black, and the
 // lock screen fades in. Dismissing the lock slides it up to reveal sign-in;
 // signing in lands on the desktop.
+//
+// F2 skips the whole sequence — see skipToDesktop.
+
+var stage = null;
+var cursor = null;
+// The lock + sign-in pair, while it is on screen.
+var lockRoot = null;
+var lock = null;
+// Set the moment the desktop exists, so there is only ever one.
+var signedIn = false;
+// Boot timers, so the shortcut can call the whole sequence off.
+var pending = [];
+
+function later(fn, ms) {
+  var id = window.setTimeout(function () {
+    var at = pending.indexOf(id);
+    if (at >= 0) {
+      pending.splice(at, 1);
+    }
+    fn();
+  }, ms);
+  pending.push(id);
+  return id;
+}
+
+// The secret way in. F2 drops the boot, the lock and the account in one go and
+// lands on the desktop: there is no account here to sign into (every password
+// is accepted), so the sequence has nothing to check, only waiting to do. It is
+// deliberately offered nowhere in the UI — the shortcut is the secret.
+// Captured at the window so it lands before the lock screen's own
+// any-key-dismisses handler.
+window.addEventListener('keydown', function (event) {
+  if (event.key !== 'F2') {
+    return;
+  }
+  event.preventDefault();
+  skipToDesktop();
+}, true);
+
+function skipToDesktop() {
+  if (signedIn || !stage || !cursor) {
+    return;
+  }
+  signedIn = true;
+  while (pending.length) {
+    window.clearTimeout(pending.pop());
+  }
+  if (lock) {
+    lock.dispose();
+    lock = null;
+  }
+  if (lockRoot) {
+    if (lockRoot.parentNode) {
+      lockRoot.parentNode.removeChild(lockRoot);
+    }
+    lockRoot = null;
+  }
+  var bootEl = stage.querySelector('.boot-screen');
+  if (bootEl && bootEl.parentNode) {
+    bootEl.parentNode.removeChild(bootEl);
+  }
+  stage.appendChild(createDesktop(cursor, stage));
+  cursor.setBooted(true);
+}
 
 function buildImage(src, className, alt) {
   var img = document.createElement('img');
@@ -55,14 +119,19 @@ function buildBootScreen() {
   return screen;
 }
 
-function showLockScreen(stage, cursor) {
+function showLockScreen() {
   var bootEl = stage.querySelector('.boot-screen');
 
   var root = document.createElement('div');
   root.className = 'lock-root';
+  lockRoot = root;
 
   root.appendChild(createSignInLayer(
     function insertDesktop() {
+      if (signedIn) {
+        return;
+      }
+      signedIn = true;
       // Underneath: desktop waits while the sign-in fades in two phases.
       stage.insertBefore(createDesktop(cursor, stage), root);
     },
@@ -73,9 +142,9 @@ function showLockScreen(stage, cursor) {
     }
   ));
 
-  var lock = createLockLayer(function () {
+  lock = createLockLayer(function () {
     root.classList.add('dismissed');
-    window.setTimeout(function () {
+    later(function () {
       if (lock.element.parentNode) {
         lock.element.parentNode.removeChild(lock.element);
       }
@@ -95,7 +164,7 @@ function showLockScreen(stage, cursor) {
 
   if (bootEl) {
     bootEl.classList.add('boot-fade');
-    window.setTimeout(function () {
+    later(function () {
       if (bootEl.parentNode) {
         bootEl.parentNode.removeChild(bootEl);
       }
@@ -134,7 +203,7 @@ function init() {
   // the browser's bars eat the screen the stage has to fit into, this is how
   // you hand that screen back.
   createSiteChrome();
-  var stage = document.getElementById('monitor-stage');
+  stage = document.getElementById('monitor-stage');
   if (!stage) {
     return;
   }
@@ -143,11 +212,11 @@ function init() {
   // and take over the cursor for the whole session.
   watchStage(stage);
   // No cursor until boot finishes: the machine is not usable yet.
-  var cursor = createCursor(stage);
+  cursor = createCursor(stage);
 
   var bootEl = stage.querySelector('.boot-screen');
 
-  window.setTimeout(function () {
+  later(function () {
     // The bug: logo goes away for good; the spinner blinks off for 0.1s,
     // comes back, then dies at the end.
     bootEl.querySelector('.boot-logo').classList.add('boot-logo-gone');
@@ -155,16 +224,20 @@ function init() {
     spinnerWrap.style.display = 'none';
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduceMotion) {
-      window.setTimeout(function () {
+      later(function () {
         spinnerWrap.style.display = '';
       }, BOOT_FLICKER_MS);
     }
   }, BOOT_GLITCH_MS);
-  window.setTimeout(function () {
+  later(function () {
     bootEl.querySelector('.boot-spinner-wrap').style.display = 'none';
   }, BOOT_SPINNER_GONE_MS);
-  window.setTimeout(function () {
-    showLockScreen(stage, cursor);
+  later(function () {
+    if (signedIn) {
+      // F2 already dropped us on the desktop; no lock screen in between.
+      return;
+    }
+    showLockScreen();
     cursor.setBooted(true);
   }, BOOT_LOCK_MS);
 }
