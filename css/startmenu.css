@@ -122,9 +122,9 @@
 /* Win10 shows the column's labels to anyone whose pointer is over it, and the
    frozen OS pointer never triggers a real :hover — so startmenu.js decides from
    the emulated cursor itself: .rail-open is set once the pointer has dwelt on
-   the column (anywhere in the strip, not only over a button) and stays set
-   until Start closes. Touch has neither, so a tap opens it and a tap off the
-   column closes it again. */
+   the column (anywhere in the strip, not only over a button), and the
+   hamburger sets or clears it by hand. Touch has no dwell, so a tap on a
+   column button opens it and a tap off the column closes it again. */
 .start-rail {
   display: flex;
   flex-direction: column;

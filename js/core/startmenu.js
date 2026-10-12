@@ -4,10 +4,10 @@
 // power buttons), the app list ("Most used" / "Recently added" / A-Z), and
 // the pinned tile grid.
 //
-// The icon column is glyphs only: Win10 spells out its labels for anyone
-// whose pointer is over the column, and the emulated pointer needs no mouse,
-// so the column widens while the pointer dwells on it (see startmenu.css).
-// Tapping a column button on a touch screen latches it open instead.
+// The icon column is glyphs only: Win10 spells out its labels for anyone whose
+// pointer is over the column, and the emulated pointer needs no mouse, so the
+// column widens while the pointer dwells on it (see startmenu.css). The
+// hamburger opens and shuts it by hand, for a pointer that will not wait.
 //
 // The two column views are Win10's "Show app list" setting: the app list sits
 // beside the tiles, and picking Pinned apps takes it away so the tiles take
@@ -516,7 +516,9 @@ export function closeStartMenu() {
   }
   open = false;
   hidePopovers();
-  // A dwell still running would open the column over the next Start session.
+  // A dwell still running would open the column over the next Start session,
+  // and the next one starts from the strip shut whatever the last one did.
+  railDismissed = false;
   closeRail();
   // Closing mid-drag must not leave a gesture running behind the panel: its
   // drop target would come back the next time Start renders.
@@ -676,6 +678,9 @@ function setView(next, persist) {
 // the app list or the tiles, and only closing Start puts them away. A touch
 // screen has no hover, so a tap on a column button opens it the same way.
 var railTimer = 0;
+// Set when the hamburger closed the column by hand: the dwell must not undo
+// that while the pointer is still sitting on the strip the user just shut.
+var railDismissed = false;
 
 function openRail() {
   menuEl.classList.add('rail-open');
@@ -710,13 +715,20 @@ function pointerOnRail() {
 }
 
 // Opening waits out the dwell, so crossing the strip on the way to the tiles
-// leaves it shut. Nothing here closes it again — only Start closing does.
+// leaves it shut. The dwell never closes anything: the hamburger and closing
+// Start are the only two things that do.
 function onRailPointerMove() {
   // A touch screen has no hover to measure: its column opens on a tap instead.
   if (!open || coarsePointer) {
     return;
   }
-  if (!pointerOnRail() || menuEl.classList.contains('rail-open') || railTimer) {
+  if (!pointerOnRail()) {
+    // The pointer has left the strip, so a column the user closed by hand is
+    // free to open again the next time they dwell on it.
+    railDismissed = false;
+    return;
+  }
+  if (railDismissed || menuEl.classList.contains('rail-open') || railTimer) {
     return;
   }
   railTimer = window.setTimeout(function () {
@@ -725,10 +737,27 @@ function onRailPointerMove() {
   }, START_RAIL_HOVER_MS);
 }
 
+// The hamburger is the column's own open/close switch: Win10 shows the strip
+// permanently but keeps its labels for whoever asks, and a hand-operated
+// pointer has no hover to ask with. A column closed by hand stays shut even
+// with the pointer resting on it, so it only answers again once the pointer has
+// left the strip and come back.
+function toggleRail() {
+  if (menuEl.classList.contains('rail-open')) {
+    railDismissed = true;
+    closeRail();
+  } else {
+    railDismissed = false;
+    openRail();
+  }
+  return menuEl.classList.contains('rail-open');
+}
+
 // A finger has no hover, so a tap on the column holds it open instead of the
 // dwell that opens it under a pointer.
 function latchRail() {
   if (coarsePointer) {
+    railDismissed = false;
     openRail();
   }
 }
@@ -765,13 +794,14 @@ export function buildStartMenu(cursor, stage) {
   hamburger.type = 'button';
   hamburger.className = 'start-hamburger';
   hamburger.innerHTML = HAMBURGER_SVG;
-  hamburger.setAttribute('aria-label', 'Show pinned apps');
-  // The hamburger is Win10's shortcut between the two column views.
+  hamburger.setAttribute('aria-label', 'Show the icon column');
+  // The hamburger is Win10's open/close for the column: pressing it spells the
+  // column's labels out, pressing it again puts them away. Switching between
+  // the two views is the picker's job, further down the column.
   hamburger.addEventListener('click', function (event) {
     event.stopPropagation();
-    latchRail();
-    setView(view === 'apps' ? 'tiles' : 'apps');
-    hamburger.setAttribute('aria-label', view === 'apps' ? 'Show pinned apps' : 'Show app list');
+    var isOpen = toggleRail();
+    hamburger.setAttribute('aria-label', isOpen ? 'Hide the icon column' : 'Show the icon column');
   });
   head.appendChild(hamburger);
 

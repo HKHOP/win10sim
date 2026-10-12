@@ -3,6 +3,27 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.7.4] - The hamburger opens the Start column itself
+
+2026-10-12
+
+### Added
+
+- The hamburger is a real switch: one press spells the column's labels out, the next puts them away, and its `aria-label` says which of the two the next press will do
+
+### Removed
+
+- The hamburger no longer flips between the App list and Pinned apps views - that job belongs to the two view buttons in the column, which always said so
+
+### Changed
+
+- A column the user shut by hand stays shut even with the pointer resting on the strip; the dwell only opens it again once the pointer has left the column and come back
+- Closing Start clears the manual dismissal too, so every Start session begins from the strip shut
+
+### Fixed
+
+- None
+
 ## [1.7.3] - The Start icon column waits to be sure
 
 2026-10-12
