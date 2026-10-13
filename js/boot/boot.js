@@ -12,6 +12,7 @@ import { watchStage } from '../core/stage.js';
 import { createCursor } from '../core/cursor.js';
 import { createDesktop } from '../core/desktop.js';
 import { createSiteChrome } from '../core/sitechrome.js';
+import { createVirtualKeyboard } from '../core/keyboard.js';
 import { createLockLayer } from './lockscreen.js';
 import { createSignInLayer } from './signin.js';
 // App registrations (side effects): taskbar, desktop and Start menu launch
@@ -203,6 +204,7 @@ function init() {
   // the browser's bars eat the screen the stage has to fit into, this is how
   // you hand that screen back.
   createSiteChrome();
+  createVirtualKeyboard();
   stage = document.getElementById('monitor-stage');
   if (!stage) {
     return;

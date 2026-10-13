@@ -392,6 +392,13 @@ export function mountTouchpad(win, driver) {
     if (!driver.isBooted()) {
       return;
     }
+    // A finger that landed on the page's own chrome and then moved is still the
+    // browser's - it is dragging the keyboard by its grip, not steering the
+    // cursor. A gesture already under way is not abandoned when it wanders over
+    // the chrome, because dropping it mid-drag would strand a press.
+    if (!fingerCount() && driver.isExempt(event.target)) {
+      return;
+    }
     event.preventDefault();
     if (fingerCount() === 1) {
       eachTouch(event, function (touch) {
@@ -413,6 +420,9 @@ export function mountTouchpad(win, driver) {
 
   win.addEventListener('touchend', function (event) {
     if (!driver.isBooted()) {
+      return;
+    }
+    if (!fingerCount() && driver.isExempt(event.target)) {
       return;
     }
     event.preventDefault();

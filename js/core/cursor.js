@@ -50,8 +50,10 @@ var INPUT_LAYER_CLASS = 'sim-input-layer';
 
 // Browser chrome, not the emulated OS: it sits above the capture layer on
 // purpose, so its presses belong to the browser and must never be swallowed
-// or routed into the OS (see sitechrome.js).
-var CHROME_SELECTOR = '.site-chrome';
+// or routed into the OS (see sitechrome.js). The virtual keyboard is chrome too
+// and is not a `.site-chrome` button - it is a panel, with its own shape - so it
+// is named here rather than dressed in the button's styles.
+var CHROME_SELECTOR = '.site-chrome, .sim-keyboard';
 
 function isSiteChrome(target) {
   return !!(target && target.closest && target.closest(CHROME_SELECTOR));

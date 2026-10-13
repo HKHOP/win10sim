@@ -1,0 +1,147 @@
+/* The virtual keyboard, and the toggle that puts it away.
+   Page chrome rather than OS UI: it sits above the capture layer with the rest
+   of it, so the emulated cursor can never press a key, and it carries the
+   `.site-chrome` class so the input layer leaves its touches alone. */
+
+.sim-keyboard {
+  position: fixed;
+  /* Above the capture layer (…3100), below the emulated cursor (…600, which
+     is pointer-events:none and only ever draws). The toggle shares the layer. */
+  z-index: 2147483400;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, calc(100vw - 8px));
+  box-sizing: border-box;
+  padding: 4px 6px 8px;
+  border: 1px solid #a6a6a6;
+  border-radius: 6px;
+  background: #d4d4d4;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.35);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  color: #111;
+}
+
+.sim-keyboard[hidden] {
+  display: none;
+}
+
+.sim-keyboard.is-moving {
+  /* A panel placed by left/top must not keep the centring rule, or it jumps
+     away from the finger the moment it is dragged. */
+  transform: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* The drag handle: the grip bar MDL2 draws for exactly this. */
+.kbd-grip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 22px;
+  cursor: grab;
+  /* Without this a touch drag on the grip scrolls the page instead. */
+  touch-action: none;
+  color: #5a5a5a;
+}
+
+.kbd-grip svg {
+  width: 28px;
+  height: 14px;
+  display: block;
+}
+
+.kbd-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kbd-row {
+  display: flex;
+  gap: 4px;
+}
+
+/* A key is a Win10 key: a light face, a hairline, and the shadow along the
+   bottom edge that makes it look pressed-in. */
+.kbd-key {
+  flex: 1 1 0;
+  min-width: 26px;
+  /* 44px is the smallest target a thumb can be trusted with. */
+  height: 44px;
+  padding: 0;
+  border: 1px solid #9b9b9b;
+  border-radius: 4px;
+  background: linear-gradient(#fefefe, #ececec);
+  box-shadow: 0 1.5px 0 #8d8d8d;
+  font: 500 16px/1 'Segoe UI', Tahoma, sans-serif;
+  color: #1a1a1a;
+  /* The keyboard is the browser's, so it keeps a pointer of its own. */
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The symbols page types symbols, so its keys want a little more room. */
+.kbd-key--char {
+  font-size: 17px;
+}
+
+/* The space bar has no label, exactly as in Windows. */
+.kbd-key--space {
+  min-width: 90px;
+}
+
+/* A modifier that is latched says so. */
+.kbd-key.is-on,
+.kbd-key.is-on:hover {
+  background: linear-gradient(#dbe9f7, #c6dcf1);
+  border-color: #0078d7;
+  box-shadow: 0 1.5px 0 #005a9e;
+  color: #004578;
+}
+
+.kbd-key:hover,
+.kbd-key.sim-hover {
+  background: linear-gradient(#f4f9fe, #e3effa);
+  border-color: #0078d7;
+}
+
+.kbd-key:active,
+.kbd-key.is-down {
+  background: linear-gradient(#cfe4f7, #bcd9f2);
+  box-shadow: 0 0.5px 0 #8d8d8d;
+}
+
+.kbd-key:focus-visible {
+  outline: 2px solid #0078d7;
+  outline-offset: 1px;
+}
+
+/* The toggle shares the site-chrome button, and sits between the fullscreen
+   button and the install offer. */
+.site-chrome-keyboard {
+  bottom: 76px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sim-keyboard {
+    transition: box-shadow 0.12s ease-out;
+  }
+}
+
+/* A phone in portrait: the keys are already at their smallest, so the panel
+   gives up its margin and its corners instead of squeezing them further. */
+@media (max-width: 400px) {
+  .sim-keyboard {
+    width: 100vw;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .kbd-key {
+    font-size: 15px;
+  }
+}

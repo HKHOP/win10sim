@@ -52,6 +52,8 @@ import {
   ERROR as MDL2_ERROR,
   INFO as MDL2_INFO,
   DOWNLOAD as MDL2_DOWNLOAD,
+  KEYBOARD as MDL2_KEYBOARD,
+  GRIP_H as MDL2_GRIP_H,
   OPEN_LOCAL as MDL2_OPEN_LOCAL
 } from './mdl2.js';
 
@@ -147,6 +149,11 @@ export const INFO_SVG = MDL2_INFO;
 
 // The page's own install offer, outside the OS: an arrow down to a line.
 export const DOWNLOAD_SVG = MDL2_DOWNLOAD;
+
+// The virtual keyboard, which is page chrome rather than OS: its toggle, and the
+// bar it is dragged by.
+export const KEYBOARD_SVG = MDL2_KEYBOARD;
+export const GRIP_SVG = MDL2_GRIP_H;
 
 // Tile fallback art when an app declares a tile without artwork.
 export const APP_TILE_SVG = MDL2_VIEW_ALL;

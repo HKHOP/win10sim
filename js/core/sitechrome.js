@@ -69,8 +69,10 @@ function canGoFullscreen() {
 }
 
 // A handset is the case this exists for; a desktop browser has its own
-// fullscreen key and a desktop-sized viewport to fit the stage in.
-function isHandheld() {
+// fullscreen key and a desktop-sized viewport to fit the stage in. Exported
+// because the virtual keyboard asks the same question: a machine with a real
+// keyboard under the hands has no use for one drawn on the glass.
+export function isHandheld() {
   if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
     return true;
   }

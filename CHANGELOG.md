@@ -1,7 +1,67 @@
 # Changelog — Windows 10 Simulator
 
 All task completions (not conversations) get a new version section below.
-Format: MAJOR.MINOR.PATCH. Latest version on top.## [1.12.0] - Installable as an app
+Format: MAJOR.MINOR.PATCH. Latest version on top.
+
+## [1.13.0] - A virtual keyboard
+
+2026-10-13
+
+### Added
+
+- `js/core/keyboard.js`: the Windows touch keyboard, as page chrome beside the
+  fullscreen button. It is two pages - letters and symbols behind `?123` - with
+  shift, ctrl, alt, esc, backspace, tab-in-place, the arrow keys, space and
+  return, and it can be dragged anywhere on the screen by its grip bar
+- A toggle button above the fullscreen button puts it away and brings it back.
+  It is offered only on a handset, for the same reason the fullscreen button is:
+  a machine with a keyboard under the hands has no use for one drawn on the glass
+- While it is up it holds the browser's own keyboard down, so there is never a
+  second keyboard over the desktop. `inputmode` is honoured on Android and
+  ignored on iOS, so the one thing both respect is `readonly` - which is safe
+  here because the typing writes to the value directly
+- `js/core/keyinput.js`: the keys and what pressing one does to a field. A press
+  is delivered as the sequence a browser delivers for a real one - keydown, then
+  beforeinput and input if the field accepted it, then keyup - so every app that
+  already listens for keys keeps working. Notepad's Ctrl+S, Explorer's
+  Enter-in-the-address-bar and a popup's Enter-to-submit are ordinary keydown
+  listeners, and none of them asks whether the key was real
+- Held keys repeat as hardware keys do: backspace deletes on the way down and
+  keeps deleting, with a slower first repeat than the rest
+- Sticky ctrl and alt, and a one-shot shift that lets go as soon as it has typed
+  its one character - there is no way to feel a latch through a screen
+- The keyboard opens sitting on top of the emulated taskbar rather than over it,
+  measured from the stage's own scale, and is put back on its feet if a rotation
+  leaves it off screen
+
+### Removed
+
+- None
+
+### Changed
+
+- `CHROME_SELECTOR` in `cursor.js` now names the keyboard panel as well as the
+  `.site-chrome` buttons. It is a panel rather than a button, so dressing it in
+  the button's own styles would be wrong, but it is the same thing to the input
+  layer: chrome the emulated cursor must never press
+- `isHandheld()` is exported from `sitechrome.js`; the keyboard asks the same
+  question the fullscreen button does
+- The MDL2 table grows `KeyboardStandard` (U+E92E) and `GripperBarHorizontal`
+  (U+E76F), so the toggle and the drag handle are the font's own shapes
+
+### Fixed
+
+- A finger that starts on the page's chrome and moves no longer steers the
+  emulated cursor: the touchpad only ignored chrome on `touchstart`, so dragging
+  the keyboard by its grip moved the cursor underneath it. A gesture that
+  *started* on the pad is still not abandoned when the finger crosses the chrome
+  over it, because dropping it mid-drag would strand a press
+- Backspace deleted nothing when there was no selection, because the edit was
+  given an empty replacement for an empty range; it now takes the character in
+  front of the caret
+- A caret range that runs backwards no longer doubles the text around it
+
+## [1.12.0] - Installable as an app
 
 2026-10-13
 

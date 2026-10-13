@@ -31,8 +31,14 @@
 
 /* The install button stacks above the fullscreen button rather than beside it,
    so neither can be pressed by mistake and both keep the same corner. */
-.site-chrome-install {
+/* The install offer stacks above the keyboard toggle, which stacks above the
+   fullscreen button: three buttons, one corner, none of them overlapping. */
+.site-chrome-keyboard {
   bottom: 76px;
+}
+
+.site-chrome-install {
+  bottom: 136px;
 }
 
 .site-chrome svg {

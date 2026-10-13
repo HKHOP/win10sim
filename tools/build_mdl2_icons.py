@@ -97,6 +97,9 @@ GLYPHS = {
     "INFO": (0xE946, "Info"),
     # The install offer on the page's own chrome: an arrow down to a line.
     "DOWNLOAD": (0xE896, "Download"),
+    # The virtual keyboard's own toggle and its drag handle.
+    "KEYBOARD": (0xE92E, "KeyboardStandard"),
+    "GRIP_H": (0xE76F, "GripperBarHorizontal"),
 }
 
 
