@@ -87,7 +87,16 @@ export const BELL_SVG = MDL2_ACTION_CENTER;
 // The network state. The simulated machine has no network at all, and Win10
 // says so with the globe rather than the wifi arcs - the arcs mean "connected
 // to a network", which is the opposite of what is true here.
-export const NETWORK_OFFLINE_SVG = MDL2_GLOBE;
+// The offline state adds the red-circle-white-cross badge (the Windows "no
+// internet" overlay) in the bottom-right of the globe.
+export const NETWORK_OFFLINE_SVG =
+  '<svg viewBox="0 0 1024 1024" aria-hidden="true">' +
+  // Globe (from MDL2 U+E774)
+  '<path fill="currentColor" transform="translate(0,1024) scale(1,-1)" d="M512 1024q70.5 0 136-18.25t122.5-51.5 103.75-80 80-103.75 51.5-122.5 18.25-136-18.25-136-51.5-122.5-80-103.75-103.75-80-122.5-51.5-136-18.25-136 18.25-122.5 51.5-103.75 80-80 103.75-51.5 122.25-18.25 136.25q0 70.5 18.25 136t51.5 122.5 80 103.75 103.75 80 122.25 51.5 136.25 18.25zM916.5 704q-19 40.5-46 76.25t-60 65.25-71.5 52.5-80.5 37.5q18-25 32.5-53t25.75-57.75 19.25-60.25 14-60.5h166.5zM960 512q0 66.5-18.5 128h-181.5q4-32 6-63.75t2-64.25-2-64.25-6-63.75h181.5q18.5 61.5 18.5 128zM512 64q24.5 0 45.75 13.5t39.25 35.5 32.25 49.75 25.25 56.25 18.5 55 11.5 46h-345q4-19.5 11.5-46t18.5-55 25.25-56.25 32.25-49.75 39.25-35.5 45.75-13.5zM695.5 384q4 32 6.25 63.75t2.25 64.25-2.25 64.25-6.25 63.75h-367q-4-32-6.25-63.75t-2.25-64.25 2.25-64.25 6.25-63.75h367zM64 512q0-66.5 18.5-128h181.5q-4 32-6 63.75t-2 64.25 2 64.25 6 63.75h-181.5q-18.5-61.5-18.5-128zM512 960q-24.5 0-45.75-13.5t-39.25-35.5-32.25-49.75-25.25-56.25-18.5-55-11.5-46h345q-4 19.5-11.5 46t-18.5 55-25.25 56.25-32.25 49.75-39.25 35.5-45.75 13.5zM365.5 935.5q-42-14.5-80.5-37.5t-71.5-52.5-60-65.25-46-76.25h166.5q6 30 14 60.5t19.25 60.25 25.75 57.75 32.5 53zM107.5 320q19-40.5 46-76.25t60-65.25 71.5-52.5 80.5-37.5q-18 25-32.5 53t-25.75 57.75-19.25 60.25-14 60.5h-166.5zM658.5 88.5q42 14.5 80.5 37.5t71.5 52.5 60 65.25 46 76.25h-166.5q-6-30-14-60.5t-19.25-60.25-25.75-57.75-32.5-53z"/>' +
+  // Offline badge: red circle with white cross (Windows "no internet" overlay)
+  '<circle cx="768" cy="768" r="128" fill="#e81123"/>' +
+  '<path fill="#fff" d="M720 720l96 96M816 720l-96 96" stroke="#fff" stroke-width="16" stroke-linecap="round"/>' +
+  '</svg>';
 export const GLOBE_SVG = MDL2_GLOBE;
 
 // Start menu glyphs: the same real outlines, re-exported under the names the
