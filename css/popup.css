@@ -61,6 +61,21 @@
   display: block;
 }
 
+/* Windows colours a message box's mark: blue for a note, red for something that
+   went wrong, amber for a warning. The glyphs are the font's outlines, so these
+   are its own shades rather than the darker ones the message box draws on. */
+.popup-glyph-info {
+  color: #0067b8;
+}
+
+.popup-glyph-error {
+  color: #c42b1c;
+}
+
+.popup-glyph-warning {
+  color: #a86f00;
+}
+
 .popup-text {
   flex: 1;
   min-width: 0;

@@ -1,0 +1,33 @@
+{
+  "name": "Windows 10 Simulator",
+  "short_name": "Windows 10",
+  "description": "A working Windows 10 on your phone or tablet: the shell, File Explorer, Notepad, and a start you can learn on.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "orientation": "any",
+  "background_color": "#0078d7",
+  "theme_color": "#0078d7",
+  "categories": ["utilities", "education", "productivity"],
+  "icons": [
+    {
+      "src": "assets/app/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

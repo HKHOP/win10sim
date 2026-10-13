@@ -1,7 +1,54 @@
 # Changelog — Windows 10 Simulator
 
 All task completions (not conversations) get a new version section below.
-Format: MAJOR.MINOR.PATCH. Latest version on top.
+Format: MAJOR.MINOR.PATCH. Latest version on top.## [1.12.0] - Installable as an app
+
+2026-10-13
+
+### Added
+
+- `manifest.webmanifest`: the site is now installable. A launcher opens it as an
+  app - its own window, no browser bars, the Windows mark as its icon - and the
+  service worker it already had means it opens with no network
+- `assets/app/`: the app icons, built by `tools/build_app_icons.py` out of the
+  Windows logo the shell already wears. The mark's own alpha is used as a
+  silhouette and painted white on the accent blue, which is how Windows draws it,
+  so nothing here redraws the logo. 192 and 512 for launchers, a maskable 512
+  with the mark inside the safe circle, and an apple-touch-icon because iOS
+  ignores the manifest and wants that name
+- `index.html`: the manifest link, `theme-color` (the accent blue the taskbar is
+  built on), the favicon, and the iOS tags - `apple-mobile-web-app-capable` and
+  friends - so Share > Add to Home Screen opens the app rather than a web page
+- **An install button**, the same courtesy the fullscreen button already offers:
+  it appears only once the browser fires `beforeinstallprompt`, so a platform with
+  no way to install us is never shown a button that would do nothing. The offer
+  is spent on first use and the button goes away once it is taken up
+- The install offer is asked for independently of the fullscreen button, so a
+  desktop browser (offered the install, not the fullscreen) gets it too
+
+### Removed
+
+- None
+
+### Changed
+
+- `index.html`'s `apple-mobile-web-app-status-bar-style` is `default` rather than
+  `black-translucent`: that one puts the page under the status bar, and nothing
+  here handles the safe-area insets it would need
+
+### Fixed
+
+- **The message box marks are the real MDL2 glyphs after all.** [1.10.0] drew the
+  warning triangle, error disc and info disc by hand on the stated grounds that
+  the font has no circle-and-exclamation. It does: U+E7BA `Warning`, U+E783
+  `Error` and U+E946 `Info` are all in Microsoft's own icon list. The drawn ones
+  are gone, the generator's table carries the four new codepoints, and the skin
+  colours the marks the way Windows colours them
+- `FULLSCREEN_SVG`'s comment claims MDL2 has no corner-bracket glyph. That is
+  worth a look: the font has U+E740 `FullScreen` and U+E92D `ChromeFullScreen`,
+  and this file's own table already carries the first. The drawing is left alone
+  here rather than changed on the side
+
 ## [1.11.0] - The touchpad behaves like a touchpad
 
 2026-10-13

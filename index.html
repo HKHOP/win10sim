@@ -4,6 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Windows 10 Simulator</title>
+  <meta name="description" content="A working Windows 10 in the browser: the shell, File Explorer, Notepad, and a start you can learn on." />
+  <!-- Installed as an app: the manifest names the icon, the launcher and the
+       window the shell opens in, and the service worker (sw.js) makes it open
+       with no network. theme-color is the accent blue the taskbar is built on. -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0078d7" />
+  <link rel="icon" href="assets/app/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/app/apple-touch-icon.png" />
+  <!-- iOS has no install prompt: Share > Add to Home Screen is the only way in,
+       and these are what make the home screen icon open without Safari's bars. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- 'default' rather than 'black-translucent': that one puts the page under
+       the status bar, and nothing here handles the safe-area insets it would
+       need, so the top of the emulated monitor would sit behind the clock. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Windows 10" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/monitor.css" />
   <link rel="stylesheet" href="css/boot.css" />
@@ -13,7 +30,7 @@
   <link rel="stylesheet" href="css/desktop.css" />
   <link rel="stylesheet" href="css/taskbar.css" />
   <link rel="stylesheet" href="css/window.css" />
-<link rel="stylesheet" href="css/popup.css" />
+  <link rel="stylesheet" href="css/popup.css" />
   <link rel="stylesheet" href="css/startmenu.css" />
   <link rel="stylesheet" href="css/notepad.css" />
   <link rel="stylesheet" href="css/explorer.css" />

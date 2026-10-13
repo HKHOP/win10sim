@@ -2,6 +2,7 @@
 // icons.js, which re-exports the shell's own set under friendlier names; a
 // dialog is not part of that set, so the codepoint name is used as it stands.
 import { CHEVRON_UP_DOWN } from '../global/mdl2.js';
+import { WARNING_SVG, ERROR_SVG, INFO_SVG } from '../global/icons.js';
 
 // The popup API: how an app asks the shell for a dialog.
 //
@@ -25,19 +26,14 @@ import { CHEVRON_UP_DOWN } from '../global/mdl2.js';
 // was dismissed - which is the same distinction Windows draws between closing a
 // dialog and answering it.
 
-// MDL2 has no circle-and-exclamation, so the dialog glyphs are drawn here. Every
-// other mark (the dropdown chevron, the tick, the bin) comes from the font.
+// The three marks a message box leads with, taken from the Segoe MDL2 glyphs
+// Windows itself draws them with (U+E7BA, U+E783, U+E946). They are filled with
+// currentColor, so the shell colours them the way Windows colours them rather
+// than a colour frozen into the path data.
 var DIALOG_GLYPHS = {
-  error: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#e81123"/>' +
-    '<path d="M11 11l10 10M21 11L11 21" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>',
-  warning: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l14 25H2z" fill="#ffb900"/>' +
-    '<path d="M15 10h2v9h-2z" fill="#3a3a3a"/><path d="M15 21h2v2h-2z" fill="#3a3a3a"/></svg>',
-  info: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#0078d7"/>' +
-    '<path d="M16 8v11" stroke="#fff" stroke-width="3" stroke-linecap="round"/>' +
-    '<circle cx="16" cy="23.5" r="2" fill="#fff"/></svg>',
-  question: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="#0078d7"/>' +
-    '<path d="M12.6 12a3.4 3.4 0 1 1 4.6 3.1c-.8.4-1.2.9-1.2 1.9v.5h-2v-.8c0-1.6.7-2.4 1.7-2.9a1.6 1.6 0 0 0 .7-1.3 1.2 1.2 0 0 0-2.2-.6z" fill="#fff"/>' +
-    '<circle cx="16" cy="21.5" r="1.9" fill="#fff"/></svg>'
+  error: ERROR_SVG,
+  warning: WARNING_SVG,
+  info: INFO_SVG
 };
 
 var FIELD_TYPES = ['text', 'password', 'multiline', 'number', 'dropdown', 'checkbox', 'radio', 'listbox', 'slider', 'progress'];
@@ -138,7 +134,9 @@ export function openPopup(context, spec) {
   var shownIcon = options.glyph ? glyph : (options.icon ? '<img alt="" draggable="false" src="' + options.icon + '">' : '');
   var head = el('div', 'popup-head' + (shownIcon ? '' : ' popup-head-plain'));
   if (shownIcon) {
-    head.appendChild(el('span', 'popup-glyph', shownIcon));
+    // The kind rides along in a class so the skin can colour the mark the way
+    // Windows colours it - the glyph itself is currentColor.
+    head.appendChild(el('span', 'popup-glyph popup-glyph-' + (options.glyph || 'icon'), shownIcon));
   }
   var text = el('div', 'popup-text');
   if (options.heading) {

@@ -48,6 +48,10 @@ import {
   MORE as MDL2_MORE,
   CANCEL as MDL2_CANCEL,
   ZOOM as MDL2_ZOOM,
+  WARNING as MDL2_WARNING,
+  ERROR as MDL2_ERROR,
+  INFO as MDL2_INFO,
+  DOWNLOAD as MDL2_DOWNLOAD,
   OPEN_LOCAL as MDL2_OPEN_LOCAL
 } from './mdl2.js';
 
@@ -134,6 +138,15 @@ export const SLEEP_SVG =
 export const SHUTDOWN_SVG = MDL2_POWER;
 
 export const RESTART_SVG = MDL2_REFRESH;
+
+// The three marks a message box leads with. MDL2 has all of them - a warning
+// triangle, a disc with a cross, a disc with a bar - so none is drawn here.
+export const WARNING_SVG = MDL2_WARNING;
+export const ERROR_SVG = MDL2_ERROR;
+export const INFO_SVG = MDL2_INFO;
+
+// The page's own install offer, outside the OS: an arrow down to a line.
+export const DOWNLOAD_SVG = MDL2_DOWNLOAD;
 
 // Tile fallback art when an app declares a tile without artwork.
 export const APP_TILE_SVG = MDL2_VIEW_ALL;

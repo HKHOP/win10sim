@@ -90,6 +90,13 @@ GLYPHS = {
     "PIN_FILL": (0xE841, "PinFill"),
     "PINNED": (0xE840, "Pinned"),
     "ZOOM": (0xE71E, "Zoom"),
+    # The dialog marks: a message box is a triangle, a disc with a cross, and a
+    # disc with a bar - all three are in the font, so none of them is drawn here.
+    "WARNING": (0xE7BA, "Warning"),
+    "ERROR": (0xE783, "Error"),
+    "INFO": (0xE946, "Info"),
+    # The install offer on the page's own chrome: an arrow down to a line.
+    "DOWNLOAD": (0xE896, "Download"),
 }
 
 
