@@ -5,8 +5,11 @@ import {
   LETTERS_LAYER,
   SYMBOLS_LAYER,
   editableTarget,
+  editableField,
   suppressNativeKeyboard,
   releaseNativeKeyboard,
+  setKeyboardActive,
+  holdFocus,
   typeKey,
   stageScale
 } from './keyinput.js';
@@ -108,6 +111,21 @@ export function createVirtualKeyboard() {
       key.setAttribute('aria-label', spec.key === 'letters' ? 'Letters' : 'Symbols');
     }
 
+    // A key is a button, and a button takes focus when it is pressed - which
+    // would pull the caret out of the field being typed into and collapse its
+    // selection. Declining the press's default is what stops that; the click
+    // still comes, so the key still works.
+    key.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      if (spec.kind === 'backspace') {
+        // A held key repeats from the moment it goes down, the way a hardware
+        // key does - which is why this one is not left to the click.
+        swallowedClick = key;
+        press(spec);
+        startRepeat(spec, key);
+      }
+    });
+
     // The press is delivered on click rather than on pointerdown, so a finger
     // that slides off the key before lifting does not type into it.
     key.addEventListener('click', function () {
@@ -116,19 +134,28 @@ export function createVirtualKeyboard() {
         swallowedClick = null;
         return;
       }
-      activate(spec);
+      press(spec);
     });
     if (spec.kind === 'backspace') {
-      // A held key repeats from the moment it goes down, the way a hardware key
-      // does - which is why this one is not left to the click.
-      key.addEventListener('pointerdown', function () {
-        swallowedClick = key;
-        activate(spec);
-        startRepeat(spec, key);
-      });
       stopRepeatOn(key);
     }
     return key;
+  }
+
+  // Send one key to whatever the emulated cursor has focused, keeping that field
+  // focused: a keyboard that takes the focus away is worse than no keyboard.
+  function press(spec) {
+    var target = editableTarget();
+    holdFocus(target, function (field) {
+      typeKey(spec, field || document.body, mods);
+    });
+
+    // Shift is one-shot: it has typed its one character and lets go, so the
+    // next key is a lowercase one without a second tap to clear it.
+    if (spec.kind === 'char' && mods.shift) {
+      mods.shift = false;
+      paintModifiers();
+    }
   }
 
   function activate(spec) {
@@ -141,15 +168,7 @@ export function createVirtualKeyboard() {
       paintModifiers();
       return;
     }
-
-    typeKey(spec, editableTarget() || document.body, mods);
-
-    // Shift is one-shot: it has typed its one character and lets go, so the
-    // next key is a lowercase one without a second tap to clear it.
-    if (spec.kind === 'char' && mods.shift) {
-      mods.shift = false;
-      paintModifiers();
-    }
+    press(spec);
   }
 
   function setLayer(next) {
@@ -178,7 +197,7 @@ export function createVirtualKeyboard() {
     keyEl.classList.add('is-down');
     repeatTimer = setTimeout(function () {
       repeatEvery = setInterval(function () {
-        typeKey(spec, editableTarget() || document.body, mods);
+        press(spec);
       }, REPEAT_EVERY_MS);
     }, REPEAT_DELAY_MS);
   }
@@ -211,9 +230,11 @@ export function createVirtualKeyboard() {
     toggle.classList.toggle('is-on', open);
     if (open) {
       place();
+      setKeyboardActive(true);
       watchField();
       return;
     }
+    setKeyboardActive(false);
     // The browser's keyboard belongs back to the browser when ours goes away, so
     // a closed keyboard is not a keyboard at all - and nothing is left listening
     // for fields that are no longer being typed into.
@@ -238,19 +259,46 @@ export function createVirtualKeyboard() {
 
   // While the keyboard is up, whichever field the emulated cursor focuses has
   // the browser's keyboard held off it.
+  //
+  // The press has to be caught before the focus, not after it. The browser asks
+  // for its keyboard as part of focusing a field, so a field marked readonly
+  // once focusin arrives is a field whose keyboard is already on the way up -
+  // which is exactly how the first version of this failed. The emulated cursor
+  // dispatches the press and focuses in that order, so a capture-phase
+  // listener here is always in time.
+  function onPress(event) {
+    var field = editableField(event.target);
+    if (field) {
+      watched = field;
+      suppressNativeKeyboard(field);
+    }
+  }
+
+  // A field that focuses itself - a popup putting the caret in its first text
+  // box - never gets a press first, so the focus itself is caught too. It is
+  // late on the platforms that decide during the focus, and it is a backstop on
+  // the ones that decide after.
+  function onFocus() {
+    var field = editableTarget();
+    if (field !== watched) {
+      watched = field;
+      if (field) {
+        suppressNativeKeyboard(field);
+      } else {
+        // Nothing typeable has the focus any more, so the field that had it
+        // goes back to asking for the browser's own keyboard.
+        releaseNativeKeyboard();
+      }
+    }
+  }
+
   function watchField() {
     if (watcher) {
       return;
     }
-    watcher = function () {
-      var field = editableTarget();
-      if (field !== watched) {
-        watched = field;
-        if (field) {
-          suppressNativeKeyboard(field);
-        }
-      }
-    };
+    watcher = onFocus;
+    document.addEventListener('pointerdown', onPress, true);
+    document.addEventListener('mousedown', onPress, true);
     document.addEventListener('focusin', watcher);
     document.addEventListener('focusout', watcher);
     watcher();
@@ -260,6 +308,8 @@ export function createVirtualKeyboard() {
     if (!watcher) {
       return;
     }
+    document.removeEventListener('pointerdown', onPress, true);
+    document.removeEventListener('mousedown', onPress, true);
     document.removeEventListener('focusin', watcher);
     document.removeEventListener('focusout', watcher);
     watcher = null;

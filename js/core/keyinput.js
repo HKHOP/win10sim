@@ -99,33 +99,56 @@ export var SYMBOLS_LAYER = {
 // The field the emulated cursor last focused, if it is one text can go into.
 export function editableTarget() {
   var active = document.activeElement;
-  if (!active || active === document.body) {
-    return null;
+  return active ? editableField(active) : null;
+}
+
+var FIELD_SELECTOR = 'input, textarea, [contenteditable=""], [contenteditable="true"]';
+
+// Is this node itself a field text can go into? Used both for whatever has
+// focus and for whatever is about to be pressed, so that the two agree on what
+// counts as typeable.
+function isEditable(node) {
+  if (!node || node === document.body) {
+    return false;
   }
-  if (active.isContentEditable) {
-    return active;
+  if (node.isContentEditable) {
+    return true;
   }
-  if (active.tagName === 'INPUT') {
-    var type = (active.getAttribute('type') || 'text').toLowerCase();
+  if (node.tagName === 'TEXTAREA') {
+    return true;
+  }
+  if (node.tagName === 'INPUT') {
+    var type = (node.getAttribute('type') || 'text').toLowerCase();
     // A checkbox, a button and a file picker are not typed into, and a select is
     // picked from rather than typed at.
-    if (['text', 'password', 'search', 'email', 'url', 'tel', 'number', ''].indexOf(type) >= 0) {
-      return active;
-    }
+    return ['text', 'password', 'search', 'email', 'url', 'tel', 'number', ''].indexOf(type) >= 0;
   }
-  if (active.tagName === 'TEXTAREA') {
-    return active;
+  return false;
+}
+
+// The typeable field at or above this node. A press lands on the inside of a
+// field - its padding, or a label drawn over it - so the node itself is not
+// always the field.
+export function editableField(node) {
+  if (!node) {
+    return null;
   }
-  return null;
+  if (isEditable(node)) {
+    return node;
+  }
+  var found = node.closest ? node.closest(FIELD_SELECTOR) : null;
+  return found && isEditable(found) ? found : null;
 }
 
 // Hiding the phone's own keyboard.
 //
-// The browser puts its keyboard up for a field the user focuses, and there is
-// no way to ask it not to except to make the field not want one: inputmode is
-// honoured on Android and ignored on iOS, so the one thing both respect is
-// readonly. That is safe here because the typing in this module writes to the
-// value directly - readonly stops the browser's keyboard, not our keys.
+// The browser asks for its keyboard as part of giving a field focus, and there
+// is no way to decline afterwards: by the time a focusin handler runs, the
+// keyboard is already on its way up. The only thing that works is to make the
+// field not want one BEFORE the focus lands - inputmode is honoured on Android
+// and ignored on iOS, so the one thing both respect is readonly. That is safe
+// here because the typing in this module writes to the value directly: readonly
+// stops the browser's keyboard, not our keys.
 var suppressed = null;
 
 export function suppressNativeKeyboard(field) {
@@ -134,8 +157,15 @@ export function suppressNativeKeyboard(field) {
   }
   releaseNativeKeyboard();
   suppressed = field;
-  field.dataset.simWasReadOnly = field.readOnly ? '1' : '';
+  if (field.dataset.simWasReadOnly == null) {
+    field.dataset.simWasReadOnly = field.readOnly ? '1' : '';
+    field.dataset.simInputMode = field.getAttribute('inputmode') || '';
+  }
   field.readOnly = true;
+  // Both are asked for: inputmode is what Android reads, readonly is what iOS
+  // reads, and a browser that honours neither still leaves a field that has no
+  // reason to open anything.
+  field.setAttribute('inputmode', 'none');
 }
 
 export function releaseNativeKeyboard() {
@@ -145,8 +175,70 @@ export function releaseNativeKeyboard() {
   if (!suppressed.dataset.simWasReadOnly) {
     suppressed.readOnly = false;
   }
+  if (suppressed.dataset.simInputMode) {
+    suppressed.setAttribute('inputmode', suppressed.dataset.simInputMode);
+  } else {
+    suppressed.removeAttribute('inputmode');
+  }
   delete suppressed.dataset.simWasReadOnly;
+  delete suppressed.dataset.simInputMode;
   suppressed = null;
+}
+
+// Whether the virtual keyboard is on screen. The suppression above belongs to
+// the keyboard's lifetime rather than to any one field, so a surface that
+// focuses a field itself - a popup putting the caret in its first text box -
+// can ask for the same treatment without knowing whether a keyboard exists.
+var keyboardUp = false;
+
+export function setKeyboardActive(up) {
+  keyboardUp = !!up;
+  if (!up) {
+    releaseNativeKeyboard();
+  }
+}
+
+export function suppressIfActive(field) {
+  if (keyboardUp && field) {
+    suppressNativeKeyboard(field);
+  }
+}
+
+// Tapping a key must not take the field's focus away, or the selection in it
+// collapses and the next key has nowhere to go. Callers prevent the default on
+// the press, which is what stops the browser moving focus; this is the second
+// half, for the browsers that move it anyway.
+export function holdFocus(field, run) {
+  if (!field || typeof field.focus !== 'function') {
+    run(null);
+    return;
+  }
+  // Where the caret was, in case putting focus back has to put it back too.
+  var range = null;
+  try {
+    if (typeof field.selectionStart === 'number') {
+      range = { start: field.selectionStart, end: field.selectionEnd };
+    }
+  } catch (err) {
+    // A field with no caret to remember (see rangeOf).
+  }
+  var lost = document.activeElement !== field;
+  if (lost) {
+    try {
+      field.focus({ preventScroll: true });
+    } catch (err) {
+      field.focus();
+    }
+    if (range) {
+      try {
+        field.selectionStart = range.start;
+        field.selectionEnd = range.end;
+      } catch (err2) {
+        // Nothing to place it in.
+      }
+    }
+  }
+  run(field);
 }
 
 // --- typing ---------------------------------------------------------------

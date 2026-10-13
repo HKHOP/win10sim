@@ -3,6 +3,7 @@
 // dialog is not part of that set, so the codepoint name is used as it stands.
 import { CHEVRON_UP_DOWN } from '../global/mdl2.js';
 import { WARNING_SVG, ERROR_SVG, INFO_SVG } from '../global/icons.js';
+import { suppressIfActive } from './keyinput.js';
 
 // The popup API: how an app asks the shell for a dialog.
 //
@@ -488,6 +489,10 @@ export function openPopup(context, spec) {
     focus: function (name) {
       var node = nodes[name];
       if (node && node.focus) {
+        // A popup puts the caret in its own first field, with no press to catch
+        // it beforehand, so it asks for the same treatment a tap would get. This
+        // is a no-op when no virtual keyboard is on screen.
+        suppressIfActive(node);
         node.focus();
         if (node.select) {
           node.select();

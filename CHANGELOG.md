@@ -3,6 +3,45 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.13.1] - The keyboard stops fighting the fields
+
+2026-10-13
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- The key press is caught in the capture phase, before the emulated cursor
+  focuses the field. `cursor.js` dispatches the press and focuses in that
+  order, so a field is marked before the focus lands rather than after it
+- Suppression now sets `inputmode="none"` as well as `readonly`, and restores
+  both - `inputmode` is what Android reads, `readonly` is what iOS reads
+- A field whose focus has moved elsewhere is put back, with the selection it had,
+  before the key is delivered
+- A popup asks for the same treatment for the caret it puts in its own first
+  field, which has no press to catch it beforehand
+
+### Fixed
+
+- **The phone's own keyboard still came up.** Marking a field readonly from a
+  `focusin` handler was always too late: the browser asks for its keyboard as
+  part of focusing a field, so by the time focusin ran it was already on its way
+  up. It is now marked before the focus, which is the only moment the decision
+  has not been made
+- **The fields deselected when a key was pressed.** A key is a `<button>`, and a
+  button takes focus when it is pressed, which pulled the caret out of the field
+  and collapsed its selection - and left the following keys with nothing to type
+  into. The press's default is now declined, and the focus is restored even if a
+  browser moves it anyway
+- A field the user taps away from is handed back to the browser rather than left
+  readonly, and a field an app made readonly itself is left readonly
+
 ## [1.13.0] - A virtual keyboard
 
 2026-10-13
