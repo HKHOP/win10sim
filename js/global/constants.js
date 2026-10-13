@@ -48,17 +48,38 @@ export const CURSOR_RESIZE_NS_HOTSPOT = [4, 11];
 export const CURSOR_DIAG_HOTSPOT = [8, 8];
 export const CURSOR_BUSY_HOTSPOT = [16, 16];
 
-// Touchpad mode (touch screens): one finger drag moves the cursor
-// relatively, a quick tap left-clicks, two fingers drag to scroll.
+// Touchpad mode (touch screens): one finger drag moves the cursor relatively
+// through an acceleration curve, a quick tap left-clicks, a tap that keeps
+// moving drags, a finger held still presses, two fingers scroll and coast, two
+// fingers tapped right-click and three middle-click.
 export const MOUSE_SENSITIVITY = 1.0;
 // Post-lock movement blackout + absurd-jump clamp (lock-transition artifacts).
 export const POST_LOCK_IGNORE_MS = 120;
 export const MAX_MOUSE_DELTA_PX = 400;
-export const TOUCH_SENSITIVITY = 1.5;
+// Finger travel speed (px per millisecond) -> cursor gain. Slow movement gains
+// little, so a taskbar icon can still be hit; the last entry is the top speed,
+// so a fast flick crosses the screen exactly as fast as a flat multiplier did.
+export const TOUCH_ACCEL_CURVE = [[0, 0.45], [0.5, 0.7], [1.2, 1.1], [2.5, 1.5]];
 export const TAP_MAX_MS = 300;
 export const TAP_MAX_MOVE_PX = 12;
+// Tap and drag: a tap that is still travelling after this long, and has gone
+// further than the wobble of a click, is pressing and dragging instead.
+export const TAP_DRAG_DELAY_MS = 150;
+export const TAP_DRAG_MOVE_PX = 24;
 // Holding one finger still this long engages a press (drag windows/icons).
 export const TOUCH_HOLD_MS = 500;
+// Two fingers tapped is the context menu; three is the middle button.
+export const MULTI_TAP_MAX_MS = 250;
+export const MULTI_TAP_MAX_MOVE_PX = 10;
+// How far the fingers must travel before a second finger counts as a scroll
+// rather than as the second finger simply landing off centre.
+export const MULTI_DEAD_ZONE_PX = 4;
+// The coast a flick leaves behind: below this speed (px per millisecond) there
+// is nothing left to coast, the speed is damped by this factor per millisecond,
+// and it never runs for longer than this.
+export const SCROLL_MIN_VELOCITY_PX_MS = 0.12;
+export const SCROLL_FRICTION = 0.99;
+export const SCROLL_MOMENTUM_MAX_MS = 400;
 
 // Lock / sign-in artwork and identity.
 export const LOCK_WALLPAPER_SRC = 'assets/Windows-10-lock-screen-bg.jpg';

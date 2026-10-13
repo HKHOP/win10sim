@@ -2,6 +2,54 @@
 
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
+## [1.11.0] - The touchpad behaves like a touchpad
+
+2026-10-13
+
+### Added
+
+- `js/core/touchpad.js`: the gestures a finger set means, recognised apart from
+  the cursor that reports them. The pad is the whole stage on a touch screen, so
+  the gestures have to carry what a mouse would otherwise
+- **Two fingers tapped is a right click**, routed to whatever is under the emulated
+  cursor, so every context menu in the shell - the desktop, Explorer's files, a
+  taskbar button, a window's system menu - is reachable without a mouse
+- **Three fingers tapped is a middle click**, delivered as the button-1 press pair
+  plus `auxclick` and deliberately not as a `click`, because a middle click is not
+  an activation and must not launch anything
+- **Tap and drag**: a finger that is still travelling 150 ms after landing, and
+  has gone past the wobble of a click, presses and drags what the cursor is over,
+  so a window or icon can be dragged without waiting out the hold
+- **Scroll momentum**: a flick keeps scrolling after the fingers lift, decaying to
+  a stop over up to 400 ms. A new finger, or a real wheel turning, stops it dead
+- **Pointer acceleration**: slow finger travel gains less of the cursor than fast
+  travel, so a taskbar icon can be hit and a screen can still be crossed. The top
+  gain is unchanged, so a flick moves as far as it did before
+- Two fingers have to travel past a small dead zone before anything scrolls, so a
+  second finger landing slightly off centre is not a jolt
+
+### Removed
+
+- None
+
+### Changed
+
+- Gesture state left `cursor.js` for `touchpad.js` (846 -> 717 lines). The
+  cursor now hands the pad a driver - move, press, release, click, rightClick,
+  middleClick, scroll - and the pad never touches the DOM itself
+- Scrolling follows the centroid of the fingers rather than one of them, so
+  lifting one of three carries on instead of jumping
+- A press that a second finger interrupts is released rather than left stuck down,
+  and a cancelled gesture no longer coasts
+- `TOUCH_SENSITIVITY` is replaced by `TOUCH_ACCEL_CURVE`, the tap, multi-tap,
+  dead-zone and momentum values; the hold and tap timings are unchanged
+
+### Fixed
+
+- Two fingers lifting in the usual order (one before the other) no longer
+  discarded the two-finger tap, which made right-click unreachable
+- A two-finger scroll measured each finger separately, so the second one got a
+  zero-length frame and the coast came out six times too strong
 
 ## [1.10.0] - The shell's real icons, and a machine with no network
 

@@ -23,12 +23,9 @@ import {
   CURSOR_BUSY_HOTSPOT,
   MOUSE_SENSITIVITY,
   POST_LOCK_IGNORE_MS,
-  MAX_MOUSE_DELTA_PX,
-  TOUCH_SENSITIVITY,
-  TOUCH_HOLD_MS,
-  TAP_MAX_MS,
-  TAP_MAX_MOVE_PX
+  MAX_MOUSE_DELTA_PX
 } from '../global/constants.js';
+import { mountTouchpad } from './touchpad.js';
 
 // The emulated hardware cursor is the only pointer in the emulated OS.
 //
@@ -43,9 +40,11 @@ import {
 //   movement deltas steer the emulated cursor); if capture is unavailable the
 //   real pointer steers the cursor absolutely, still with no direct UI
 //   interaction. Esc releases; click re-captures.
-// - Touch: the surface behaves like a laptop touchpad — one finger drags the
-//   cursor relatively, a quick tap left-clicks, holding presses and drags,
-//   two fingers scroll what is under the cursor.
+// - Touch: the surface behaves like a laptop touchpad, recognised in
+//   touchpad.js — one finger steers the cursor through an acceleration curve, a
+//   tap left-clicks, a tap that keeps moving drags, a finger held still
+//   presses, two fingers scroll (and coast), two fingers tapped right-click
+//   and three middle-click.
 
 var INPUT_LAYER_CLASS = 'sim-input-layer';
 
@@ -388,6 +387,24 @@ function updateHover(target) {
     synthTap(modifiers);
   }
 
+  // The middle button, which on a pad is three fingers tapped. It is delivered
+  // as the button-1 press pair plus auxclick, and deliberately NOT as a `click`:
+  // a middle click is not an activation, so nothing that launches on click may
+  // see one.
+  function synthMiddleClick() {
+    var target = targetUnderCursor();
+    if (!target) {
+      return;
+    }
+    var opts = eventOpts(null, clientPoint());
+    opts.button = 1;
+    opts.buttons = 1;
+    target.dispatchEvent(new MouseEvent('mousedown', opts));
+    target.dispatchEvent(new MouseEvent('mouseup', opts));
+    target.dispatchEvent(new MouseEvent('auxclick', opts));
+    updateHover(target);
+  }
+
   // The nearest thing above `node` that can actually move on this axis. A
   // browser only scrolls a box for a *trusted* wheel event, and every wheel
   // that reaches the emulated desktop is re-dispatched from here, so the box
@@ -640,181 +657,45 @@ function updateHover(target) {
       return;
     }
     event.preventDefault();
+    // A real wheel is being turned, so a coast still running from a touch flick
+    // must stop rather than fight it.
+    if (touchpad) {
+      touchpad.cancelMomentum();
+    }
     // Some wheels report lines rather than pixels; the scroller moves in
     // pixels, so translate before anything reads the delta.
     var scale = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? 400 : 1);
     synthWheel(event.deltaX * scale, event.deltaY * scale);
   }, { capture: true, passive: false });
 
-  // --- Touch: relative touchpad tracking (unchanged by pointer lock). ---
-  // Holding one finger still engages a press (like holding a mouse button),
-  // so windows and icons can be dragged; a quick tap still clicks.
-  var fingers = {};
-  var fingerCount = 0;
-  var tapCandidate = null;
-  var holdTimer = null;
-  var holdActive = false;
-  var holdMoved = 0;
-
-  function clearHold() {
-    if (holdTimer) {
-      window.clearTimeout(holdTimer);
-      holdTimer = null;
-    }
-  }
-
-  function fingerDown(touch) {
-    fingers[touch.identifier] = { x: touch.clientX, y: touch.clientY };
-    fingerCount++;
-    if (fingerCount === 1) {
-      tapCandidate = { start: Date.now(), moved: 0 };
-      holdActive = false;
-      holdMoved = 0;
-      holdTimer = window.setTimeout(function () {
-        holdTimer = null;
-        if (fingerCount === 1 && fingers[touch.identifier]) {
-          holdActive = true;
-          synthDown(null);
-        }
-      }, TOUCH_HOLD_MS);
-    } else {
-      // Second finger turns the gesture into a scroll; not a tap or hold.
-      tapCandidate = null;
-      if (holdActive) {
-        synthUp(null);
-      }
-      clearHold();
-      holdActive = false;
-    }
-  }
-
-  function fingerMove(touch) {
-    var prev = fingers[touch.identifier];
-    if (!prev) {
-      return null;
-    }
-    var dx = touch.clientX - prev.x;
-    var dy = touch.clientY - prev.y;
-    prev.x = touch.clientX;
-    prev.y = touch.clientY;
-    return { dx: dx, dy: dy };
-  }
-
-  function fingerUp(touch) {
-    if (fingers[touch.identifier]) {
-      delete fingers[touch.identifier];
-      fingerCount--;
-    }
-  }
-
-  // Touch is caught at the window, before it can reach anything: a finger on
-  // the touchpad steers the emulated cursor and nothing else, so it can never
-  // press what sits under the finger.
-  window.addEventListener('touchstart', function (event) {
-    if (!booted || isSiteChrome(event.target)) {
-      // Site chrome taps are taps, not touchpad gestures, so they must not be
-      // swallowed into a cursor move.
-      return;
-    }
-    event.preventDefault();
-    for (var i = 0; i < event.changedTouches.length; i++) {
-      fingerDown(event.changedTouches[i]);
-    }
-  }, { passive: false, capture: true });
-
-  window.addEventListener('touchmove', function (event) {
-    if (!booted) {
-      return;
-    }
-    event.preventDefault();
-    var rect = stage.getBoundingClientRect();
-    var toStage = DISPLAY_WIDTH / rect.width;
-    if (fingerCount === 1) {
-      var touch = event.changedTouches[0];
-      var d = fingerMove(touch);
-      if (!d) {
-        return;
-      }
-      x += d.dx * toStage * TOUCH_SENSITIVITY;
-      y += d.dy * toStage * TOUCH_SENSITIVITY;
+  // --- Touch: the surface is a laptop touchpad. ---
+  // The pad is this whole stage, so the touchpad recognises the gestures and
+  // reports what they meant; it never touches the DOM itself.
+  var touchpad = mountTouchpad(window, {
+    isBooted: function () {
+      return booted;
+    },
+    isExempt: isSiteChrome,
+    move: function (dx, dy) {
+      // Finger travel is in CSS pixels while the emulated display has its own
+      // size, so the movement is converted into display units.
+      var rect = stage.getBoundingClientRect();
+      var toStage = DISPLAY_WIDTH / rect.width;
+      x += dx * toStage;
+      y += dy * toStage;
       clamp();
       render();
       // The emulated cursor is the pointer, so the finger hovering a control
       // hovers it exactly as a mouse would.
       updateHoverTarget();
-      holdMoved += Math.abs(d.dx) + Math.abs(d.dy);
-      if (!holdActive && holdTimer && holdMoved >= TAP_MAX_MOVE_PX) {
-        // Left the spot: plain cursor move, not a hold.
-        clearHold();
-      }
-      if (tapCandidate) {
-        tapCandidate.moved += Math.abs(d.dx) + Math.abs(d.dy);
-      }
-    } else if (fingerCount === 2) {
-      // Two-finger drag scrolls whatever sits under the cursor.
-      var totalX = 0;
-      var totalY = 0;
-      var n = 0;
-      for (var j = 0; j < event.changedTouches.length; j++) {
-        var dd = fingerMove(event.changedTouches[j]);
-        if (dd) {
-          totalX += dd.dx;
-          totalY += dd.dy;
-          n++;
-        }
-      }
-      if (n > 0) {
-        synthWheel(totalX / n, totalY / n);
-      }
-    }
-  }, { passive: false, capture: true });
-
-  function touchEnd(event) {
-    if (!booted) {
-      return;
-    }
-    event.preventDefault();
-    var wasTap = tapCandidate &&
-      fingerCount === 1 &&
-      (Date.now() - tapCandidate.start) < TAP_MAX_MS &&
-      tapCandidate.moved < TAP_MAX_MOVE_PX;
-    var held = holdActive;
-    var heldStill = holdMoved < TAP_MAX_MOVE_PX;
-    clearHold();
-    holdActive = false;
-    for (var i = 0; i < event.changedTouches.length; i++) {
-      fingerUp(event.changedTouches[i]);
-    }
-    if (fingerCount === 0) {
-      tapCandidate = null;
-    }
-    if (held) {
-      // Held press released: end the drag, and click only if it never moved.
-      synthUp(null);
-      if (heldStill) {
-        synthTap(null);
-      }
-    } else if (wasTap) {
-      synthClick();
-    }
-  }
-
-  window.addEventListener('touchend', touchEnd, { passive: false, capture: true });
-  window.addEventListener('touchcancel', function (event) {
-    if (!booted) {
-      return;
-    }
-    event.preventDefault();
-    if (holdActive) {
-      synthUp(null);
-    }
-    clearHold();
-    holdActive = false;
-    for (var i = 0; i < event.changedTouches.length; i++) {
-      fingerUp(event.changedTouches[i]);
-    }
-    tapCandidate = null;
-  }, { passive: false, capture: true });
+    },
+    press: function () { synthDown(null); },
+    release: function () { synthUp(null); },
+    click: function () { synthClick(); },
+    rightClick: function () { dispatchContextMenu(null); },
+    middleClick: function () { synthMiddleClick(); },
+    scroll: function (dx, dy) { synthWheel(dx, dy); }
+  });
 
   setState('idle');
   render();
