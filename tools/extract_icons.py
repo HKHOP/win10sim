@@ -19,10 +19,11 @@ LIBRARY = os.path.join(ROOT, "assets", "win10-shell-icons")
 OUT = os.path.join(ROOT, "assets", "shell")
 SIZE = 128
 
-# Icon file name -> output name. These are the icons Windows 10 draws for the
-# profile's known folders and for Quick access (the renamed Favorites, so it
-# keeps the star). Desktop and Downloads are the folder icons from Imageres; the
-# rest are Shell32's.
+# Icon file name -> output name. Every one of these was found by LOOKING at the
+# library: the whole folder was rendered to a contact sheet and the known folders
+# and the Quick access star were picked off it by eye. The numbers are positions
+# in this folder and NOT DLL resource IDs - see README-mdl2.md - so no published
+# index maps onto them, and none of these mappings was derived from one.
 WANTED = {
     "imageres/Imageres_dll_174.ico": "desktop-folder",
     "imageres/Imageres_dll_175.ico": "downloads",

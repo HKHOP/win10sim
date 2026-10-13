@@ -65,6 +65,8 @@ export function buildWindowFrame(win, handlers) {
   var closeBtn = captionButton(CAPT_CLOSE_SVG, 'Close', function () {
     handlers.onCaption('close');
   });
+  minBtn.classList.add('win-min');
+  maxBtn.classList.add('win-max');
   closeBtn.classList.add('win-close');
   caps.appendChild(minBtn);
   caps.appendChild(maxBtn);

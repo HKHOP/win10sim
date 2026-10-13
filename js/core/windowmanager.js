@@ -231,6 +231,16 @@ export function createWindow(opts) {
   win.bodyEl = frame.body;
   win.maxBtn = frame.maxBtn;
   win.titleEl = frame.title;
+  // Windows dresses a dialog differently from a window: no maximise, no resize
+  // grips, and only a close button unless the dialog asks to be minimisable.
+  // The frame is built once for both, and the chrome class says which it is.
+  if (options.chrome) {
+    win.chrome = options.chrome;
+    win.el.classList.add('is-' + options.chrome);
+    if (!options.minimizable) {
+      win.el.classList.add('no-minimize');
+    }
+  }
 
   layer.appendChild(win.el);
   windows.push(win);

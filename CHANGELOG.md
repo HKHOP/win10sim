@@ -33,6 +33,51 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and each says so in a comment: the Sleep moon, the fullscreen corner brackets, and the lock-screen eye.
 
+## [1.10.0] - The popup API
+
+2026-10-13
+
+### Added
+
+- `context.popup(spec)` - how any app asks the shell for a dialog, and the
+  first surface an app gets without declaring a permission. One schema covers
+  every shape Windows draws a dialog in: `title`, `icon`, `heading`, `body`
+  (paragraphs, and links), and `fields` of `text`, `password`, `multiline`,
+  `number`, `dropdown`, `listbox`, `checkbox`, `radio`, `slider` or `progress`,
+  each with a label, a placeholder, a hint, a width and a disabled state
+- Buttons decide the dialog: `primary` is the default Enter button, `cancel` is
+  what Escape means, and a button can hold the dialog open. The call is awaited
+  and answers with `{ button, values }`, or with `null` when the dialog was
+  dismissed - the same difference Windows draws between closing a dialog and
+  answering it
+- The handle stays useful while the dialog is open: `values()`, `setValue()`,
+  `enable()`, `setHint()` (with the red error styling Windows uses for a field
+  that failed), `setTitle()`, `press()`, `close()`, `focus()`, `isOpen()`
+- `onSubmit` may return `false` to refuse the close, which is how a popup
+  validates: Enter is pressed, the field is marked, and the dialog stays put
+- `onChange` reports a field as it is edited, with every value so far
+- A dialog is dressed as one: no maximise, no resize grips, close and (unless the
+  app opts out) minimise - `windowchrome`/`windowmanager` grew a `chrome` option
+  for that. Its height follows what it has to say, so a one-line message is a
+  short box and a three-field form is a tall one
+- The dropdown chevron and the dialog's other marks come from the generated
+  Segoe MDL2 glyphs. The red disc, blue disc and yellow triangle are drawn here,
+  because the font has no circle-and-exclamation
+
+### Removed
+
+- None
+
+### Changed
+
+- The shell's message box is now a popup rather than a hand-built window, so
+  Explorer's and the desktop's dialogs get the same glyphs, buttons and
+  Enter/Escape handling as anything else that asks for one
+
+### Fixed
+
+- None
+
 ## [1.9.0] - Shortcuts
 
 2026-10-12

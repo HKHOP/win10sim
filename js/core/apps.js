@@ -1,4 +1,5 @@
 import { createWindow } from './windowmanager.js';
+import { openPopup } from './popup.js';
 import { mountNtfs } from '../apis/ntfs.js';
 import { attachQuickAccess } from '../apis/quickaccess.js';
 import { attachAssociations, registerAssociations } from '../apis/associations.js';
@@ -197,6 +198,12 @@ export function launchApp(id, args) {
     // has not asked for storage never reaches the files.
     getVolume: function () {
       return mayUseFiles ? getVolume() : lockedVolume(def.name);
+    },
+    // How an app asks the shell for a dialog. The popup is the one surface
+    // every app gets without asking: a window, a set of controls and buttons,
+    // and an answer.
+    popup: function (spec) {
+      return openPopup(context, spec);
     },
     createWindow: function (opts) {
       const merged = Object.assign({}, opts, { appId: def.id });

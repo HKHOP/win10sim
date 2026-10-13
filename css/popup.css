@@ -1,0 +1,279 @@
+/* The popup skin: Windows 10 dialogs - a title bar with only a close button,
+   the content, then a row of buttons along the bottom edge. Sizes are the
+   touch targets a phone needs, so a popup stays usable on a small screen. */
+
+.popup {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px 16px;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  overflow-y: auto;
+}
+
+/* A dialog is a dialog: no maximise, no resize grips. */
+.win.is-popup .win-max,
+.win.is-popup .win-resize {
+  display: none;
+}
+
+.win.is-popup.no-minimize .win-min {
+  display: none;
+}
+
+.win.is-popup .win-titlebar {
+  height: 30px;
+}
+
+/* ---- the glyph and the words beside it ---- */
+
+.popup-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* With no glyph there is nothing to line up with, so the words start at the
+   left edge rather than in a gap. */
+.popup-head-plain {
+  display: block;
+}
+
+.popup-glyph {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+}
+
+.popup-glyph svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.popup-glyph img {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.popup-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.popup-heading {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.popup-body {
+  margin: 0 0 6px;
+  line-height: 1.5;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.popup-body:last-child {
+  margin-bottom: 0;
+}
+
+.popup-body a {
+  color: #0067b8;
+}
+
+/* ---- fields ---- */
+
+.popup-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popup-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.popup-label {
+  color: #333;
+  line-height: 1.4;
+}
+
+.popup-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 26px;
+  padding: 2px 6px;
+  border: 1px solid #a6a6a6;
+  background: #fff;
+  font: inherit;
+  color: #111;
+}
+
+.popup-input:focus,
+.popup-select:focus,
+.popup-multiline:focus {
+  outline: none;
+  border-color: #0078d7;
+}
+
+.popup-multiline {
+  height: auto;
+  min-height: 64px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.popup-row-checkbox,
+.popup-row-slider,
+.popup-row-radio,
+.popup-row-listbox {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The dropdown: a closed box with the font's chevron on its right edge. */
+.popup-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.popup-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+}
+
+.popup-caret {
+  position: absolute;
+  right: 7px;
+  width: 12px;
+  height: 12px;
+  color: #444;
+  pointer-events: none;
+}
+
+.popup-caret svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.popup-listbox {
+  height: auto;
+  padding: 2px;
+}
+
+.popup-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.popup-check,
+.popup-radio input {
+  accent-color: #0078d7;
+  margin: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.popup-slider {
+  width: 100%;
+  accent-color: #0078d7;
+}
+
+.popup-progress {
+  height: 14px;
+  border: 1px solid #bbb;
+  background: #f0f0f0;
+  overflow: hidden;
+}
+
+.popup-progress-fill {
+  height: 100%;
+  background: #0078d7;
+  transition: width 120ms linear;
+}
+
+.popup-hint {
+  grid-column: 1 / -1;
+  color: #666;
+  font-size: 11px;
+}
+
+.popup-hint.is-error {
+  color: #a4262c;
+}
+
+/* ---- buttons ---- */
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+.popup-btn {
+  min-width: 90px;
+  min-height: 30px;
+  padding: 4px 14px;
+  border: 1px solid #adadad;
+  background: #e1e1e1;
+  font: inherit;
+  font-size: 12px;
+  color: #111;
+  cursor: pointer;
+}
+
+.popup-btn:hover:not(:disabled),
+.popup-btn.sim-hover {
+  background: #e5f1fd;
+  border-color: #0078d7;
+}
+
+.popup-btn:active:not(:disabled) {
+  background: #cde6ff;
+}
+
+.popup-btn.is-primary {
+  border-color: #0078d7;
+}
+
+.popup-btn:disabled {
+  color: #a0a0a0;
+  cursor: default;
+  background: #f0f0f0;
+}
+
+@media (max-width: 560px) {
+  /* A narrow popup puts the label above its control and lets the buttons run
+     the full width, so nothing is squeezed into nothing. */
+  .popup-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .popup-btn {
+    flex: 1 1 auto;
+  }
+}
