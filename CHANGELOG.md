@@ -3,6 +3,85 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.20.1] - Dialogs size themselves to what they have to say
+
+2026-10-14
+
+### Added
+
+- **`win.setSize(w, h)`** on the window handle (`js/core/windowmanager.js`) - a
+  window resized from code rather than by a grip. It follows the same rules the
+  drag-resize does (clamped to the work area, and refused outright for a window
+  that is maximized or minimized, which has no size of its own to change).
+
+- **`workArea()`**, exported from the window manager: the room a window is
+  allowed, in emulated-monitor pixels. A surface that measures itself needs to
+  know what "too big" means, and the answer is the same for every window - the
+  monitor, less the taskbar.
+
+### Removed
+
+- The `naturalHeight()` estimate in `js/core/popup.js`, which guessed a dialog's
+  height from the character count of its message.
+
+### Changed
+
+- None
+
+### Fixed
+
+- **Dialogs carried a scrollbar they did not need, or a box of empty padding
+  under their buttons.** `popup.js` sized every dialog with a guess: it
+  estimated how many wrapped lines the message would take at the dialog's
+  width, added a flat 38px a field and 48px for the button row, and clamped the
+  result between 170 and 560. It was wrong in both directions, and both were
+  visible. Guessed too short, the box cut off the buttons that answer the dialog
+  and scrolled them out of reach; guessed too tall, the dialog was a tall
+  rectangle of padding under one line of text. Edge's Help dialog - three
+  paragraphs - was the worst of it.
+
+  A dialog is now **measured instead of guessed**. It opens at the full height
+  of the work area, the content is briefly released from the height of the
+  window it is in so a flex column can report the height of its own contents,
+  and the window is given exactly that plus the title bar above it. Nothing is
+  painted at the tall size: the fit happens before the browser draws.
+
+  **Width only ever grows.** A dialog lays its text out at the width its author
+  asked for, so that width is already the width of its content; the only case
+  left is something inside being wider than the box - a long row of buttons, a
+  list of choices - and the window widens to keep it from being cut off.
+  Narrowing would fight the author on every dialog laid out to its declared
+  width.
+
+  **A scrollbar now means the dialog genuinely does not fit.** A dialog taller
+  than the work area is held at the work area and scrolls, which is the one case
+  where scrolling is the right answer: there is no more room on the monitor, and
+  a button row that has run off the bottom of the screen cannot be pressed at
+  all.
+
+  Three details the measurement had to get right, recorded here because each is
+  a way to reintroduce the scrollbar:
+  - **Layout pixels, not page pixels.** Everything is read from `offsetHeight`
+    and `scrollWidth`, never from `getBoundingClientRect`: the stage is scaled
+    to fit the viewport, so a rect would come back multiplied by the factor the
+    whole screen is drawn at and the window would be sized to a number that has
+    nothing to do with the monitor.
+  - **A pixel of slack.** `offsetHeight` is rounded, and content can need a
+    fraction more than it reported - which is exactly how a dialog ends up one
+    pixel short of its own content and shows the very scrollbar this removes.
+  - **Sized before focus lands.** Focusing a field can scroll the body to reach
+    it, and a body about to be resized is no place to have scrolled.
+
+  An explicitly declared `height` is kept as a floor the dialog is never drawn
+  shorter than, and content taller than it still grows the window. No caller
+  declares one today, so in practice every dialog is fitted outright.
+
+  This covers everything built on `openPopup`: the shell's message boxes (the
+  desktop's and Explorer's), and every Edge dialog. The three hand-built dialog
+  shells - Notepad's `dialogs.js`, Explorer's `openwith.js` and Edge's own
+  non-popup dialogs - still take a fixed height from their author and are
+  untouched by this.
+
 ## [1.20.0] - A reference checker, and the shell findings it goes with
 
 2026-10-14

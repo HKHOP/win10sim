@@ -4,6 +4,7 @@
 import { CHEVRON_UP_DOWN } from '../global/mdl2.js';
 import { WARNING_SVG, ERROR_SVG, INFO_SVG } from '../global/icons.js';
 import { createTextField } from './textfield.js';
+import { workArea } from './windowmanager.js';
 
 // The popup API: how an app asks the shell for a dialog.
 //
@@ -112,31 +113,24 @@ export function openPopup(context, spec, ownerId) {
   };
 
   // Windows sizes a dialog to what it has to say: a one-line message is a short
-  // box, a form with fields is a tall one. The window manager has no
-  // content-sizing, so the height is worked out here.
-  function naturalHeight() {
-    var lines = 0;
-    var paragraphs = Array.isArray(options.body) ? options.body : (options.body ? [options.body] : []);
-    paragraphs.forEach(function (line) {
-      // Roughly how many wrapped lines a sentence of this length takes at this
-      // width; close enough that no dialog is a scrollbar it should not have.
-      var perLine = Math.max(20, Math.floor(((options.width || 460) - 90) / 7));
-      lines += Math.max(1, Math.ceil(String(line && line.url ? line.label || line.url : line || '').length / perLine));
-    });
-    var height = 74 + lines * 18;
-    if (options.heading) {
-      height += 22;
-    }
-    height += (options.fields || []).length * 38;
-    height += 48;
-    return Math.max(170, Math.min(560, height));
-  }
+  // box, a form with fields is a tall one. That used to be worked out here by
+  // guessing how many wrapped lines a sentence would take, which is a guess in
+  // both directions - a box guessed too tall is padding someone scrolls past,
+  // and one guessed too short scrolls away the very buttons that answer it. The
+  // dialog is measured instead, below, once the content exists.
+  var declaredHeight = options.height || null;
+  var declaredWidth = options.width || 460;
+  var area = workArea();
 
   var win = context.createWindow({
     title: options.title || context.name || 'Dialog',
     icon: options.icon || '',
-    width: options.width || 460,
-    height: options.height || naturalHeight(),
+    width: declaredWidth,
+    // Opened at the full height of the work area so the content can be measured
+    // against more room than it will ever have. It is fitted before anything is
+    // painted, so the tall box that exists for a few lines of script is never
+    // seen.
+    height: declaredHeight || area.h,
     // A dialog is a dialog: no maximise, no resize grips.
     chrome: 'popup',
     minimizable: options.minimizable !== false,
@@ -569,6 +563,11 @@ export function openPopup(context, spec, ownerId) {
     result: result
   };
 
+  // The dialog is sized before anything takes the keyboard: focusing a field can
+  // scroll the body to reach it, and a body that is about to be resized is no
+  // place to have scrolled.
+  fitToContent();
+
   // A dialog takes the keyboard when it opens, the way a Win32 dialog does. What
   // is focused is the content rather than the default button: Enter on a real
   // button answers the dialog on the browser's own, and this dialog answers it
@@ -583,6 +582,52 @@ export function openPopup(context, spec, ownerId) {
   }
 
   return api;
+}
+
+// The dialog is the size of what it has to say.
+//
+// Height is measured, not guessed: the content is briefly released from the
+// height of the window it is in, so a flex column can report the height of its
+// own contents rather than the height it was handed, and the window is then
+// given exactly that plus the title bar above it. A dialog only scrolls when its
+// content is taller than the monitor's work area, which is the one case where a
+// scrollbar is the right answer: there is no more room to be had, and a button
+// row that has run off the bottom of the screen cannot be pressed at all.
+//
+// Width only ever grows. A dialog lays its text out at the width its author
+// asked for, so that width is already the width of its content; all that is
+// left is the case where something inside is wider than the box - a long list of
+// choices, a row of buttons - and the window widens to keep it from being cut
+// off. Narrowing it would fight the author on every dialog that lays out to its
+// declared width.
+//
+// Everything is measured in layout pixels (offsetHeight, scrollWidth) and not in
+// page pixels: the stage is scaled to fit the viewport, so anything taken off
+// getBoundingClientRect would be in the emulated monitor's own scale times the
+// factor the whole screen is drawn at, and the window would be resized to fit a
+// number that has nothing to do with the monitor.
+function fitToContent() {
+  // An explicit height is the author's, not the layout's: it is a floor the
+  // dialog never draws shorter than, and content taller than it still grows the
+  // window, because a dialog that scrolls when it did not have to is the thing
+  // being fixed here.
+  var frame = win.body.parentNode;
+  var chromeHeight = frame.offsetHeight - win.body.offsetHeight;
+  var wasHeight = root.style.height;
+  root.style.height = 'auto';
+  var contentHeight = root.offsetHeight;
+  root.style.height = wasHeight;
+  var contentWidth = root.scrollWidth;
+
+  // The pixel of slack is deliberate. offsetHeight is a rounded measurement and
+  // the content it measured can need a fraction more than it reported, which is
+  // exactly how a dialog ends up a pixel short of its own content and shows the
+  // scrollbar this is here to remove.
+  var height = contentHeight + chromeHeight + 1;
+  if (declaredHeight) {
+    height = Math.max(height, declaredHeight);
+  }
+  win.setSize(Math.max(declaredWidth, contentWidth), height);
 }
 
 export { DIALOG_GLYPHS };

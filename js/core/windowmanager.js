@@ -105,6 +105,15 @@ function workAreaRect() {
   return { x: 0, y: 0, w: DISPLAY_WIDTH, h: DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX };
 }
 
+// The room a window is allowed to have, in emulated-monitor pixels. A surface
+// that lays itself out and then asks to be the size of what it laid out needs
+// to know what "too big" means (see popup.js), and the answer is the same for
+// every window: the monitor, less the taskbar.
+export function workArea() {
+  var area = workAreaRect();
+  return { w: area.w, h: area.h };
+}
+
 function defaultRect() {
   return { x: 140, y: 70, w: 640, h: 420 };
 }
@@ -121,6 +130,21 @@ function paint(win) {
   win.el.style.transform = 'translate(' + win.rect.x + 'px,' + win.rect.y + 'px)';
   win.el.style.width = win.rect.w + 'px';
   win.el.style.height = win.rect.h + 'px';
+}
+
+// A window can be resized from code, the way a dialog is the size of what it
+// has to say (see popup.js). The same rules the drag-resize follows: the window
+// cannot outgrow the work area. A maximized window has no size of its own to
+// change, and one that is minimized is not on screen to resize.
+function resizeTo(win, w, h) {
+  if (win.maximized || win.minimized) {
+    return;
+  }
+  win.rect.w = Math.round(w);
+  win.rect.h = Math.round(h);
+  clampRect(win.rect);
+  paint(win);
+  emit();
 }
 
 function setMaxGlyph(win, maximized) {
@@ -294,6 +318,10 @@ export function createWindow(opts) {
     restore: function () { setMinimized(win, false); focusWindow(win); },
     toggleMaximize: function () { toggleMaximize(win); },
     restoreSize: function () { restoreSize(win); },
+    // For a surface that lays itself out and then asks to be the size of what
+    // it laid out. Sizes are in emulated-monitor pixels, like every other rect
+    // in here, and the window is held inside the work area whatever it asks for.
+    setSize: function (w, h) { resizeTo(win, w, h); },
     close: function () { closeWindow(win); }
   };
 
