@@ -163,10 +163,11 @@ export const WELCOME_BG_FADE_MS = 600;
 export const TASKBAR_HEIGHT_PX = 40;
 
 // Start menu: Win10's medium panel, anchored bottom-left over the taskbar.
-// The reference is a used install, so the panel is tall enough for the
-// "Most used" rows, the A-Z list and four rows of tiles at once. Its width and
-// height are not fixed here: the Start menu is sized in whole grid cells, so
-// it is derived from the tile geometry and the stored column/row count.
+// The reference is a used install, so the panel is tall enough for the A-Z list
+// and four rows of tiles at once. Its width and height are not fixed here: the
+// Start menu is sized in whole grid cells, so it is derived from the tile
+// geometry and the stored column/row count - and a stored count of zero rows is
+// a real size, the one the pinned section is hidden at.
 export const START_TOP_PX = 62;
 export const START_ANIM_MS = 240;
 export const START_ANIM_CLOSE_MS = 200;

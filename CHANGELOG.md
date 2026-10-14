@@ -3,6 +3,45 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.18.0] - The pinned section, and the Start menu without it
+
+2026-10-14
+
+### Added
+
+- **The pinned section can be sized away.** Dragging Start's top edge down now
+  reaches zero rows, which is a size like any other: the section is put away and
+  the panel is left with the icon column, the app list and the resize strips.
+  Dragging the edge back up brings it out again, at whatever size it was before,
+  with the pins behind it untouched - hiding a section does not unpin anything
+- **The pinned section is not drawn when there is nothing in it.** With nothing
+  pinned, or no rows to show it in, the pane is put away and the app list is
+  given the width it would have been using, rather than an empty grid sitting
+  there taking taps
+
+### Removed
+
+- **The "Most used" list** in the app list, and the launch counting that only
+  existed to order it: the per-app launch counts, the last-launch times and the
+  "Most used" section are gone from the Start menu, from the stored profile and
+  from the shell's API. "Recently added" and the A-Z list are unchanged, and
+  nothing else in the shell was reading a launch count
+
+### Changed
+
+- None
+
+### Fixed
+
+- **A first boot came up with an empty Start menu.** The tiles Windows ships
+  pinned are laid out from the app registry, and the store walked the registry's
+  answer as if it were a list — an object has no `forEach` — so on a profile with
+  no stored layout yet the seeding threw before it laid out anything. It only
+  ever showed on a genuinely new profile, which is why it went unnoticed: anyone
+  already using the simulator had a stored layout and never took that path. Every
+  new profile now comes up with its pinned tiles where they belong, and no two of
+  them on top of each other
+
 ## [1.17.0] - The C: drive, as Windows lays it out
 
 2026-10-14

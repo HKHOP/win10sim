@@ -621,6 +621,13 @@
   overflow-x: hidden;
 }
 
+/* With no rows to show the pinned section in, or nothing pinned to show, the
+   pane is put away rather than left as an empty box - the grid sets its own
+   display, so [hidden] has to be answered here the way it is for the app list. */
+.start-tiles[hidden] {
+  display: none;
+}
+
 /* Where a dragged tile would land. A grid item of the target cell, so the grid
    places it exactly where it places the tile; zero-height itself, so marking a
    cell never changes the layout it is marking. */

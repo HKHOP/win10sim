@@ -1,6 +1,6 @@
 // Start menu state: the profile's Start layout (which tiles are pinned, in
-// what order and at what size) plus the launch history that feeds "Most
-// used" and "Recently added". Windows keeps this per account, so it is
+// what order and at what size) plus when each app first appeared, which is what
+// "Recently added" is built from. Windows keeps this per account, so it is
 // persisted as JSON on the emulated C: volume; without storage the session
 // simply starts like a first boot.
 //
@@ -9,7 +9,6 @@
 // until the Start layout is actually read or written.
 
 var STATE_PATH = 'C:\\Users\\User\\AppData\\Local\\Start\\startmenu.json';
-var MAX_MOST_USED = 6;
 // Win10 stops calling an app "recently added" after a week.
 var RECENT_DAYS = 7;
 var DAY_MS = 24 * 60 * 60 * 1000;
@@ -23,10 +22,6 @@ var MAX_START_COLS = 6;
 var MAX_START_ROWS = 5;
 
 var state = {
-  // appId -> launch count (Win10's Most used ordering key).
-  launches: {},
-  // appId -> epoch ms of the last launch, breaking count ties.
-  lastLaunch: {},
   // appId -> epoch ms the app first appeared in this profile.
   firstSeen: {},
   // [{ appId, size, col, row }] in tile order; the tile grid reads this.
@@ -62,7 +57,6 @@ function volume() {
 
 function snapshot() {
   return {
-    launches: state.launches,
     pins: state.pins,
     startCols: state.startCols,
     startRows: state.startRows,
@@ -123,7 +117,7 @@ async function load() {
 }
 
 function mergeState(stored) {
-  ['launches', 'lastLaunch', 'firstSeen'].forEach(function (key) {
+  ['firstSeen'].forEach(function (key) {
     if (stored[key] && typeof stored[key] === 'object') {
       for (var id in stored[key]) {
         if (Object.prototype.hasOwnProperty.call(stored[key], id)) {
@@ -154,7 +148,7 @@ function mergeState(stored) {
     state.showAppList = stored.showAppList;
   }
   state.startCols = clampInt(stored.startCols, DEFAULT_START_COLS, 1, MAX_START_COLS);
-  state.startRows = clampInt(stored.startRows, DEFAULT_START_ROWS, 1, MAX_START_ROWS);
+  state.startRows = clampInt(stored.startRows, DEFAULT_START_ROWS, 0, MAX_START_ROWS);
 }
 
 function clampInt(value, fallback, min, max) {
@@ -170,7 +164,12 @@ function clampInt(value, fallback, min, max) {
 // pinned. Only a first-boot profile does this; a stored layout wins.
 function seedSystemApps() {
   var epoch = 0;
-  registryApps().forEach(function (appId, info) {
+  // The registry answers with appId -> { pinned, tileSize }, so its own keys are
+  // the apps: an object has no forEach, and calling one on it meant a first boot
+  // never got as far as laying out the tiles that ship pinned.
+  var apps = registryApps();
+  Object.keys(apps).forEach(function (appId) {
+    var info = apps[appId];
     if (state.firstSeen[appId] === undefined) {
       state.firstSeen[appId] = epoch;
     }
@@ -234,18 +233,7 @@ window.addEventListener('beforeunload', function () {
   }
 });
 
-// Launch history -----------------------------------------------------------
-
-export function recordLaunch(appId) {
-  if (!appId) {
-    return;
-  }
-  state.launches[appId] = (state.launches[appId] || 0) + 1;
-  state.lastLaunch[appId] = Date.now();
-  pendingSave = true;
-  save();
-  emit();
-}
+// Registration history ------------------------------------------------------
 
 // Called by the registry when an app registers, so genuinely new apps come
 // up in "Recently added" while preinstalled ones do not. On a first-boot
@@ -265,28 +253,6 @@ export function noteAppRegistered(appId) {
   emit();
 }
 
-export function getLaunchCount(appId) {
-  return state.launches[appId] || 0;
-}
-
-// Most used: by count, then by how recently it ran. Win10 caps the section
-// at six rows.
-export function getMostUsed(limit) {
-  var max = limit || MAX_MOST_USED;
-  var now = Date.now();
-  return Object.keys(state.launches)
-    .filter(function (id) { return state.launches[id] > 0; })
-    .sort(function (a, b) {
-      if (state.launches[b] !== state.launches[a]) {
-        return state.launches[b] - state.launches[a];
-      }
-      var at = state.lastLaunch[a] || now;
-      var bt = state.lastLaunch[b] || now;
-      return bt - at;
-    })
-    .slice(0, max);
-}
-
 // Recently added: apps that appeared inside the recent window, newest
 // first. Apps stamped at 0 came with the profile and never qualify.
 export function getRecentlyAdded(limit) {
@@ -304,11 +270,12 @@ export function getRecentlyAdded(limit) {
 // The Start menu size -------------------------------------------------------
 
 // Win10 snaps the menu to whole tiles as it is dragged and remembers the size
-// between sessions.
+// between sessions. Zero rows is a size like any other: it is what the pinned
+// section is hidden at, and the next drag away from the edge brings it back.
 export function getStartSize() {
   return {
     cols: gridCols(),
-    rows: clampInt(state.startRows, DEFAULT_START_ROWS, 1, MAX_START_ROWS)
+    rows: clampInt(state.startRows, DEFAULT_START_ROWS, 0, MAX_START_ROWS)
   };
 }
 
@@ -324,7 +291,7 @@ function minCols() {
 
 export function setStartSize(cols, rows) {
   var nextCols = clampInt(cols, DEFAULT_START_COLS, minCols(), MAX_START_COLS);
-  var nextRows = clampInt(rows, DEFAULT_START_ROWS, 1, MAX_START_ROWS);
+  var nextRows = clampInt(rows, DEFAULT_START_ROWS, 0, MAX_START_ROWS);
   if (nextCols === gridCols() && nextRows === getStartSize().rows) {
     return false;
   }

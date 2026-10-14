@@ -4,7 +4,7 @@ import { mountNtfs } from '../apis/ntfs.js';
 import { attachQuickAccess } from '../apis/quickaccess.js';
 import { attachAssociations, registerAssociations } from '../apis/associations.js';
 import { APP_PERMISSIONS } from '../global/constants.js';
-import { initStartState, setRegistryHook, noteAppRegistered, recordLaunch } from './startstate.js';
+import { initStartState, setRegistryHook, noteAppRegistered } from './startstate.js';
 import { setCursorBusy } from './cursor.js';
 
 // App registry + launcher: each app registers { id, name, icon, manifest,
@@ -67,7 +67,7 @@ function normalizeStart(def) {
   return {
     name: declared.name || def.name || def.id,
     icon: def.icon || '',
-    // Second line in Most used rows (Win10 shows the publisher there).
+    // Second line in the app list rows (Win10 shows the publisher there).
     subtitle: declared.subtitle || '',
     tile: tile,
     pinned: !!declared.pinned,
@@ -228,7 +228,5 @@ export function launchApp(id, args) {
       });
     });
   }
-  // Win10 counts a launch for Most used as soon as the app starts.
-  recordLaunch(id);
   return result;
 }

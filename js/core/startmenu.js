@@ -1,8 +1,8 @@
 // Win10 Start menu: the medium panel anchored over the taskbar's left
 // corner, in the three segments Windows documents — a narrow icon column at
 // the far left (hamburger, the App list / Pinned apps picker, the account and
-// power buttons), the app list ("Most used" / "Recently added" / A-Z), and
-// the pinned tile grid.
+// power buttons), the app list ("Recently added" / A-Z), and the pinned tile
+// grid.
 //
 // The icon column is glyphs only: Win10 spells out its labels for anyone whose
 // pointer is over the column, and the emulated pointer needs no mouse, so the
@@ -14,8 +14,8 @@
 // its width, with the column keeping a way back to the list.
 //
 // Everything the menu lists comes from the app registry (apps/), so any app
-// that registers later shows up here — in the list, in Most used once it has
-// been launched, and on a tile if it declares one — with no shell change.
+// that registers later shows up here — in the list, and on a tile if it
+// declares one — with no shell change.
 
 import {
   DISPLAY_HEIGHT,
@@ -56,7 +56,6 @@ import { showContextMenu, isContextMenuTarget } from './contextmenu.js';
 import { isRawDevicePress } from './cursor.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
-  getMostUsed,
   getRecentlyAdded,
   pinApp,
   isPinned,
@@ -137,6 +136,11 @@ function menuWidth(cols, listW) {
 }
 
 function menuHeightForRows(rows) {
+  if (!rows) {
+    // No rows to show: what is left of the menu is its padding and the strip the
+    // top resize edge lives in, which is as short as this menu may be drawn.
+    return START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX;
+  }
   return START_TILE_PAD_PX * 2 + START_RESIZE_EDGE_PX +
     rows * START_TILE_ROW_PX + (rows - 1) * START_TILE_GAP_PX;
 }
@@ -156,11 +160,41 @@ function listWidth() {
   return view === 'apps' ? START_LIST_W : 0;
 }
 
+// The pinned section is either drawn or it is not. It takes rows to be seen in,
+// and there is nothing to see with nothing pinned, so both of those put it away
+// rather than leave an empty box on the start screen - and the app list is given
+// the width it would have been using.
+function tilesShown() {
+  return getStartSize().rows > 0 && getPins().length > 0;
+}
+
+function applyTilesPane() {
+  var shown = tilesShown();
+  if (tileGrid) {
+    tileGrid.hidden = !shown;
+  }
+  return shown;
+}
+
+// The menu with no pinned section in it: the icon column, the app list, and the
+// strips the resize edges live on.
+function bareWidth(listW) {
+  return START_RAIL_W + listW + gridPadX();
+}
+
 function applyStartSize() {
   var size = getStartSize();
   var listW = listWidth();
-  var w = Math.min(menuWidth(size.cols, listW), maxMenuWidth(listW));
-  var h = Math.max(START_MIN_H_PX, Math.min(menuHeightForRows(size.rows), menuHeight()));
+  var shown = applyTilesPane();
+  var w = shown
+    ? Math.min(menuWidth(size.cols, listW), maxMenuWidth(listW))
+    : bareWidth(listW);
+  // Zero rows is a size of its own: the section is put away, so the menu is as
+  // tall as what is left of it rather than at the floor that keeps the app list
+  // usable - which is the only way to hide the section completely, and the size
+  // the next drag away from the edge brings back.
+  var wanted = menuHeightForRows(size.rows);
+  var h = Math.max(size.rows ? START_MIN_H_PX : wanted, Math.min(wanted, menuHeight()));
   menuEl.style.setProperty('--menu-w', w + 'px');
   menuEl.style.setProperty('--menu-h', h + 'px');
   // The bottom edge is pinned to the taskbar, so the top is whatever is left.
@@ -169,8 +203,12 @@ function applyStartSize() {
 
 // Which column count a dragged width means, and the other way round. The
 // pointer is measured against the edge it is dragging, and the result snaps to
-// the nearest whole cell.
+// the nearest whole cell. With no pinned section drawn there are no columns to
+// hand out, so the width drag keeps the count it has.
 function colsForWidth(px, listW) {
+  if (!tilesShown()) {
+    return getStartSize().cols;
+  }
   var fixed = START_RAIL_W + listW + gridPadX();
   var raw = (px - fixed + START_TILE_GAP_PX) / (START_TILE_CELL_PX + START_TILE_GAP_PX);
   return Math.max(1, Math.min(Math.round(raw), maxCols(listW)));
@@ -179,7 +217,9 @@ function colsForWidth(px, listW) {
 function rowsForHeight(px) {
   var raw = (px - START_TILE_PAD_PX * 2 - START_RESIZE_EDGE_PX + START_TILE_GAP_PX) /
     (START_TILE_ROW_PX + START_TILE_GAP_PX);
-  return Math.max(1, Math.min(Math.round(raw), maxRows()));
+  // Zero rows is reachable on purpose: it is the size that puts the pinned
+  // section away, and dragging the top edge back up brings it out again.
+  return Math.max(0, Math.min(Math.round(raw), maxRows()));
 }
 
 function maxCols(listW) {
@@ -283,11 +323,13 @@ function sectionHeader(text, letter) {
 
 // Repaints both panes: the app list from the registry history, the tile
 // grid from the pinned layout. Running markers are re-applied after, since
-// the tile grid is rebuilt from scratch.
+// the tile grid is rebuilt from scratch, and the menu is measured again because
+// pinning the first tile is what brings the pinned section back.
 function render() {
   renderList();
   renderTileGrid(tileGrid);
   applyRunning();
+  applyStartSize();
 }
 
 // Win10 files non-letters under their own heading.
@@ -382,16 +424,6 @@ function renderList() {
   entries.forEach(function (entry) {
     byId[entry.id] = entry;
   });
-
-  var mostUsed = getMostUsed()
-    .map(function (id) { return byId[id]; })
-    .filter(Boolean);
-  if (mostUsed.length) {
-    listEl.appendChild(sectionHeader('Most used'));
-    mostUsed.forEach(function (entry) {
-      listEl.appendChild(buildRow(entry));
-    });
-  }
 
   // Only genuinely new apps get a Recently added section.
   var recent = getRecentlyAdded()
