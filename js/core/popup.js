@@ -26,6 +26,15 @@ import { createTextField } from './textfield.js';
 // The promise resolves with what the user pressed, or with null when the dialog
 // was dismissed - which is the same distinction Windows draws between closing a
 // dialog and answering it.
+//
+// `ownerId` is the window this dialog belongs to, which the shell passes as the
+// focused window: Windows will not let an owner come up over its own dialog, and
+// neither does this. `behind: true` is the one way out, for a dialog that is
+// meant to be behind the window it was opened from and left there.
+//
+// A dialog can open another: `api.open({...})` hands back the same shape of
+// handle, owned by this dialog, and this one stops answering presses while the
+// child is up - which is what a modal child does in Windows.
 
 // The three marks a message box leads with, taken from the Segoe MDL2 glyphs
 // Windows itself draws them with (U+E7BA, U+E783, U+E946). They are filled with
@@ -91,9 +100,10 @@ function valueOf(field, node) {
   return node.value;
 }
 
-// spec: see the comment at the top. Returns a handle with the window, the live
-// values, and a promise for what the user pressed.
-export function openPopup(context, spec) {
+// spec: see the comment at the top. ownerId is the window this dialog belongs
+// to. Returns a handle with the window, the live values, and a promise for what
+// the user pressed.
+export function openPopup(context, spec, ownerId) {
   var options = spec || {};
   var state = {
     closed: false,
@@ -129,7 +139,11 @@ export function openPopup(context, spec) {
     height: options.height || naturalHeight(),
     // A dialog is a dialog: no maximise, no resize grips.
     chrome: 'popup',
-    minimizable: options.minimizable !== false
+    minimizable: options.minimizable !== false,
+    // Which window it belongs to, and whether this is the one dialog that is
+    // allowed to sit behind it.
+    ownerId: options.owner !== undefined ? options.owner : ownerId,
+    behindOwner: !!options.behind
   });
 
   var root = el('div', 'popup');
@@ -434,7 +448,14 @@ export function openPopup(context, spec) {
 
   // Escape dismisses; Enter presses the default button - both consumed here so
   // the window's own shortcuts never fire a second time behind the dialog.
-  root.addEventListener('keydown', function (event) {
+  //
+  // The listener is on the dialog's whole body rather than on the content,
+  // because a dialog with nothing in it to focus - a message box, a question
+  // with two buttons and no fields - left every key to the shell behind it:
+  // Enter did nothing at all, which on a keyboard (or on the phone's own) reads
+  // as a dialog whose buttons are dead. Stopping the keys as well as handling
+  // them is what keeps a global shortcut from firing behind a dialog.
+  win.body.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && options.closeOnEscape !== false) {
       event.preventDefault();
       event.stopPropagation();
@@ -506,6 +527,22 @@ export function openPopup(context, spec) {
     press: function (value) {
       press(buttons.filter(function (b) { return b.value === value; })[0]);
     },
+    // A dialog inside this one. The child is owned by this dialog, so it stays
+    // above it, and this dialog stops taking presses while the child is up -
+    // which is what a modal child does in Windows. The presses come back when
+    // the child closes, however it closes.
+    open: function (childSpec) {
+      var blocker = el('div', 'popup-blocked');
+      blocker.setAttribute('aria-hidden', 'true');
+      win.body.appendChild(blocker);
+      var child = openPopup(context, childSpec, win.id);
+      child.result.then(function () {
+        if (blocker.parentNode) {
+          blocker.parentNode.removeChild(blocker);
+        }
+      }, function () {});
+      return child;
+    },
     close: function () { finish(null, readValues()); },
     focus: function (name) {
       var node = nodes[name];
@@ -519,6 +556,13 @@ export function openPopup(context, spec) {
     isOpen: function () { return !state.closed; },
     result: result
   };
+
+  // A dialog takes the keyboard when it opens, the way a Win32 dialog does. What
+  // is focused is the content rather than the default button: Enter on a real
+  // button answers the dialog on the browser's own, and this dialog answers it
+  // itself - and most message boxes have nothing in them worth focusing.
+  root.tabIndex = -1;
+  root.focus();
 
   // An app usually wants the textbox it named to be ready for typing.
   var firstText = state.fields.filter(function (f) { return f.type === 'text' || f.type === 'password'; })[0];

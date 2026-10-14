@@ -1,4 +1,5 @@
 import { openPopup } from './popup.js';
+import { focusedWindowId } from './windowmanager.js';
 
 // The shell's message box: glyph on the left, text on the right, buttons along
 // the bottom, the way Windows puts a dialog in front of you.
@@ -16,6 +17,9 @@ export function showMessageBox(context, opts) {
   var options = opts || {};
   var buttons = options.buttons || [{ label: 'OK', primary: true }];
 
+  // A message box belongs to the window that raised it - Explorer's when it is
+  // Explorer saying something - so that window cannot come up over the box, and
+  // so the buttons it is offering stay pressable.
   return openPopup(context, {
     title: options.title || 'File Explorer',
     icon: options.icon || '',
@@ -24,6 +28,7 @@ export function showMessageBox(context, opts) {
     // that went wrong, a blue one for a note.
     glyph: options.info ? 'info' : 'error',
     body: options.message || '',
+    behind: !!options.behind,
     buttons: buttons.map(function (button, index) {
       return {
         label: button.label,
@@ -41,5 +46,5 @@ export function showMessageBox(context, opts) {
       }
       return false;
     }
-  });
+  }, options.ownerId !== undefined ? options.ownerId : focusedWindowId());
 }

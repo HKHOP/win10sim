@@ -3,6 +3,54 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.0] - Dialogs that belong to their window
+
+2026-10-14
+
+### Added
+
+- **A dialog belongs to the window it was opened from.** Windows treats a dialog
+  as an owned window: the window that raised it cannot be brought up over it, and
+  the two are raised together with the dialog in front. That is now the rule here
+  too - pressing an app's own window brings its dialog up with it instead of
+  sliding underneath it, and a whole family (a dialog, and the dialogs opened
+  from those) comes up as a unit with the innermost one last
+- **`behind: true`**, for the dialog that is meant to be behind the window it was
+  opened from. It is left there - by the owner coming forward, and even when the
+  dialog itself has the focus - which is the case Windows allows for a dialog an
+  app opens to say something without taking the screen away from what it was
+  saying it about
+- **A dialog can open a dialog.** `api.open({...})` gives back the same handle,
+  owned by the dialog it came from, and the parent stops answering presses while
+  the child is up - the way a modal child behaves - getting them back when the
+  child closes however it closed. Closing the parent takes the child with it, so
+  a dialog can never be left standing on the desktop with nothing left to answer
+  it
+- **Closing a dialog hands the keyboard back to its owner**, which is where a
+  person looks next
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **A dialog's buttons could be pressing the window behind them.** This was the
+  same fault as the z-order above: an app's window came up over the dialog
+  waiting on it, so a press that should have hit OK hit the window underneath and
+  nothing appeared to happen
+- **Enter and Escape did nothing in a dialog with nothing in it to focus** - every
+  message box, and any dialog of buttons and no fields. The keyboard handler was
+  on the dialog's content, which nothing in a message box can hold the focus, so
+  the keys went to the shell behind the dialog: on a keyboard, or on the phone's
+  own, a dialog with two buttons and nothing to type in could not be answered at
+  all. The handler is now on the dialog's whole body, and a dialog takes the
+  focus when it opens the way a Win32 dialog does
+
 ## [1.18.0] - The pinned section, and the Start menu without it
 
 2026-10-14

@@ -206,6 +206,14 @@ export function createWindow(opts) {
       h: h
     }),
     prevRect: null,
+    // A dialog belongs to the window it was opened from, the way a Win32 owned
+    // window does. Windows will not let that owner come up over it: a press on
+    // the owner brings the dialog up with it, so the pair travels together and
+    // the dialog stays in front. `behindOwner` is the one exception, asked for
+    // by name: a dialog that is meant to be behind its owner and is left there.
+    owner: options.ownerId != null ? windowById(options.ownerId) : null,
+    behindOwner: !!options.behindOwner,
+    owns: [],
     // Snap state: 'left' / 'right' / 'top-left' / ... when snapped, null
     // when free. Maximize is tracked separately, exactly like Win10's
     // window state.
@@ -255,6 +263,9 @@ export function createWindow(opts) {
 
   layer.appendChild(win.el);
   windows.push(win);
+  if (win.owner) {
+    win.owner.owns.push(win);
+  }
   paint(win);
   focusWindow(win);
   if (!REDUCED) {
@@ -304,10 +315,58 @@ function focusWindow(win) {
     }
   });
   win.seq = ++focusSeq;
-  win.el.style.zIndex = String(++zTop);
+  // A dialog belongs to the window it was opened from, and Windows keeps it in
+  // front of that window: the whole family is raised together, the owner first
+  // and each dialog after it, so no press on the owner can bring the owner up
+  // over the dialog waiting on it - which is also why a dialog's buttons cannot
+  // end up pressing the owner instead of themselves.
+  windowFamily(win).forEach(function (member) {
+    member.el.style.zIndex = String(++zTop);
+  });
+  // The one dialog allowed to be behind: asked for by name, and put back below
+  // its owner every time the owner comes forward.
+  placeBehind(win);
+  // A behind-owner dialog that has the focus anyway still yields to its owner.
+  if (win.behindOwner && win.owner && !win.owner.minimized) {
+    win.owner.el.style.zIndex = String(++zTop);
+  }
   if (changed) {
     emit();
   }
+}
+
+// A window and the dialogs opened from it, in the order Windows stacks a family
+// of owned windows: the owner, then its dialogs, then the ones inside those.
+function windowFamily(win) {
+  var out = [win];
+  win.owns.forEach(function (owned) {
+    if (!owned.minimized && !owned.behindOwner) {
+      out = out.concat(windowFamily(owned));
+    }
+  });
+  return out;
+}
+
+// A dialog asked to sit behind its owner goes just below it rather than
+// somewhere in the middle of the stack.
+function placeBehind(win) {
+  win.owns.forEach(function (owned, index) {
+    if (owned.minimized) {
+      return;
+    }
+    if (owned.behindOwner) {
+      owned.el.style.zIndex = String(Number(win.el.style.zIndex) - 1 - index);
+      return;
+    }
+    placeBehind(owned);
+  });
+}
+
+// Which window has the focus, by id: this is how a dialog is told which window
+// it belongs to.
+export function focusedWindowId() {
+  var win = focusedWindow();
+  return win ? win.id : null;
 }
 
 function focusedWindow() {
@@ -473,9 +532,28 @@ function closeWindow(win) {
   if (at >= 0) {
     windows.splice(at, 1);
   }
+  // The dialogs this window opened are its modal children, so they go with it:
+  // a window cannot leave a dialog of its own standing on the desktop with
+  // nothing left to answer it.
+  var owned = win.owns.slice();
+  win.owns.length = 0;
+  if (win.owner) {
+    var ownedAt = win.owner.owns.indexOf(win);
+    if (ownedAt >= 0) {
+      win.owner.owns.splice(ownedAt, 1);
+    }
+  }
+  // A dialog closing hands the keyboard back to the window it was opened from,
+  // which is where a person looks next.
+  var back = win.owner && windows.indexOf(win.owner) >= 0 && !win.owner.minimized
+    ? win.owner
+    : (windows.length ? windows[windows.length - 1] : null);
+  owned.forEach(function (child) {
+    closeWindow(child);
+  });
   hideSnapAssist();
-  if (win.focused && windows.length > 0) {
-    focusWindow(windows[windows.length - 1]);
+  if (win.focused && back) {
+    focusWindow(back);
   }
   emit();
   if (REDUCED) {

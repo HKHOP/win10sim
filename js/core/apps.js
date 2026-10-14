@@ -1,4 +1,4 @@
-import { createWindow } from './windowmanager.js';
+import { createWindow, focusedWindowId } from './windowmanager.js';
 import { openPopup } from './popup.js';
 import { mountNtfs } from '../apis/ntfs.js';
 import { attachQuickAccess } from '../apis/quickaccess.js';
@@ -202,8 +202,13 @@ export function launchApp(id, args) {
     // How an app asks the shell for a dialog. The popup is the one surface
     // every app gets without asking: a window, a set of controls and buttons,
     // and an answer.
+    //
+    // The window that has the focus is what the dialog belongs to, which is
+    // what keeps an app's own window from coming up over the dialog it is
+    // waiting on - and, since the dialog is in front, keeps the dialog's
+    // buttons pressing themselves rather than the window behind them.
     popup: function (spec) {
-      return openPopup(context, spec);
+      return openPopup(context, spec, focusedWindowId());
     },
     createWindow: function (opts) {
       const merged = Object.assign({}, opts, { appId: def.id });

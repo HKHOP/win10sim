@@ -156,6 +156,18 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* A dialog opened from inside another one takes its parent's presses with it,
+   the way a modal child does: the parent stays on screen and stops answering,
+   and gets its presses back when the child closes. Nothing of the parent's own
+   is visible through it - Windows dims a disabled owner by drawing on it, and
+   the emulated screen has no such effect to draw with. */
+.popup-blocked {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
+}
+
 /* The dropdown: a closed box with the font's chevron on its right edge. */
 .popup-select-wrap {
   position: relative;
