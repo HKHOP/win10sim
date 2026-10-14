@@ -14,9 +14,12 @@ import { createPrefs } from './prefs.js';
 // .lnk here, for instance, is what makes a shortcut file call itself a Shortcut
 // whether or not anything has claimed it yet.
 
-const store = createPrefs('C:\\$FileTypes.json', function () {
+// In the profile with the shell's other store files, because the root of C: is
+// no longer a folder a program may write to. An older install has the file at
+// the old path, which is read once and then taken away.
+const store = createPrefs('C:\\Users\\User\\AppData\\Local\\$FileTypes.json', function () {
   return { defaults: {} };
-});
+}, { legacy: 'C:\\$FileTypes.json' });
 
 // One record per (app, extension), built from the manifests as apps register.
 let handlers = [];
@@ -124,11 +127,15 @@ export function typeFor(ext) {
 // The app a double-click opens the file with. A remembered default only counts
 // while that app still says it handles the type, so uninstalling an app cannot
 // leave a file pointing at nothing.
+//
+// The answer is always a promise, "nothing" included: a drive full of Windows
+// files means most of what a person can click has no app behind it, and every
+// caller is waiting for an answer rather than checking whether there is one.
 export function defaultAppFor(ext) {
   var clean = String(ext || '').replace(/^\./, '').toLowerCase();
   var offered = handlersFor(clean);
   if (offered.length === 0) {
-    return null;
+    return Promise.resolve(null);
   }
   var cache = store.read();
   return cache.then(function (state) {

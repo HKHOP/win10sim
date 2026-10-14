@@ -611,6 +611,13 @@
   background: #0078d7;
 }
 
+/* A drive with this little room left is drawn red, the way Win10 draws it once
+   a volume drops under a tenth free - the bar is the warning, since the only
+   place a person would otherwise read the number is the line beneath it. */
+.exp-drive-fill.is-low {
+  background: #c42b1c;
+}
+
 .exp-drive-sub {
   color: #555;
   margin-top: 3px;

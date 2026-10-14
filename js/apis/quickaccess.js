@@ -11,9 +11,13 @@ const RECENT_MAX = 25;
 // Win10's Quick access holds the profile's known folders out of the box.
 const DEFAULT_PINNED = ['Desktop', 'Downloads', 'Documents', 'Music', 'Pictures', 'Videos'];
 
-const store = createPrefs('C:\\$QuickAccess.json', function () {
+// Kept in the profile rather than at the root of C:, where the shell's other
+// store files live: the root of a Windows drive is not a place a program may
+// write, and this one is refused like everything else there. An older install
+// has the file at the old path, which is read once and then taken away.
+const store = createPrefs('C:\\Users\\User\\AppData\\Local\\$QuickAccess.json', function () {
   return { pinned: DEFAULT_PINNED.slice(), recent: [] };
-});
+}, { legacy: 'C:\\$QuickAccess.json' });
 
 // Attached once by the app registry, which owns the single (lazy) volume
 // mount, so Explorer and Notepad share one store.

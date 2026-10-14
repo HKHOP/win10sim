@@ -125,6 +125,14 @@ export const KNOWN_FOLDER_SRC = {
 // The emulated volume is the system drive: Win10 shows the Windows-logo
 // drive (Imageres_dll_031) for C:, not the plain drive glyph.
 export const DRIVE_SRC = 'assets/shell/system-drive.png';
+// What Windows itself occupies on the system drive: WinSxS, the update store,
+// the swap and hibernation files, and everything an install has written since.
+// Almost none of it exists here - the several hundred Windows entries the drive
+// lists take no room at all, which is what lets it be browsed on a phone - but
+// it is what the drive has to say for its figures to be the ones a person is
+// used to seeing, and the free space it says beside them is the browser's own
+// answer rather than this project's.
+export const WINDOWS_ON_DISK_BYTES = Math.round(30.9 * 1024 * 1024 * 1024);
 // Notepad: the real Windows 10 Notepad icon (blue spiral notepad).
 export const NOTEPAD_SRC = 'assets/notepad.png';
 // What a registered app may ask the shell for in its manifest. The shell

@@ -173,6 +173,11 @@ function el(tag, cls, html) {
   return node;
 }
 
+// The share of a drive that has to be left before the bar stops being blue:
+// Windows colours a volume red at a tenth free, and a drive at 90% is the same
+// statement made the other way round.
+var DRIVE_LOW_SPACE = 0.1;
+
 function formatSize(bytes) {
   if (bytes < 1024) {
     return bytes + ' B';
@@ -989,21 +994,56 @@ export async function openExplorer(context, startPath) {
     }, function () {});
   }
 
+  // Windows refuses to delete, replace or rename anything it owns - and refuses
+  // by name, which is how a person is told which thing they were not allowed to
+  // touch. The offer to go ahead anyway is part of the message, and it goes
+  // nowhere: there is no Continue that lets you past this.
+  function accessDenied(place) {
+    showMessageBox(context, {
+      title: leafName(place),
+      message: [
+        'You need permission to perform this action.',
+        'Contact your system administrator.'
+      ],
+      buttons: [{ label: 'Continue', primary: true }, { label: 'Cancel' }]
+    });
+  }
+
+  // Asked of the volume rather than guessed at from the path: which folders
+  // Windows owns is the volume's business, not Explorer's.
+  function ownedByWindows(place) {
+    return typeof volume.isProtected === 'function' && volume.isProtected(place);
+  }
+
   function writableHere() {
     return state.place !== 'thispc' && state.place !== HOME_PLACE &&
-      state.place !== RECYCLE_BIN_PLACE && !state.query;
+      state.place !== RECYCLE_BIN_PLACE && !state.query && !ownedByWindows(state.place);
   }
 
   // Delete sends items to the Recycle Bin the way Win10 does: the payload is
   // moved under $Recycle.Bin\<SID> and a small $I record keeps the original
   // path so Restore can put it back.
+  //
+  // Windows also splits the selection in two before it starts: what the person
+  // is allowed to delete goes to the bin, and what Windows owns is refused with
+  // the name of the first one said out loud.
   function recycleItems(places) {
     if (!volume.available) {
       return Promise.resolve();
     }
-    emit(VOLUME_CHANGED, { kind: 'delete', places: places });
+    var refused = places.filter(ownedByWindows);
+    var allowed = places.filter(function (place) {
+      return !ownedByWindows(place);
+    });
+    if (refused.length > 0) {
+      accessDenied(refused[0]);
+    }
+    if (allowed.length === 0) {
+      return Promise.resolve();
+    }
+    emit(VOLUME_CHANGED, { kind: 'delete', places: allowed });
     return volume.makeDir(RECYCLE_BIN_ROOT).then(function () {
-      return places.reduce(function (chain, place) {
+      return allowed.reduce(function (chain, place) {
         return chain.then(function () {
           var id = '$R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
           var name = id + '_' + leafName(place);
@@ -1127,6 +1167,12 @@ export async function openExplorer(context, startPath) {
   function renameTo(item, nextName) {
     var parent = parentPath(item.place);
     var target = joinPath(parent, nextName);
+    // A rename is a delete and a create, so it meets both refusals: the thing
+    // being renamed, and the folder it would be renamed into.
+    if (ownedByWindows(item.place) || ownedByWindows(target)) {
+      accessDenied(item.place);
+      return;
+    }
     function apply() {
       volume.move(item.place, target).then(function () {
         emit(VOLUME_CHANGED, { kind: 'rename', from: item.place, to: target });
@@ -1828,7 +1874,14 @@ export async function openExplorer(context, startPath) {
     if (space.quota > 0) {
       var bar = el('div', 'exp-drive-bar');
       var fill = el('div', 'exp-drive-fill');
-      fill.style.width = Math.min(100, Math.round((space.usage / space.quota) * 100)) + '%';
+      var used = Math.min(100, Math.round((space.usage / space.quota) * 100));
+      fill.style.width = used + '%';
+      // Win10 turns the bar red once a volume has under a tenth of its space
+      // left, which is the only warning most people ever see about a drive that
+      // is about to fill up.
+      if ((space.quota - space.usage) / space.quota < DRIVE_LOW_SPACE) {
+        fill.classList.add('is-low');
+      }
       bar.appendChild(fill);
       info.appendChild(bar);
       var sub = el('div', 'exp-drive-sub');

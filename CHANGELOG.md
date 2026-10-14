@@ -3,6 +3,74 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.17.0] - The C: drive, as Windows lays it out
+
+2026-10-14
+
+### Added
+
+- **`js/apis/wintree/`**: the Windows file tree, written down as data and read,
+  never written. Open `C:\` and there is what a freshly installed machine has:
+  `Windows`, `Program Files`, `Program Files (x86)`, `ProgramData`, `Users`,
+  `Boot`, `Recovery`, `PerfLogs`, `Config.Msi`, `inetpub`, `MSOCache`,
+  `Documents and Settings`, the hidden `$Recycle.Bin` and `$WinREAgent`, and the
+  boot files the firmware reads before Windows starts - `bootmgr`, `BOOTNXT`,
+  `pagefile.sys`, `hiberfil.sys`, `swapfile.sys`
+- **The layout inside those folders**, taken from the documented folder lists
+  rather than guessed: `C:\Windows` with its language, servicing and system
+  folders (`System32`, `SysWOW64`, `WinSxS`, `SystemApps`, `SoftwareDistribution`,
+  `Prefetch`, `Logs`, `Fonts`, `Temp`, `Media`, `Help`); `System32` with the
+  programs Windows is made of (`cmd.exe`, `taskmgr.exe`, `regedit.exe`, `sfc.exe`,
+  `osk.exe`, `kernel32.dll`, `ntdll.dll`, `user32.dll`, and the rest), the
+  registry hives as files under `config`, and `drivers\etc` with the hosts file
+  in it; `Program Files` and its 32-bit twin, where Edge's own `msedge.exe` is;
+  `ProgramData`; and the profile folders a Windows account is created with -
+  Desktop, Documents, Downloads, Music, Pictures, Videos, AppData (Local,
+  LocalLow, Roaming), Contacts, Links, Favorites, Saved Games, NTUSER.DAT
+- **A few of those files can be opened**, the ones a person is meant to read:
+  `win.ini`, `system.ini`, `boot.ini` and `drivers\etc\hosts` carry their real
+  content, so Notepad shows what Windows shows. The rest read as empty, which is
+  what a file nobody has ever written is
+- **"Access is denied" for everything Windows owns.** Deleting, replacing or
+  renaming anything under `C:\Windows`, `C:\Program Files`, `C:\Program Files
+  (x86)`, `C:\ProgramData`, `C:\Boot`, `C:\Recovery`, `System Volume
+  Information`, a boot file, or another account's profile is refused the way
+  Windows refuses it - the name of the thing you reached for as the title, and
+  a message box with a Continue button that goes nowhere. The signed-in
+  account's own folders are the exception: they can be deleted and renamed like
+  any folder a person owns
+- **The drive says what a drive says.** Explorer's drive bar reads about 31 GB
+  used and the 2 GB the browser will actually give for OPFS, because that is
+  what it is true to say - the several hundred Windows entries listed above take
+  no space at all, and the free figure is the browser's own answer rather than
+  this project's. **The bar is red**, as Win10 draws a volume that has under a
+  tenth of its space left
+
+### Removed
+
+- None
+
+### Changed
+
+- **`C:` is no longer a folder a program may write to**, which is how a Windows
+  drive has always behaved. The shell's two store files - Quick access and the
+  file-type defaults - moved into the profile with the rest of its own records,
+  and an older install's copies are read once from the old path and then
+  cleared away, so nothing a person pinned is lost
+- A Windows folder that gets deleted or renamed now stays deleted and stays
+  renamed: with nothing on disk to erase, the record that the name is no longer
+  part of the drive is what makes it look that way
+
+### Fixed
+
+- **Opening a file no app had claimed crashed Explorer's window.** The handler
+  lookup answered "nothing" by returning nothing rather than by returning an
+  answer, and four callers were waiting on it as a promise - so the first
+  double-click on any of the thousands of files Windows itself ships (a `.dll`,
+  a `.exe`, the hosts file) threw instead of saying "There is no app installed
+  that can open this file". It says that now, which on this computer is the
+  honest answer: nothing here has claimed `.exe`
+
 ## [1.16.1] - The fields let go, and the pad scrolls the other way
 
 2026-10-14
