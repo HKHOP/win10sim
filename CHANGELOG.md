@@ -3,6 +3,40 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.2] - The cursor keeps its place when the phone's own buttons are pressed
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **The emulated cursor jumped to the right-hand edge of the screen whenever the
+  fullscreen or virtual-keyboard button was pressed on a phone.** A tap on a
+  button the page drew for itself arrives as the browser's own mouse events - a
+  real, trusted `mousemove` among them - and the free-pointer path turns any
+  mousemove into the cursor's position. The two buttons float against the right
+  edge of the viewport, so taking that move at its word threw the cursor to the
+  right edge of the emulated screen every time. Page chrome is stepped past for
+  movement now, exactly as the press path already stepped past it, so the cursor
+  is only ever moved by a pointer that is over the emulated screen
+- **The same fault from the other end**: finger movement is converted from page
+  pixels into emulated pixels by the stage's own scale, and a stage with no room
+  on the page - the moment a browser changes the viewport - has no scale to
+  convert by. Dividing by it moved the cursor by infinity, which clamping turns
+  into the corner of the screen. A stage that is not there is now a stage the
+  finger does not move
+
 ## [1.19.1] - The Start menu opens again
 
 2026-10-14

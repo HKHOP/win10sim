@@ -632,6 +632,16 @@ function updateHover(target) {
     if (!event.isTrusted || !booted) {
       return;
     }
+    // Page chrome is not ours to follow, and on a touch screen a tap on one of
+    // its buttons arrives as the browser's own mouse events - a real, trusted
+    // mousemove included. That move is at the button, and the chrome buttons
+    // float against the right edge of the viewport, so taking it at its word
+    // threw the emulated cursor to the right-hand edge of the emulated screen
+    // every time the fullscreen or keyboard button was pressed. The press path
+    // already steps past the chrome; this is the same rule for the movement.
+    if (isSiteChrome(event.target)) {
+      return;
+    }
     var rect = stage.getBoundingClientRect();
     if (!isLocked()) {
       // No capture: the browser pointer steers the cursor absolutely, still
@@ -746,8 +756,14 @@ function updateHover(target) {
     isExempt: isSiteChrome,
     move: function (dx, dy) {
       // Finger travel is in CSS pixels while the emulated display has its own
-      // size, so the movement is converted into display units.
+      // size, so the movement is converted into display units. A stage with no
+      // room on the page (the moment a browser changes the viewport) has no
+      // scale to convert by, and dividing by its width would throw the cursor
+      // at the edge of the screen rather than move it.
       var rect = stage.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return;
+      }
       var toStage = DISPLAY_WIDTH / rect.width;
       x += dx * toStage;
       y += dy * toStage;
