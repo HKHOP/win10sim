@@ -17,7 +17,7 @@ import {
 import { launchApp } from './apps.js';
 import { subscribeWindows, showWindowSystemMenu } from './windowmanager.js';
 import { toggleStartMenu, subscribeStartOpen } from './startmenu.js';
-import { openSearch, subscribeSearchOpen } from './search.js';
+import { openSearch, searchTyped, attachSearchInput, subscribeSearchOpen } from './search.js';
 
 // Win10 light-theme taskbar: Start button, search box, Task view, pinned
 // apps, running-app area, and the tray (chevron, network, volume, language,
@@ -90,7 +90,10 @@ export function buildTaskbar() {
   });
   bar.appendChild(start);
 
-  // Search box: opens the Search flyout on focus or typing.
+  // Search box: the search panel's input, handed to it by attachSearchInput
+  // below. The panel widens this box to its own width while it is open
+  // (task-search.is-open), so the two read as one surface and the caret stays
+  // here rather than in a second box drawn inside the panel.
   var search = document.createElement('div');
   search.className = 'task-search';
   var searchIcon = document.createElement('span');
@@ -101,20 +104,29 @@ export function buildTaskbar() {
     placeholder: 'Type here to search',
     label: 'Search'
   });
-  // Clicking the search box (or the icon) opens the Search flyout.
+  // Clicking the box or the magnifier opens the panel, keeping whatever is
+  // already in the box. The box itself is not closed again by a second press:
+  // it is the input, and the panel closes on Escape or a press outside.
   [search, searchIcon, searchInput].forEach(function (el) {
     el.addEventListener('click', function (event) {
       event.stopPropagation();
-      openSearch('');
+      openSearch();
     });
   });
-  // Typing into the field opens the flyout with the query.
+  // Typing drives the panel: first keystroke opens it, the rest re-read it.
   searchInput.addEventListener('input', function () {
-    openSearch(searchInput.value);
+    searchTyped(searchInput.value);
   });
   search.appendChild(searchIcon);
   search.appendChild(searchInput);
   bar.appendChild(search);
+  attachSearchInput(searchInput);
+
+  // While the panel is open, the box is widened and ringed: it belongs to the
+  // panel then, not to the taskbar.
+  subscribeSearchOpen(function (isOpen) {
+    search.classList.toggle('is-open', isOpen);
+  });
 
   var taskView = document.createElement('button');
   taskView.type = 'button';

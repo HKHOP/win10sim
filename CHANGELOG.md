@@ -3,6 +3,53 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.21.1] - Search panel and its taskbar box come down to 600px
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `css/search.css`: `--search-w` is 600px, down from 660px. The panel is wide
+  enough for its five tabs and its two panes without running the taskbar's
+  running-app area short.
+
+### Fixed
+
+- None
+
+## [1.21.0] - Working search flyout, driven by the taskbar's own search box
+
+2026-10-14
+
+### Added
+
+- **Search panel (`js/core/search.js` + `css/search.css`)**: the Win10 search flyout, sitting flush on the taskbar above the taskbar's own search box. Filter tabs (All, Apps, Documents, Settings, Web, More), Top apps / Recent / Quick searches while the box is empty, and Best match / Apps / Search the web with a preview card once it is not.
+- **The taskbar search box is the input** (`task-search.is-open`): while the panel is open the box widens to the panel's width and takes the blue focus ring, so the two read as one surface. There is deliberately no second input drawn inside the panel - the caret stays in the box that is already there.
+- **Start menu type-to-search**: typing any printable character while the Start menu is open closes it and opens the search panel on that character.
+- **Event bus wiring**: `search-opened` / `search-closed` on `js/system/events.js`, so the Start menu can shut itself when search opens and the taskbar box can widen and empty itself, without either module importing the other.
+
+### Removed
+
+- The duplicate input that first sat inside the panel - the taskbar box serves it, and two boxes meant two carets.
+
+### Changed
+
+- `js/core/taskbar.js`: hands its search box to the panel with `attachSearchInput()`, opens it on click (`openSearch()`, keeping what is typed), re-reads it as it types (`searchTyped()`), and widens and rings it while the panel is open.
+- `js/core/desktop.js`: the panel is appended after the Start menu, so it paints above it.
+- `index.html`: added `css/search.css`.
+
+### Fixed
+
+- None
+
 ## [1.20.2] - The dialog fit was out of scope and never ran
 
 2026-10-14

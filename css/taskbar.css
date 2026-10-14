@@ -44,6 +44,9 @@
   filter: brightness(0);
 }
 
+/* The taskbar search box is the search panel's input: while the panel is open
+   it widens to the panel's width (shared with search.css via --search-w) and
+   takes the blue focus ring, the way Win10's expanded box does. */
 .task-search {
   width: 220px;
   display: flex;
@@ -53,6 +56,14 @@
   border-right: 1px solid #d4d4d4;
   padding: 0 10px;
   gap: 8px;
+  transition: width 0.15s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.task-search.is-open {
+  width: var(--search-w);
+  background: #fff;
+  border-color: #0078d7;
+  box-shadow: 0 0 0 1px #0078d7;
 }
 
 .task-search-icon {

@@ -1,26 +1,35 @@
-/* Win10 Search Flyout */
+/* Win10 Search Flyout: the panel that sits on the taskbar, directly above the
+   taskbar's own search box. That box is the input - it widens to the panel's
+   width while the panel is open (-task-search.is-expanded in taskbar.css), so
+   the two read as one surface. There is deliberately no second input here. */
+
+:root {
+  /* The one width the panel and the widened taskbar search box share. */
+  --search-w: 600px;
+  --search-h: 580px;
+}
 
 .search-menu {
   position: absolute;
-  left: 60px;
+  /* Flush with the taskbar search box's left edge, and sitting on the
+     taskbar's top edge: Win10's panel has no free bottom edge. */
+  left: 48px;
   bottom: 40px;
-  width: 660px;
-  height: 580px;
-  background: rgba(246, 246, 246, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid #d4d4d4;
-  border-bottom: 0;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  width: var(--search-w);
+  height: var(--search-h);
+  background: rgba(243, 243, 243, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  /* Sits on the taskbar, so only the free edges cast a shadow. */
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.22);
   z-index: 1800;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   user-select: none;
   font-family: inherit;
   color: #111;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  transform-origin: bottom left;
   transition: transform 0.15s ease, opacity 0.15s ease;
+  transform-origin: bottom left;
 }
 
 .search-menu[hidden] {
@@ -130,9 +139,12 @@
   display: block;
 }
 
-/* Search Content Body */
+/* Search Content Body: the panel has no input bar of its own - the taskbar
+   search box below it is the input, widened to this panel's width while the
+   panel is open - so the body takes the full height it has. */
 .search-body {
   flex: 1;
+  min-height: 0;
   display: flex;
   overflow: hidden;
   padding: 16px 20px;
@@ -310,40 +322,4 @@
 
 .search-best-match-open:hover {
   background: #005a9e;
-}
-
-/* Bottom Search Input Box */
-.search-bottom-bar {
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.8);
-  border-top: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-input-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border: 1px solid #adadad;
-  border-radius: 2px;
-  padding: 6px 12px;
-  gap: 10px;
-}
-
-.search-input-wrap:focus-within {
-  border-color: #0078d7;
-  box-shadow: 0 0 0 1px #0078d7;
-}
-
-.search-input-field {
-  flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  font-size: 13px;
-  font-family: inherit;
-  color: #111;
 }

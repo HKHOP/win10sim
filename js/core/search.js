@@ -20,7 +20,13 @@ var open = false;
 var openListeners = [];
 var currentQuery = '';
 var activeTab = 'all';
-var startMenuWasOpen = false;
+
+// The taskbar hands its own search box over: it is the input this panel serves.
+// There is no second box in the panel itself - Win10 widens the one in the
+// taskbar and drops the panel on top of it, so typing never has to move.
+export function attachSearchInput(field) {
+  inputEl = field;
+}
 
 // Listen for typed character from Start menu to open search with that query
 on('start-menu-type-to-search', function (key) {
@@ -50,21 +56,23 @@ export function toggleSearch() {
   }
 }
 
+// A query already in the taskbar's box is kept when the panel opens with no
+// argument, the way Win10 reopens the panel on what was typed last.
 export function openSearch(initialQuery) {
-  if (open) {
-    if (initialQuery !== undefined && initialQuery !== null && inputEl) {
-      inputEl.value = initialQuery;
-      currentQuery = initialQuery;
-      renderContent();
-    }
-    if (inputEl) {
-      inputEl.focus();
-    }
-    return;
+  var query;
+  if (initialQuery === undefined) {
+    query = inputEl ? inputEl.value : currentQuery;
+  } else {
+    query = initialQuery || '';
   }
-  currentQuery = initialQuery || '';
   if (inputEl) {
-    inputEl.value = currentQuery;
+    inputEl.value = query;
+  }
+  currentQuery = query;
+  if (open) {
+    renderContent();
+    focusInput();
+    return;
   }
   renderContent();
   searchEl.hidden = false;
@@ -77,7 +85,23 @@ export function openSearch(initialQuery) {
   window.addEventListener('mousedown', onOutsidePress, true);
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onSearchKey, true);
-  if (inputEl) {
+  focusInput();
+}
+
+// Typing in the panel's box: open the panel if it is shut, otherwise just
+// re-read the box - the panel is already on screen and the caret is where the
+// typist left it.
+export function searchTyped(value) {
+  if (!open) {
+    openSearch(value);
+    return;
+  }
+  currentQuery = value || '';
+  renderContent();
+}
+
+function focusInput() {
+  if (inputEl && inputEl.focus) {
     inputEl.focus();
   }
 }
@@ -92,6 +116,12 @@ export function closeSearch() {
   window.removeEventListener('mousedown', onOutsidePress, true);
   window.removeEventListener('touchstart', onOutsidePress, true);
   window.removeEventListener('keydown', onSearchKey, true);
+  // Win10 leaves the box empty once the panel has gone: what was typed was for
+  // the panel, not for the taskbar.
+  if (inputEl) {
+    inputEl.value = '';
+  }
+  currentQuery = '';
   if (prefersReducedMotion()) {
     searchEl.hidden = true;
     searchEl.classList.remove('search-open');
@@ -107,6 +137,26 @@ export function closeSearch() {
   }, START_ANIM_CLOSE_MS);
 }
 
+// What Enter in the search box runs: the best match, or the web when there is
+// no app to match. Shared by the key handler and the Open button.
+export function launchTopResult() {
+  var q = currentQuery.trim();
+  if (!q) {
+    return;
+  }
+  var apps = listStartApps().filter(function (app) {
+    return app.name.toLowerCase().indexOf(q.toLowerCase()) >= 0 ||
+      (app.subtitle && app.subtitle.toLowerCase().indexOf(q.toLowerCase()) >= 0);
+  });
+  if (apps.length) {
+    launchApp(apps[0].id);
+    closeSearch();
+    return;
+  }
+  launchApp('edge', { url: 'https://www.bing.com/search?q=' + encodeURIComponent(q) });
+  closeSearch();
+}
+
 function onOutsidePress(event) {
   if (isRawDevicePress(event)) {
     return;
@@ -118,6 +168,8 @@ function onOutsidePress(event) {
   if (searchEl.contains(target)) {
     return;
   }
+  // The taskbar's own search box is the input, so a press on it is a press on
+  // this panel, not a press outside it.
   if (target.closest && target.closest('.task-search')) {
     return;
   }
@@ -125,9 +177,19 @@ function onOutsidePress(event) {
 }
 
 function onSearchKey(event) {
+  // The box the panel serves holds the focus, so Escape and Enter are answered
+  // here rather than left to the field: the field has nothing of its own to do
+  // with either key.
   if (event.key === 'Escape') {
     event.preventDefault();
+    event.stopPropagation();
     closeSearch();
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    event.stopPropagation();
+    launchTopResult();
   }
 }
 
@@ -442,54 +504,11 @@ export function buildSearchMenu(cursor, stage) {
 
   searchEl.appendChild(header);
 
-  // Body
+  // Body. The panel has no input of its own: the taskbar search box beneath it
+  // is the input, so this is all there is to draw.
   bodyEl = document.createElement('div');
   bodyEl.className = 'search-body';
   searchEl.appendChild(bodyEl);
-
-  // Bottom bar with input
-  var bottomBar = document.createElement('div');
-  bottomBar.className = 'search-bottom-bar';
-
-  var inputWrap = document.createElement('div');
-  inputWrap.className = 'search-input-wrap';
-
-  var iconSpan = document.createElement('span');
-  iconSpan.className = 'task-search-icon';
-  iconSpan.innerHTML = SEARCH_SVG;
-  inputWrap.appendChild(iconSpan);
-
-  inputEl = document.createElement('input');
-  inputEl.type = 'text';
-  inputEl.className = 'search-input-field';
-  inputEl.placeholder = 'Type here to search';
-  inputEl.addEventListener('input', function () {
-    currentQuery = inputEl.value;
-    renderContent();
-  });
-  inputEl.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      var q = currentQuery.trim();
-      if (!q) {
-        return;
-      }
-      var apps = listStartApps().filter(function (a) {
-        return a.name.toLowerCase().indexOf(q.toLowerCase()) >= 0;
-      });
-      if (apps.length) {
-        launchApp(apps[0].id);
-        closeSearch();
-      } else {
-        launchApp('edge', { url: 'https://www.bing.com/search?q=' + encodeURIComponent(q) });
-        closeSearch();
-      }
-    }
-  });
-
-  inputWrap.appendChild(inputEl);
-  bottomBar.appendChild(inputWrap);
-  searchEl.appendChild(bottomBar);
 
   return searchEl;
 }
