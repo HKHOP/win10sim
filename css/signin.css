@@ -83,11 +83,21 @@
   border-color: #0078d7;
 }
 
+/* Windows draws the sign-in password row as ONE box: the border belongs to the
+   row, and the field, the eye and the arrow sit inside it with no edges of
+   their own. So the field takes the whole space between the two buttons, has no
+   height of its own (the row's is the box's), and paints nothing - which also
+   means there is no inner rectangle that could stop short of the buttons and
+   read as a small box in the corner. */
 .signin-password {
-  flex: 1;
+  flex: 1 1 0;
+  align-self: stretch;
   min-width: 0;
+  width: auto;
+  height: auto;
   border: 0;
   outline: 0;
+  background: transparent;
   padding: 0 10px;
   font-size: 16px;
   font-family: inherit;
@@ -104,16 +114,41 @@
   justify-content: center;
 }
 
+/* The form's own buttons sit on white, so their glyphs are dark; the status bar's
+   sit on the dark bar, so theirs are white. One rule for both made the eye in
+   the password box invisible - white on white. */
 .signin-icon-btn svg {
   width: 22px;
   height: 22px;
   display: block;
+  color: #3c3c3c;
+}
+
+.signin-statusbar .signin-icon-btn svg {
   color: #fff;
 }
 
+/* The arrow. Win10's sign-in box tells you it is ready by turning it the accent
+   blue, and leaves it grey until there is a password to send. */
 .signin-submit {
   width: 48px;
   background: #e1e1e1;
+}
+
+.signin-submit svg {
+  color: #6a6a6a;
+}
+
+.signin-submit.is-ready {
+  background: #0078d7;
+}
+
+.signin-submit.is-ready svg {
+  color: #fff;
+}
+
+.signin-submit[disabled] {
+  cursor: default;
 }
 
 .signin-shake {

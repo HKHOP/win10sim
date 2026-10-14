@@ -292,10 +292,18 @@ export function buildRecentTabs(ctx) {
   var paintSeq = 0;
 
   function paint() {
+    if (!ctx.alive()) {
+      // The page has been replaced, so this strip is off screen: it must not
+      // reach for the store, and it must not empty a list nobody can see.
+      return;
+    }
     var seq = ++paintSeq;
-    // The header row stays; everything under it is this paint's to rebuild.
-    while (list.firstChild && list.firstChild !== head) {
-      list.removeChild(list.firstChild);
+    // The header row stays; everything under it is this paint's to rebuild. It
+    // has to be walked from the bottom: the header is the FIRST child, so a walk
+    // from the top stops on it before it has removed anything and every paint
+    // stacks its rows underneath the last one's.
+    while (list.lastChild && list.lastChild !== head) {
+      list.removeChild(list.lastChild);
     }
     function empty(text) {
       var none = document.createElement('div');

@@ -3,7 +3,7 @@
 // dialog is not part of that set, so the codepoint name is used as it stands.
 import { CHEVRON_UP_DOWN } from '../global/mdl2.js';
 import { WARNING_SVG, ERROR_SVG, INFO_SVG } from '../global/icons.js';
-import { suppressIfActive } from './keyinput.js';
+import { createTextField } from './textfield.js';
 
 // The popup API: how an app asks the shell for a dialog.
 //
@@ -48,6 +48,13 @@ function el(tag, cls, text) {
     node.textContent = text;
   }
   return node;
+}
+
+// A <label for> only names a control by its id, and the shell's fields are not
+// form controls - so they are given one anyway, which is what keeps clicking the
+// label putting the caret in the box beside it.
+function labelTarget(name) {
+  return 'popup-' + name;
 }
 
 function normalizeField(spec, index) {
@@ -174,7 +181,7 @@ export function openPopup(context, spec) {
     if (field.label) {
       var label = el(field.type === 'checkbox' ? 'span' : 'label', 'popup-label', field.label);
       if (field.type !== 'checkbox' && field.type !== 'radio') {
-        label.setAttribute('for', 'popup-' + field.name);
+        label.setAttribute('for', labelTarget(field.name));
       }
       row.appendChild(label);
     }
@@ -264,21 +271,32 @@ export function openPopup(context, spec) {
       row.appendChild(node);
       nodes[field.name] = node;
     } else if (field.type === 'multiline') {
-      node = document.createElement('textarea');
-      node.className = 'popup-input popup-multiline';
-      node.rows = field.rows || 4;
-      node.value = field.value == null ? '' : field.value;
+      node = createTextField({
+        multiline: true,
+        value: field.value == null ? '' : field.value,
+        placeholder: field.placeholder,
+        readOnly: field.readOnly,
+        disabled: field.disabled,
+        className: 'popup-input popup-multiline',
+        label: field.label
+      });
+      node.id = labelTarget(field.name);
+      if (field.rows) {
+        node.style.height = (field.rows * 16 + 10) + 'px';
+      }
       row.appendChild(node);
       nodes[field.name] = node;
     } else {
-      node = document.createElement('input');
-      node.type = field.type === 'number' ? 'number'
-        : (field.type === 'password' ? 'password' : 'text');
-      node.className = 'popup-input';
-      node.value = field.value == null ? '' : field.value;
-      if (field.placeholder) {
-        node.placeholder = field.placeholder;
-      }
+      node = createTextField({
+        type: field.type === 'password' ? 'password' : 'text',
+        value: field.value == null ? '' : field.value,
+        placeholder: field.placeholder,
+        readOnly: field.readOnly,
+        disabled: field.disabled,
+        className: 'popup-input',
+        label: field.label
+      });
+      node.id = labelTarget(field.name);
       if (field.readOnly) {
         node.readOnly = true;
       }
@@ -286,9 +304,6 @@ export function openPopup(context, spec) {
       nodes[field.name] = node;
     }
 
-    if (field.disabled) {
-      node.disabled = true;
-    }
     if (field.width) {
       row.style.gridTemplateColumns = 'auto minmax(0,' + field.width + ')';
     }
@@ -489,10 +504,6 @@ export function openPopup(context, spec) {
     focus: function (name) {
       var node = nodes[name];
       if (node && node.focus) {
-        // A popup puts the caret in its own first field, with no press to catch
-        // it beforehand, so it asks for the same treatment a tap would get. This
-        // is a no-op when no virtual keyboard is on screen.
-        suppressIfActive(node);
         node.focus();
         if (node.select) {
           node.select();

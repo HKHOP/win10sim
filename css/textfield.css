@@ -1,0 +1,201 @@
+/* The shell's own text field.
+   A div, not an <input>: the browser would raise its own keyboard over the
+   emulated desktop, and its text, selection and caret are not the ones Windows
+   draws. Everything the old controls got from the stylesheet is here instead - the
+   box, the focus ring, the placeholder - so the surfaces that own a field
+   only have to say how big it is.
+
+   The defaults below are written inside :where(), which matches exactly as
+   `.sim-field` does but carries no specificity of its own. That is the whole
+   point: a surface must be able to say `height: auto` and be believed, whether
+   it does so in a stylesheet loaded before this one or after. At normal
+   specificity these defaults were a race decided by <link> order - and since
+   this file is the component base, the losing side was whichever surface the
+   author happened to add last. Everything below the defaults (the viewport, the
+   layer, the caret, the highlights) is the field's own machinery rather than a
+   default, so it keeps its specificity and is left alone.
+
+   The three layers inside are the scrolled viewport, the layer that is moved
+   within it, and the text itself. The caret and the selection are positioned
+   from the browser's own text measurement (see textfield-view.js). */
+
+:where(.sim-field) {
+  position: relative;
+  box-sizing: border-box;
+  /* The field clips; scrolling is the layer's job, not the box's. */
+  overflow: hidden;
+  min-width: 0;
+  /* The text lives in layers that are taken out of the flow, so a field has no
+     height of its own and is given one: a single line's, which is what Windows
+     draws, and what every surface here wants unless it says otherwise. */
+  height: 22px;
+  background: #fff;
+  color: #111;
+  cursor: text;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* A multi-line field grows with the box it is given - Notepad's editor is
+   stretched by its wrapper - so it does not claim a height of its own. */
+:where(.sim-field--multi) {
+  height: auto;
+  min-height: 60px;
+}
+
+.sim-field-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sim-field-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* The layer is moved rather than scrolled, so the caret and the selection can
+     be placed in the same coordinates the browser measured the text in.
+
+     Deliberately NOT promoted with will-change: the compositor has to give the
+     layer a texture, and a field with word wrap off is as wide as its longest
+     line - a Notepad document with one long line asks for a texture bigger than
+     a phone's GPU will hand out, and what comes back is garbled text. The
+     browser tiles the painting itself, which is slower and legible. */
+  min-width: 100%;
+}
+
+.sim-field-text {
+  display: block;
+  /* Set per field: one line pre, a wrapped block for the editor. */
+  white-space: inherit;
+  min-height: 1em;
+}
+
+/* A one-line field centres its one line in whatever height it was given, the
+   way a single-line input does. A multi-line one starts at the top. */
+.sim-field:not(.sim-field--multi) .sim-field-layer {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* The selection, behind the text. One rectangle per wrapped line, which is why
+   these are drawn rather than being a ::selection the browser owns. */
+.sim-field-highlights {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* The selection, behind the text and no wider than the characters it covers, so
+   it never tints the field's own padding. Windows lays the accent blue over the
+   box rather than painting it on: the characters stay legible through it, and the
+   box underneath is still the box. */
+.sim-field-hl {
+  position: absolute;
+  background: rgba(0, 90, 158, 0.45);
+}
+
+.sim-field-caret {
+  position: absolute;
+  width: 1px;
+  background: #111;
+  pointer-events: none;
+}
+
+/* The caret. It blinks the way Windows' does, and a caret that has just moved
+   starts that blink again rather than carrying on from wherever the last one was
+   - which is what the .is-blinking class is for, put on by the view on every
+   repaint.
+
+   A field nobody is typing in shows NO caret at all. Stopping the animation is
+   not how you get there: with none running the line sits at full opacity, which
+   is how a caret came to stand in boxes that had lost focus. */
+.sim-field:focus .sim-field-caret.is-blinking {
+  animation: sim-caret-blink 1.06s steps(1, end) infinite;
+}
+
+.sim-field:not(:focus) .sim-field-caret {
+  opacity: 0;
+}
+
+@keyframes sim-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Placeholder text, drawn rather than ::placeholder - a div has none. It sits
+   where the text it stands in for would sit, which for a one-line field is the
+   middle of the box, not its corner. */
+.sim-field-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  color: #6a6a6a;
+  pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A multi-line field's placeholder belongs at the top, where its first line
+   would be. */
+.sim-field--multi .sim-field-placeholder {
+  align-items: flex-start;
+}
+
+.sim-field.is-empty .sim-field-placeholder {
+  display: block;
+}
+
+.sim-field:not(.is-empty) .sim-field-placeholder {
+  display: none;
+}
+
+.sim-field.is-disabled {
+  background: #f0f0f0;
+  color: #8a8a8a;
+  cursor: default;
+}
+
+.sim-field.is-readonly {
+  background: #f7f7f7;
+  color: #333;
+}
+
+/* Windows puts no ring around a text box you have clicked into: the caret is
+   the feedback, and a blue outline round every box you touch reads as a
+   debugging aid rather than as Windows. The ring comes back for keyboard
+   navigation, where there is no caret to see and nothing else says where the
+   focus is - unless the surface has already answered the question itself, which
+   is why these are defaults rather than rules. */
+:where(.sim-field:focus) {
+  outline: none;
+}
+
+:where(.sim-field:focus-visible) {
+  outline: 1px solid #0078d7;
+  outline-offset: -1px;
+}
+
+/* No blink at all for anyone who has asked for less movement. The line stays put
+   and stays visible while the field has the focus - less movement, not less
+   feedback. */
+@media (prefers-reduced-motion: reduce) {
+  .sim-field:focus .sim-field-caret.is-blinking {
+    animation: none;
+  }
+}

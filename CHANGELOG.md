@@ -3,6 +3,160 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.14.0] - The shell's own text fields
+
+2026-10-14
+
+### Added
+
+- `js/core/textfield.js` and its four companions: a text field the emulated OS
+  owns, drawn by the shell rather than handed to the browser. The text, the
+  selection, the caret and the caret's blink are ours, so the browser has nothing
+  to type into and nothing to raise a keyboard for - which is the whole reason
+  the phone's own keyboard used to come up over the desktop every time a box was
+  tapped
+- The field answers the interface an `<input>` did - `.value`,
+  `.selectionStart`/`.selectionEnd`, `.setSelectionRange()`, `.select()`,
+  `.focus()`, `.scrollTop`/`.scrollHeight`, `.placeholder`, `.type`, and the
+  keydown / beforeinput / input / change / select events - so the code that uses
+  a field is unchanged and only the line that created one is different
+- Editing Windows' way: a caret that blinks only while the field has focus,
+  double-click takes a word and three clicks a line, a drag selects, arrows move
+  by character or by word with Ctrl, Home/End work per line and Ctrl+End to the
+  end of the text, and Backspace repeats when it is held
+- **Undo and redo** the shell's own, with a run of typing kept as one step the
+  way Windows keeps a word - and cut, copy and paste that work, since
+  `document.execCommand` does nothing at all for a div. Notepad's four commands
+  go through the field now instead of through a browser that has no text to act on
+- A password field shows bullets, and the sign-in screen's show-password button
+  still works, because `.type` is now a real thing the field answers to
+- `css/textfield.css`: the box, the focus ring and the placeholder text. The
+  caret and the selection are placed from the browser's own text measurement
+  (a Range's rectangles), so wrapping, tabs and a hundred lines need no
+  arithmetic here
+- `js/system/drag.js`: whether a drag is under way, for the surfaces that need to
+  know. Counted rather than flagged, because the worst failure of a flag here is
+  permanent - a stuck one freezes the pointer for the rest of the session with
+  nothing on screen to explain why
+
+### Removed
+
+- **`keyinput.js`**, and with it the whole workaround it existed for. Marking a
+  field `readonly` and `inputmode="none"` to stop the browser raising its
+  keyboard, catching the press before the focus to be in time, and putting the
+  focus and the selection back after a key stole it - none of it is needed when
+  the field is not a form control in the first place
+- The popup's `suppressIfActive` hook, for the same reason
+
+### Changed
+
+- **Every text box the shell draws is now one of these**: Explorer's address bar,
+  search box and rename, the popup API's text, password, number and multiline
+  fields, the taskbar's search, the sign-in password, and Notepad's editor - so
+  none of them can raise a keyboard, and a key on the virtual keyboard has
+  something to type into that will still have the caret afterwards
+- Notepad's editor is a shell field, so word wrap, the status bar's Ln/Col, find,
+  replace, Go To and the editing commands all drive it as they did; the two
+  places that reached for the browser's own undo and paste now ask the field
+- `stage.js` gained `stageScale()`, which measures the scale the monitor is drawn
+  at instead of recomputing it from the viewport, for the keyboard that sits its
+  height above the taskbar
+- The caret's cursor shape comes from `[role="textbox"]`, which the field
+  carries, so the beam appears over a field the way it did over an `<input>`
+- **`css/textfield.css` now loads second, straight after `css/base.css`**, and the
+  field's defaults are written inside `:where()`. The sheet used to be last, where
+  its defaults beat whichever surface came before: the sign-in field's
+  `height: auto` lost to `.sim-field`'s own 22px and the box stopped filling its
+  row. `:where()` matches identically and carries no specificity, so a surface is
+  believed whatever order the stylesheets load in
+- The field layer is no longer promoted with `will-change: transform`. A field
+  with word wrap off is as wide as its longest line, and asking a phone's GPU for
+  a texture that size is how text comes back garbled
+- **The emulated cursor now says where it has moved to.** It dispatched presses
+  but no `mousemove`, so nothing that follows a pointer ever heard about a drag.
+  The event goes to the document and does not bubble: the shell's window-level
+  `mousemove` handlers are the emulated pointer's own plumbing, already fed by the
+  device that moved it, and an event bubbling up from an element would make every
+  drag in the shell happen twice
+- The emulated cursor is clipped to `.sim-cursor-frame`, a box the size of the
+  stage bounded by the window. It has to live outside the stage - in there the
+  stage's stacking context traps it and paints it under context menus - and
+  nothing was clipping it, so at the edges of the screen its 32px sprite hung off
+  the monitor, which on a phone lands visibly on the page. Clipping rather than
+  clamping the pointer's position: the pointer still reaches every pixel of the
+  screen, so a resize grip on the right edge of a window stays reachable
+- A window title bar no longer dresses the pointer in the four-arrowed move
+  cursor, on hover or through a drag. Windows does, and here the shape meant
+  nothing: a title bar is the widest thing anyone aims at, so the arrow flickered
+  on and off as the pointer crossed it on its way somewhere, and then stayed for
+  the whole drag - one glyph still claiming a move after the window had moved
+- Context menus take their **width** from the emulated screen as well as their
+  height, and a narrowed menu ellipsizes its labels rather than pushing the
+  shortcut hint and the submenu chevron off the edge
+
+### Fixed
+
+- **The caret is drawn beside its character instead of on top of it**, in every
+  field. Three separate causes: a collapsed range at the end of a text node
+  answers with the *last character's* rectangle, so a caret at the end of the text
+  was drawn over it - in the password box, over the last dot; the caret and the
+  selection are children of the layer that scrolling translates, so their numbers
+  have to be where the text sits *before* the layer is moved, and the scroll was
+  being applied a second time; and both were painted before the scroll was applied
+  at all, leaving them a whole scroll behind
+- **On a phone every field's caret was at a fraction of its distance**, because the
+  browser measures in page pixels and the emulated display is scaled to fit the
+  viewport: the caret for the tenth character was drawn where the fifth is. The
+  field asks how big it is actually being drawn and divides by it. The selection
+  had the same problem and was half its width, and scroll-into-view was comparing a
+  half-scale distance against an unscaled width
+- A field that has lost focus shows no caret at all. Stopping the blink is not how
+  you get there: with no animation running the line sits at full opacity, which is
+  how a caret came to stand in boxes nobody was typing in
+- The caret at a soft wrap stands at the start of the new line. Measured from the
+  character in front of it, which at a wrap does not exist, it was drawn at the
+  end of the previous line instead
+- **A click puts the caret between the characters** rather than at the start of the
+  field. `caretPositionFromPoint` declines whenever the text sits in a layer that
+  scrolling moves, and the fallback then answered 0; the offset is measured now,
+  by searching the offsets for the line under the point and then the character
+  within that line - both searches halve each step, so a click costs the same in a
+  four-character password box as in a line of five thousand
+- **Holding a character and dragging selects the text between**, so it can be
+  copied - the same missing `mousemove` as above, with the field now reporting the
+  selection as the drag goes both ways. A press with no movement behind it is
+  still a caret and not a selection
+- The selection is the accent blue laid *over* the field (`rgba(0, 90, 158,
+  0.45)`) rather than a flat pale tint, so the characters stay legible through it.
+  It sits behind the text and is drawn no wider than the characters it covers, so
+  it never tints the field's own padding
+- **Swiping the touchpad no longer holds the left button.** Tap-and-drag engaged
+  on any movement past 24px after 150ms, and a swipe *is* movement past 150ms, so
+  every swipe pressed and dragged whatever the cursor was over. A finger now has
+  to come to rest before it travels, which is what tells a drag from a swipe on a
+  real pad; the 500ms hold-to-press is unchanged
+- The floating keyboard no longer snaps to the left edge when it is dragged: its
+  clamp range was `[0, 100vw - (100vw - 8px)]`, so every sideways move landed on 0,
+  and letting go of the drag restored the centring transform and jumped the panel
+  half its own width to the left
+- **Explorer Quick access no longer stacks its rows.** Pressing Recent, Favorites
+  or Shared appended a set under the last one's for as long as the page was open,
+  because the loop that clears them walked from the front and stopped on the
+  header row it was meant to keep
+- A context menu wider than the emulated screen ran off the right: only its height
+  was ever clamped. One narrower than the screen now gives up its minimum rather
+  than hanging off both sides, and a replaced page's tab strip stops reaching for
+  the store at all
+- Sign-in: Enter signs in, the arrow turns the accent blue when there is a
+  password to send, the show-password eye is dark on the white box instead of
+  white on white, and the password row is one box that the field fills rather than
+  a small box in the corner
+- The focus ring no longer appears when a text box is clicked into - the caret is
+  the feedback, as on Windows - and comes back for keyboard navigation only
+- A held key repeats by sending the key to the field rather than into the
+  document, so a held Backspace keeps deleting
+
+
 ## [1.13.1] - The keyboard stops fighting the fields
 
 2026-10-13

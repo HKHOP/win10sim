@@ -25,12 +25,28 @@ body.sim-pointer-only * {
   cursor: none !important;
 }
 
-.sim-cursor {
+/* The frame is the emulated screen as it sits on the page, and it clips. The
+   cursor has to live outside the stage - in there the stage's stacking context
+   always paints it under context menus - and nothing else was clipping it, so at
+   the edges of the screen the 32px sprite hung off the monitor onto the page. On
+   a phone that is plainly visible: the stage is letterboxed inside the viewport,
+   so there is page to spill onto. Clipping rather than clamping is deliberate: the
+   pointer still reaches every pixel of the screen, so a resize grip on the right
+   edge of a window is still reachable. */
+.sim-cursor-frame {
   position: fixed;
   left: 0;
   top: 0;
+  overflow: hidden;
   /* Above the capture layer and context menus, which are document-level. */
   z-index: 2147483600;
+  pointer-events: none;
+}
+
+.sim-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
   pointer-events: none;
   will-change: transform;
 }

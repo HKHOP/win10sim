@@ -62,10 +62,14 @@ export const MAX_MOUSE_DELTA_PX = 400;
 export const TOUCH_ACCEL_CURVE = [[0, 0.45], [0.5, 0.7], [1.2, 1.1], [2.5, 1.5]];
 export const TAP_MAX_MS = 300;
 export const TAP_MAX_MOVE_PX = 12;
-// Tap and drag: a tap that is still travelling after this long, and has gone
-// further than the wobble of a click, is pressing and dragging instead.
+// Tap and drag: a finger that has rested this long and then travels is pressing
+// and dragging. The rest is the whole test - a swipe is travelling from its
+// first frame and never rests, and a swipe that pressed would drag whatever the
+// cursor happened to be over.
 export const TAP_DRAG_DELAY_MS = 150;
 export const TAP_DRAG_MOVE_PX = 24;
+// How far a finger may drift before the delay is up and still count as resting.
+export const TAP_STILL_MAX_PX = 6;
 // Holding one finger still this long engages a press (drag windows/icons).
 export const TOUCH_HOLD_MS = 500;
 // Two fingers tapped is the context menu; three is the middle button.

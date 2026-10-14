@@ -44,12 +44,14 @@
   overflow: hidden;
 }
 
+/* The editor is the shell's own field (see textfield.js) rather than a
+   textarea, so it needs the flex box a form control does not bring: the field
+   itself is the item that grows, and its inner layer is where the text sits. */
 .np-editor {
   flex: 1 1 auto;
   width: 100%;
   border: 0;
   outline: 0;
-  resize: none;
   padding: 2px 4px;
   margin: 0;
   background: #fff;
@@ -60,16 +62,22 @@
   caret-color: #000;
 }
 
-/* Word wrap off: the text keeps one line and scrolls sideways, like Notepad. */
-.np-editor-wrap.no-wrap .np-editor {
-  white-space: pre;
-  overflow-x: auto;
+/* The field scrolls its own layer, so the wrapping rules belong on the text
+   inside it rather than on the field, and the field itself always clips. */
+.np-editor .sim-field-layer {
+  padding: 0;
 }
 
-.np-editor-wrap .np-editor {
+/* Word wrap off: the text keeps one line and scrolls sideways, like Notepad. */
+.np-editor-wrap.no-wrap .np-editor .sim-field-layer {
+  white-space: pre;
+  min-width: max-content;
+}
+
+.np-editor-wrap .np-editor .sim-field-layer {
   white-space: pre-wrap;
   overflow-wrap: break-word;
-  overflow-x: hidden;
+  min-width: 100%;
 }
 
 /* --- Status bar -------------------------------------------------------- */
@@ -166,6 +174,8 @@
   text-align: right;
 }
 
+/* A shell field, so the box lives on the field itself and the text is centred
+   by it - see css/textfield.css. */
 .np-input {
   height: 22px;
   padding: 0 4px;
@@ -176,8 +186,10 @@
   color: #111;
 }
 
+/* No focus ring: the caret says where the text goes, the way it does in
+   Notepad. The shell's fields draw the ring for keyboard navigation instead. */
 .np-input:focus {
-  outline: 1px solid #0078d7;
+  outline: none;
 }
 
 .np-input-grow {

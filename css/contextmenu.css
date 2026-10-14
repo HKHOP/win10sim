@@ -8,8 +8,13 @@
   /* Above every window, desktop layer and taskbar button. */
   z-index: 2147483000;
   min-width: 180px;
-  /* A menu taller than the emulated screen scrolls instead of vanishing
-     past the bottom edge. */
+  /* The viewport is only a fallback for the moment before the menu is placed:
+     placeMenu (contextmenu.js) replaces both of these with the emulated screen's
+     own bounds, because the stage is letterboxed inside the viewport and a menu
+     sized against the viewport can be taller or wider than the monitor it is
+     meant to be sitting on. A menu taller than the screen scrolls; one wider
+     than it is narrowed. */
+  max-width: calc(100vw - 4px);
   max-height: calc(100vh - 4px);
   overflow-y: auto;
   overflow-x: hidden;
@@ -28,6 +33,9 @@
   align-items: center;
   gap: 8px;
   width: 100%;
+  /* So a narrowed menu ellipsizes its label instead of pushing the shortcut and
+     the chevron off the edge of the screen. */
+  min-width: 0;
   padding: 5px 12px 5px 6px;
   border: 0;
   background: transparent;
@@ -67,7 +75,12 @@
 
 .win-ctx-label {
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
+  /* A label longer than the screen allows is cut with an ellipsis, as Windows
+     cuts it. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .win-ctx-check {

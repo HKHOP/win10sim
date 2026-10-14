@@ -20,6 +20,7 @@ import { showSnapAssist, hideSnapAssist } from './snapassist.js';
 import { buildWindowFrame } from './windowchrome.js';
 import { openWindowMenu, startGuidedMode, stopGuidedMode } from './windowmenu.js';
 import { createPointerTracker } from './pointer.js';
+import { beginDrag, endDrag } from '../system/drag.js';
 
 // Floating window system: window records and chrome, focus z-order,
 // minimize / maximize / Aero Snap state, Aero shake, and the drag / resize
@@ -539,8 +540,17 @@ function pinToGrip(win, mode) {
 }
 
 function beginGesture(win, mode, origin) {
+  if (gesture) {
+    // A second press while one is live would otherwise leave the drag count
+    // ahead of the ends, and the cursor would hold its shape for the rest of
+    // the session.
+    endDrag();
+    gesture = null;
+  }
   var pos = gesturePoint();
   pinToGrip(win, mode);
+  // The emulated cursor holds its shape for the length of the drag.
+  beginDrag();
   gesture = {
     origin: origin,
     win: win,
@@ -695,6 +705,7 @@ window.addEventListener('mouseup', function (event) {
   }
   var g = gesture;
   gesture = null;
+  endDrag();
   hideSnapPreview();
   if (g.mode === 'move' && g.pendingZone) {
     snapWindow(g.win, g.pendingZone);
@@ -702,7 +713,10 @@ window.addEventListener('mouseup', function (event) {
 });
 
 window.addEventListener('blur', function () {
-  gesture = null;
+  if (gesture) {
+    gesture = null;
+    endDrag();
+  }
   hideSnapPreview();
   hideSnapAssist();
   stopGuidedMode();

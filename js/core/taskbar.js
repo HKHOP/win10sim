@@ -5,6 +5,7 @@ import {
   EDGE_SRC,
   STORE_SRC
 } from '../global/constants.js';
+import { createTextField } from './textfield.js';
 import {
   SEARCH_SVG,
   TASKVIEW_SVG,
@@ -94,10 +95,11 @@ export function buildTaskbar() {
   var searchIcon = document.createElement('span');
   searchIcon.className = 'task-search-icon';
   searchIcon.innerHTML = SEARCH_SVG;
-  var searchInput = document.createElement('input');
-  searchInput.className = 'task-search-input';
-  searchInput.placeholder = 'Type here to search';
-  searchInput.setAttribute('aria-label', 'Search');
+  var searchInput = createTextField({
+    className: 'task-search-input',
+    placeholder: 'Type here to search',
+    label: 'Search'
+  });
   search.appendChild(searchIcon);
   search.appendChild(searchInput);
   bar.appendChild(search);

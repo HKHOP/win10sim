@@ -9,6 +9,7 @@ import {
   WELCOME_CONTENT_HOLD_MS,
   WELCOME_BG_FADE_MS
 } from '../global/constants.js';
+import { createTextField } from '../core/textfield.js';
 import { NETWORK_OFFLINE_SVG, ACCESS_SVG, POWER_SVG, EYE_SVG, ARROW_SVG } from '../global/icons.js';
 import { sleep, shutDown, restart as restartPc } from '../core/power.js';
 
@@ -124,11 +125,12 @@ export function createSignInLayer(onInsertDesktop, onFinished) {
   form.className = 'signin-form';
   form.setAttribute('autocomplete', 'off');
 
-  var input = document.createElement('input');
-  input.type = 'password';
-  input.className = 'signin-password';
-  input.placeholder = 'Password';
-  input.setAttribute('aria-label', 'Password');
+  var input = createTextField({
+    type: 'password',
+    className: 'signin-password',
+    placeholder: 'Password',
+    label: 'Password'
+  });
 
   var eye = buildIconButton('signin-icon-btn', EYE_SVG, 'Show password', function () {
     input.type = input.type === 'password' ? 'text' : 'password';
@@ -138,6 +140,20 @@ export function createSignInLayer(onInsertDesktop, onFinished) {
   var submit = buildIconButton('signin-icon-btn signin-submit', ARROW_SVG, 'Sign in', function () {
     trySignIn();
   });
+  submit.disabled = true;
+
+  // Win10's arrow is grey until there is something to send, and turns the accent
+  // blue the moment there is - so it says whether the box is ready before it is
+  // pressed.
+  function syncSubmit() {
+    var ready = input.value.length > 0;
+    submit.disabled = !ready;
+    submit.classList.toggle('is-ready', ready);
+  }
+
+  input.addEventListener('input', syncSubmit);
+  input.addEventListener('keyup', syncSubmit);
+  syncSubmit();
 
   function trySignIn() {
     if (input.value.length === 0) {
@@ -149,6 +165,17 @@ export function createSignInLayer(onInsertDesktop, onFinished) {
     }
     showWelcome(layer, onInsertDesktop, onFinished);
   }
+
+  // Enter signs in. The field is the shell's own rather than a form control (see
+  // textfield.js), and the browser's implicit submission works off form
+  // controls, so there is nothing for it to fire on: Enter has to be handled
+  // here, as the box's own key.
+  input.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      trySignIn();
+    }
+  });
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();

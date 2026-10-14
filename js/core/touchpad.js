@@ -5,6 +5,7 @@ import {
   TAP_MAX_MOVE_PX,
   TAP_DRAG_DELAY_MS,
   TAP_DRAG_MOVE_PX,
+  TAP_STILL_MAX_PX,
   MULTI_TAP_MAX_MS,
   MULTI_TAP_MAX_MOVE_PX,
   MULTI_DEAD_ZONE_PX,
@@ -135,11 +136,18 @@ export function mountTouchpad(win, driver) {
     if (!tap) {
       return;
     }
+    // Judged once, when the delay is up: a finger that has not travelled by then
+    // has come to rest, and a finger that has come to rest and then travels is
+    // pressing and dragging. A swipe never rests - it is travelling from the
+    // first frame - so a swipe steers the cursor and only a swipe-free gesture
+    // presses, which is what separates the two on a real pad.
+    if (!tap.decided && now() - tap.start >= TAP_DRAG_DELAY_MS) {
+      tap.decided = true;
+      tap.armed = tap.moved <= TAP_STILL_MAX_PX;
+    }
     tap.moved += Math.abs(dx) + Math.abs(dy);
-    if (tap.moved >= TAP_DRAG_MOVE_PX && now() - tap.start >= TAP_DRAG_DELAY_MS) {
-      // Tap and drag: the finger is still moving after the head start, so it is
-      // pressing and dragging whatever the cursor is over. A tap that wobbles
-      // and lifts keeps being a click, which is the whole point of the delay.
+    if (tap.armed && tap.moved >= TAP_DRAG_MOVE_PX) {
+      // Tap and drag.
       pressedMoved = tap.moved;
       tap = null;
       engagePress();
@@ -277,7 +285,7 @@ export function mountTouchpad(win, driver) {
       // the flick's speed is measured from the first scrolled frame rather than
       // from however long the finger had been resting before it moved.
       cancelMomentum();
-      tap = { start: now(), moved: 0 };
+      tap = { start: now(), moved: 0, decided: false, armed: false };
       armHold();
     } else {
       clearHold();

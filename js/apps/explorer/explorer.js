@@ -12,6 +12,7 @@ import { buildRibbon } from './ribbon.js';
 import { showOpenWithDialog } from './openwith.js';
 import { showContextMenu, hideContextMenu } from '../../core/contextmenu.js';
 import { showMessageBox } from '../../core/msgbox.js';
+import { createTextField } from '../../core/textfield.js';
 import { launchApp, getApp } from '../../core/apps.js';
 import {
   extensionOf,
@@ -673,11 +674,10 @@ export async function openExplorer(context, startPath) {
     recentEl = el('div', 'exp-recent');
     addressEl.appendChild(recentEl);
 
-    addrInput = document.createElement('input');
-    addrInput.className = 'exp-addr-input';
-    addrInput.type = 'text';
-    addrInput.spellcheck = false;
-    addrInput.setAttribute('aria-label', 'Address');
+    addrInput = createTextField({
+      className: 'exp-addr-input',
+      label: 'Address'
+    });
     addrInput.addEventListener('keydown', function (event) {
       if (event.key === 'Enter') {
         event.preventDefault();
@@ -690,9 +690,7 @@ export async function openExplorer(context, startPath) {
     addrInput.addEventListener('blur', exitAddressEdit);
 
     searchWrap = el('div', 'exp-search');
-    searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.setAttribute('aria-label', 'Search');
+    searchInput = createTextField({ label: 'Search' });
     searchInput.addEventListener('input', function () {
       if (searchTimer) {
         window.clearTimeout(searchTimer);
@@ -1083,10 +1081,11 @@ export async function openExplorer(context, startPath) {
       return;
     }
     var current = displayName(item.name, item.type === 'dir', state.showExtensions);
-    var input = document.createElement('input');
-    input.className = 'exp-rename';
-    input.type = 'text';
-    input.value = current;
+    var input = createTextField({
+      className: 'exp-rename',
+      value: current,
+      label: 'Rename'
+    });
     label.textContent = '';
     label.appendChild(input);
     input.focus();

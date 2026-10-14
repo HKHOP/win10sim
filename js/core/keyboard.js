@@ -1,18 +1,10 @@
 import { KEYBOARD_SVG, GRIP_SVG } from '../global/icons.js';
 import { TASKBAR_HEIGHT_PX } from '../global/constants.js';
 import { isHandheld } from './sitechrome.js';
-import {
-  LETTERS_LAYER,
-  SYMBOLS_LAYER,
-  editableTarget,
-  editableField,
-  suppressNativeKeyboard,
-  releaseNativeKeyboard,
-  setKeyboardActive,
-  holdFocus,
-  typeKey,
-  stageScale
-} from './keyinput.js';
+import { LETTERS_LAYER, SYMBOLS_LAYER } from './keyboard-layout.js';
+import { pressKey } from './textfield-keys.js';
+import { activeField } from './textfield.js';
+import { stageScale } from './stage.js';
 
 // The virtual keyboard.
 //
@@ -25,11 +17,16 @@ import {
 //
 // It is three things at once, which is why it is built here rather than in the
 // shell: a toggle beside the fullscreen button, a panel that can be dragged
-// anywhere on the screen by its grip bar, and a source of key events for
-// whichever field the emulated cursor has focused.
+// anywhere on the screen by its grip bar, and a source of key presses for
+// whichever field the emulated cursor has the caret in.
 //
-// While it is up it keeps the browser's own keyboard down (see keyinput.js), so
-// there is only ever one keyboard on screen.
+// It has no business raising a keyboard of its own: the fields it types into are
+// the shell's own (see textfield.js) rather than the browser's, so there is
+// nothing left for the browser to offer. What a key means is the field's
+// business - pressKey sends it there and the field decides.
+//
+// Which keys there are is keyboard-layout.js; what each one does once pressed is
+// textfield-keys.js.
 
 var CHROME_CLASS = 'site-chrome';
 var PANEL_CLASS = 'sim-keyboard';
@@ -142,13 +139,13 @@ export function createVirtualKeyboard() {
     return key;
   }
 
-  // Send one key to whatever the emulated cursor has focused, keeping that field
-  // focused: a keyboard that takes the focus away is worse than no keyboard.
+  // Send one key to whichever field has the caret. With nothing to type into the
+  // key still goes somewhere: to the body, where the shell's own shortcuts hear
+  // it, so Escape closes a menu and Alt+Space opens a window's menu from the
+  // keyboard too.
   function press(spec) {
-    var target = editableTarget();
-    holdFocus(target, function (field) {
-      typeKey(spec, field || document.body, mods);
-    });
+    var field = activeField();
+    pressKey(spec, field || document.body, mods);
 
     // Shift is one-shot: it has typed its one character and lets go, so the
     // next key is a lowercase one without a second tap to clear it.
@@ -230,16 +227,11 @@ export function createVirtualKeyboard() {
     toggle.classList.toggle('is-on', open);
     if (open) {
       place();
-      setKeyboardActive(true);
-      watchField();
       return;
     }
-    setKeyboardActive(false);
-    // The browser's keyboard belongs back to the browser when ours goes away, so
-    // a closed keyboard is not a keyboard at all - and nothing is left listening
-    // for fields that are no longer being typed into.
+    // A key that was repeating when the keyboard went away must not keep
+    // deleting into a field nobody can see.
     stopRepeat();
-    unwatchField();
   }
 
   // The emulated monitor is scaled to fit the viewport, so the taskbar's height
@@ -254,69 +246,6 @@ export function createVirtualKeyboard() {
     panel.style.bottom = Math.max(8, Math.round(taskbar)) + 'px';
   }
 
-  var watched = null;
-  var watcher = null;
-
-  // While the keyboard is up, whichever field the emulated cursor focuses has
-  // the browser's keyboard held off it.
-  //
-  // The press has to be caught before the focus, not after it. The browser asks
-  // for its keyboard as part of focusing a field, so a field marked readonly
-  // once focusin arrives is a field whose keyboard is already on the way up -
-  // which is exactly how the first version of this failed. The emulated cursor
-  // dispatches the press and focuses in that order, so a capture-phase
-  // listener here is always in time.
-  function onPress(event) {
-    var field = editableField(event.target);
-    if (field) {
-      watched = field;
-      suppressNativeKeyboard(field);
-    }
-  }
-
-  // A field that focuses itself - a popup putting the caret in its first text
-  // box - never gets a press first, so the focus itself is caught too. It is
-  // late on the platforms that decide during the focus, and it is a backstop on
-  // the ones that decide after.
-  function onFocus() {
-    var field = editableTarget();
-    if (field !== watched) {
-      watched = field;
-      if (field) {
-        suppressNativeKeyboard(field);
-      } else {
-        // Nothing typeable has the focus any more, so the field that had it
-        // goes back to asking for the browser's own keyboard.
-        releaseNativeKeyboard();
-      }
-    }
-  }
-
-  function watchField() {
-    if (watcher) {
-      return;
-    }
-    watcher = onFocus;
-    document.addEventListener('pointerdown', onPress, true);
-    document.addEventListener('mousedown', onPress, true);
-    document.addEventListener('focusin', watcher);
-    document.addEventListener('focusout', watcher);
-    watcher();
-  }
-
-  function unwatchField() {
-    if (!watcher) {
-      return;
-    }
-    document.removeEventListener('pointerdown', onPress, true);
-    document.removeEventListener('mousedown', onPress, true);
-    document.removeEventListener('focusin', watcher);
-    document.removeEventListener('focusout', watcher);
-    watcher = null;
-    watched = null;
-    releaseNativeKeyboard();
-  }
-
   toggle.addEventListener('click', function (event) {
     // The browser's button, not the emulated OS's: nothing here is routed.
     event.stopPropagation();
@@ -326,6 +255,13 @@ export function createVirtualKeyboard() {
   // --- moving it ----------------------------------------------------------
 
   var dragging = null;
+
+  // How much of the panel has to stay on screen for it to be worth keeping.
+  // A panel as wide as the screen has nowhere to move sideways *within* the
+  // screen, and clamping it to that range pins it to the left edge - which looks
+  // exactly like a drag that does not work. So it is allowed to travel as far as
+  // it can while still keeping a strip of itself to grab.
+  var GRAB_STRIP_PX = 56;
 
   grip.addEventListener('pointerdown', function (event) {
     event.preventDefault();
@@ -339,9 +275,12 @@ export function createVirtualKeyboard() {
       dy: event.clientY - rect.top
     };
     // Measuring from a fixed bottom edge, so the panel is measured from the top
-    // for as long as it is being dragged.
+    // for as long as it is being dragged. It is also now positioned by hand, and
+    // keeps its own left and top from here on rather than the centring rule the
+    // docked panel uses - which would slide it half its own width to the left.
     panel.style.top = Math.round(rect.top) + 'px';
     panel.style.bottom = 'auto';
+    panel.classList.add('is-placed');
     panel.classList.add('is-moving');
   });
 
@@ -351,7 +290,11 @@ export function createVirtualKeyboard() {
     }
     event.preventDefault();
     var rect = panel.getBoundingClientRect();
-    var left = clamp(event.clientX - dragging.dx, 0, window.innerWidth - rect.width);
+    var left = clamp(
+      event.clientX - dragging.dx,
+      GRAB_STRIP_PX - rect.width,
+      window.innerWidth - GRAB_STRIP_PX
+    );
     var top = clamp(event.clientY - dragging.dy, 0, window.innerHeight - rect.height);
     panel.style.left = Math.round(left) + 'px';
     panel.style.top = Math.round(top) + 'px';

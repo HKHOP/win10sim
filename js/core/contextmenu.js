@@ -31,6 +31,9 @@ var SUBMENU_OPEN_DELAY_MS = 1000;
 var SUBMENU_CLOSE_DELAY_MS = 400;
 var HOVER_POLL_MS = 120;
 var MENU_OFFSET_PX = 2;
+// What the stylesheet asks for as a minimum, and what a screen narrower than
+// that makes the menu give up.
+var MIN_MENU_WIDTH_PX = 180;
 
 function closeSub(record) {
   if (!record.child) {
@@ -188,26 +191,34 @@ function screenBounds() {
 // Win10 flips the menu up or left when the press is near an edge, so the
 // list never runs off-screen or under the taskbar.
 function placeMenu(menu, x, y, hostEl) {
-  var rect = menu.getBoundingClientRect();
   var bounds = screenBounds();
+  var availWidth = bounds.right - bounds.left;
+  var availHeight = bounds.bottom - bounds.top;
+  // The screen gets the last word on both sizes before the position is even
+  // considered. A menu taller than the screen scrolls; one wider than it is
+  // narrowed and its labels ellipsize, the way Windows does - because a menu
+  // placed at the left edge and running off the right is not a menu that fits.
+  menu.style.maxWidth = availWidth + 'px';
+  menu.style.maxHeight = availHeight + 'px';
+  if (availWidth < MIN_MENU_WIDTH_PX) {
+    // A screen narrower than a menu is the emulated display on a phone held
+    // upright: the menu gives up its minimum rather than hanging off both edges.
+    menu.style.minWidth = '0';
+  }
+  var rect = menu.getBoundingClientRect();
   var left;
   var top;
   if (hostEl) {
     var host = hostEl.getBoundingClientRect();
     left = host.right - MENU_OFFSET_PX;
     if (left + rect.width > bounds.right) {
+      // No room to the right of the parent, so cascade to its left instead.
       left = host.left - rect.width + MENU_OFFSET_PX;
     }
     top = host.top - 3;
   } else {
     left = x + MENU_OFFSET_PX;
     top = y + MENU_OFFSET_PX;
-  }
-  // A menu taller than the screen scrolls instead of running off it.
-  var maxHeight = bounds.bottom - bounds.top;
-  if (rect.height > maxHeight) {
-    menu.style.maxHeight = maxHeight + 'px';
-    rect = menu.getBoundingClientRect();
   }
   menu.style.left = Math.max(bounds.left, Math.min(left, bounds.right - rect.width)) + 'px';
   menu.style.top = Math.max(bounds.top, Math.min(top, bounds.bottom - rect.height)) + 'px';

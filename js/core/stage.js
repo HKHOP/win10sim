@@ -15,6 +15,14 @@ export function fitStage(stage) {
   stage.style.transform = 'scale(' + scale + ')';
 }
 
+// The scale the stage is actually drawn at, measured rather than recomputed, so
+// a caller that needs the emulated monitor's size in page pixels (the virtual
+// keyboard, sitting its height above the taskbar) does not have to guess at the
+// viewport the way computeStageScale would.
+export function stageScale(stage) {
+  return stage ? stage.getBoundingClientRect().width / DISPLAY_WIDTH : 1;
+}
+
 export function watchStage(stage) {
   fitStage(stage);
   window.addEventListener('resize', function () { fitStage(stage); });

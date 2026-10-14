@@ -4,7 +4,6 @@ import {
   CURSOR_IDLE_SRC,
   CURSOR_LINK_SRC,
   CURSOR_TEXT_SRC,
-  CURSOR_MOVE_SRC,
   CURSOR_RESIZE_EW_SRC,
   CURSOR_RESIZE_NS_SRC,
   CURSOR_RESIZE_NESW_SRC,
@@ -16,7 +15,6 @@ import {
   CURSOR_IDLE_HOTSPOT,
   CURSOR_LINK_HOTSPOT,
   CURSOR_TEXT_HOTSPOT,
-  CURSOR_MOVE_HOTSPOT,
   CURSOR_RESIZE_EW_HOTSPOT,
   CURSOR_RESIZE_NS_HOTSPOT,
   CURSOR_DIAG_HOTSPOT,
@@ -26,6 +24,7 @@ import {
   MAX_MOUSE_DELTA_PX
 } from '../global/constants.js';
 import { mountTouchpad } from './touchpad.js';
+import { isDragging, onDragEnd } from '../system/drag.js';
 
 // The emulated hardware cursor is the only pointer in the emulated OS.
 //
@@ -60,11 +59,13 @@ function isSiteChrome(target) {
 }
 
 var LINK_SELECTOR = 'a, button, input, select, textarea, [role="button"]';
-var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input[type="search"], input:not([type])';
+// The shell's own text fields carry role="textbox" (see textfield.js), and they
+// want the beam like any other field text goes into.
+var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input[type="search"], input:not([type]), [role="textbox"]';
 // Elements that carry a .sim-hover twin for their :hover style: the capture
 // layer means real :hover never fires on the emulated UI, so the class is the
 // only hover the OS gets.
-var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], ' +
+var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], [role="textbox"], ' +
   '.desktop-icon, .exp-tile, .exp-list-row, .exp-detail-row, .exp-drive, ' +
   '.exp-qa-row, .exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item';
 
@@ -111,7 +112,6 @@ var CURSOR_ART = {
   idle: { src: CURSOR_IDLE_SRC, hotspot: CURSOR_IDLE_HOTSPOT },
   link: { src: CURSOR_LINK_SRC, hotspot: CURSOR_LINK_HOTSPOT },
   text: { src: CURSOR_TEXT_SRC, hotspot: CURSOR_TEXT_HOTSPOT },
-  move: { src: CURSOR_MOVE_SRC, hotspot: CURSOR_MOVE_HOTSPOT },
   'resize-ew': { src: CURSOR_RESIZE_EW_SRC, hotspot: CURSOR_RESIZE_EW_HOTSPOT },
   'resize-ns': { src: CURSOR_RESIZE_NS_SRC, hotspot: CURSOR_RESIZE_NS_HOTSPOT },
   'resize-nesw': { src: CURSOR_RESIZE_NESW_SRC, hotspot: CURSOR_DIAG_HOTSPOT },
@@ -162,8 +162,17 @@ export function createCursor(stage) {
   el.classList.add('sim-cursor-off');
   // The cursor lives at the document level, not inside the stage: context
   // menus open there too, and the stage's stacking context would always
-  // paint the cursor underneath them.
-  document.body.appendChild(el);
+  // paint the cursor underneath them. The cost of that is that nothing was
+  // clipping it, so at the edges of the emulated screen the 32px sprite hung
+  // off the monitor - which on a phone is plainly visible, because there the
+  // stage is letterboxed inside the viewport and the spill lands on the page.
+  // The frame is the emulated screen on the page: the pointer can still reach
+  // every pixel of it, and the frame is what stops the sprite being drawn
+  // outside it.
+  var frame = document.createElement('div');
+  frame.className = 'sim-cursor-frame';
+  frame.appendChild(el);
+  document.body.appendChild(frame);
 
   // The glyph is drawn in emulated pixels but lives outside the stage, which
   // the page scales down to fit the viewport — so on a phone, where the whole
@@ -215,16 +224,28 @@ export function createCursor(stage) {
   }
 
   function render() {
-    // Client coordinates: the cursor is a document-level element now, so it
-    // has to follow the stage's on-screen rect instead of its local grid.
     var rect = stage.getBoundingClientRect();
     var nextScale = rect.width ? rect.width / DISPLAY_WIDTH : 1;
     if (nextScale !== scale) {
       scale = nextScale;
       applyCursorArt();
     }
-    el.style.transform = 'translate(' + (rect.left + x / DISPLAY_WIDTH * rect.width) +
-      'px,' + (rect.top + y / DISPLAY_HEIGHT * rect.height) + 'px)';
+    // The frame is the emulated screen where it has landed on the page, bounded by
+    // the window as well: the cursor is the one thing that must never be drawn
+    // outside the viewport, and the sprite is 32px across with its hotspot on the
+    // pointer, so at the bottom and right edges most of it hangs over. The
+    // cursor's place inside the frame is then measured from the frame, not from
+    // the stage, so the two stay together when the clip is inset.
+    var left = Math.max(0, rect.left);
+    var top = Math.max(0, rect.top);
+    var right = Math.min(window.innerWidth || rect.right, rect.right);
+    var bottom = Math.min(window.innerHeight || rect.bottom, rect.bottom);
+    frame.style.left = left + 'px';
+    frame.style.top = top + 'px';
+    frame.style.width = Math.max(0, right - left) + 'px';
+    frame.style.height = Math.max(0, bottom - top) + 'px';
+    el.style.transform = 'translate(' + (x / DISPLAY_WIDTH * rect.width - (left - rect.left)) +
+      'px,' + (y / DISPLAY_HEIGHT * rect.height - (top - rect.top)) + 'px)';
   }
 
   // A viewport change rescales the stage under the cursor, so the glyph has to
@@ -276,9 +297,15 @@ export function createCursor(stage) {
     }
   }
 
-  // What the pointer is wearing follows what it is over, the way Windows dresses
-// its cursor: a resize grip gets the cursor that runs along that edge, a
-// titlebar gets the move cursor, a text field the beam, a control the hand.
+  // What the pointer is wearing follows what it is over: a resize grip gets the
+  // cursor that runs along that edge, a text field the beam, a control the hand.
+  //
+  // A title bar gets nothing. Windows dresses a title bar in the four-arrowed
+  // move cursor, and here the shape meant nothing to anyone: a title bar is the
+  // widest thing anyone aims at, so the arrow flickered on and off as the pointer
+  // crossed it on its way somewhere else, and then stayed for the whole drag - one
+  // glyph still claiming a move after the window had already moved. A window
+  // following the pointer says that by itself.
 function updateHover(target) {
   if (busy) {
     // Something is starting: the ring outranks whatever is underneath.
@@ -289,10 +316,6 @@ function updateHover(target) {
     var grip = target.closest('.win-resize');
     if (grip && RESIZE_CURSOR[grip.dataset.zone]) {
       setState(RESIZE_CURSOR[grip.dataset.zone]);
-      return;
-    }
-    if (target.closest('.win-titlebar')) {
-      setState('move');
       return;
     }
     // Text fields win over the generic link state.
@@ -360,10 +383,29 @@ function updateHover(target) {
       return;
     }
     target.dispatchEvent(markEcho(new MouseEvent('mousedown', eventOpts(source, clientPoint())), source));
+    // The browser's own controls are focused here for them. The shell's fields
+    // are not: they are the shell's, and a field takes the caret itself when it
+    // is pressed, exactly as a real one does when the browser focuses it.
     if (target.focus && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) {
       target.focus();
     }
     updateHover(target);
+  }
+
+  // A move is an event as well as a position. Anything that follows a pointer -
+  // a selection being dragged out of a text box above all - is listening for
+  // mousemove, and the emulated cursor is the only pointer in the shell, so
+  // without this a press-and-drag across a text box selects nothing at all.
+  //
+  // It is dispatched on the document rather than on the element under the cursor,
+  // and it does not bubble: the shell's window-level mousemove handlers are the
+  // emulated pointer's own plumbing (the window gesture, the desktop's icons, the
+  // Start tiles), already fed by the device that moved the cursor, and an event
+  // bubbling up from an element would make every one of those drags happen twice.
+  function synthMove(source) {
+    var opts = eventOpts(source, clientPoint());
+    opts.bubbles = false;
+    document.dispatchEvent(new MouseEvent('mousemove', opts));
   }
 
   function synthUp(source) {
@@ -620,10 +662,21 @@ function updateHover(target) {
   }, true);
 
   function updateHoverTarget() {
+    // Windows holds the pointer's shape - and a control's highlight - for the
+    // whole length of a drag. A window travelling over the taskbar, a file name
+    // and a text box must not turn the cursor into a hand and then a beam.
+    if (isDragging()) {
+      return;
+    }
     var hovered = targetUnderCursor();
     updateHover(hovered);
     setSimHover(hovered);
   }
+
+  // The drag is over, so whatever is under the cursor decides its shape again.
+  onDragEnd(function () {
+    updateHoverTarget();
+  });
 
   // Capture-phase: the real press is swallowed here and re-delivered as the
   // emulated cursor's own press. The engagement click only captures the
@@ -690,6 +743,9 @@ function updateHover(target) {
       // The emulated cursor is the pointer, so the finger hovering a control
       // hovers it exactly as a mouse would.
       updateHoverTarget();
+      // And a drag the pointer is in the middle of is still a drag: the surfaces
+      // following it are told where it has got to.
+      synthMove(null);
     },
     press: function () { synthDown(null); },
     release: function () { synthUp(null); },

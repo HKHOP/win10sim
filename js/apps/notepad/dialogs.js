@@ -1,3 +1,4 @@
+import { createTextField } from '../../core/textfield.js';
 // Notepad's dialogs. Win10's classic Notepad opens real top-level dialogs
 // (Find, Replace, Go To, Font, About, and its prompts), so each of these is
 // built on the same shell: a small window with a title bar, the controls,
@@ -135,10 +136,11 @@ export function showFindDialog(context, opts) {
     height: 172,
     variant: 'find',
     build: function (content, close) {
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'np-input np-input-grow';
-      input.value = opts.initial || '';
+      var input = createTextField({
+        className: 'np-input np-input-grow',
+        value: opts.initial || '',
+        label: 'Find what'
+      });
       content.appendChild(field('Find what:', input));
 
       var check = matchCaseRow();
@@ -193,16 +195,18 @@ export function showReplaceDialog(context, opts) {
     height: 210,
     variant: 'replace',
     build: function (content) {
-      var findInput = document.createElement('input');
-      findInput.type = 'text';
-      findInput.className = 'np-input np-input-grow';
-      findInput.value = opts.initial || '';
+      var findInput = createTextField({
+        className: 'np-input np-input-grow',
+        value: opts.initial || '',
+        label: 'Find what'
+      });
       content.appendChild(field('Find what:', findInput));
 
-      var withInput = document.createElement('input');
-      withInput.type = 'text';
-      withInput.className = 'np-input np-input-grow';
-      withInput.value = opts.replacement || '';
+      var withInput = createTextField({
+        className: 'np-input np-input-grow',
+        value: opts.replacement || '',
+        label: 'Replace with'
+      });
       content.appendChild(field('Replace with:', withInput));
 
       var check = matchCaseRow();
@@ -252,10 +256,11 @@ export function showGoToDialog(context, opts) {
     height: 148,
     variant: 'goto',
     build: function (content) {
-      var input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'np-input np-input-number';
-      input.value = String(opts.initial || 1);
+      var input = createTextField({
+        className: 'np-input np-input-number',
+        value: String(opts.initial || 1),
+        label: 'Line number'
+      });
       content.appendChild(field('Line number:', input));
       content.__go = function () {
         var line = parseInt(input.value, 10);

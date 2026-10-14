@@ -25,10 +25,15 @@
   display: none;
 }
 
-.sim-keyboard.is-moving {
-  /* A panel placed by left/top must not keep the centring rule, or it jumps
-     away from the finger the moment it is dragged. */
+/* A panel the user has put somewhere keeps its own left and top, so it must not
+   be centred by the transform the docked panel uses - which would slide it half
+   its own width to the left the moment the drag ended. */
+.sim-keyboard.is-placed {
   transform: none;
+}
+
+/* The stronger shadow while it is being dragged. */
+.sim-keyboard.is-moving {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 

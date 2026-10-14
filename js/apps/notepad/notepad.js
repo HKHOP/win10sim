@@ -7,6 +7,7 @@ import {
   NOTEPAD_DEFAULT_DIR,
   ACCOUNT_NAME
 } from '../../global/constants.js';
+import { createTextField } from '../../core/textfield.js';
 import { buildMenuBar } from './menus.js';
 import {
   showOpenDialog,
@@ -79,12 +80,16 @@ export function openNotepad(context, args) {
 
   var editorWrap = document.createElement('div');
   editorWrap.className = 'np-editor-wrap';
-  var editor = document.createElement('textarea');
-  editor.className = 'np-editor';
-  editor.spellcheck = false;
-  editor.setAttribute('autocomplete', 'off');
-  editor.setAttribute('autocorrect', 'off');
-  editor.setAttribute('aria-label', 'Notepad editor');
+  // The editor is the shell's own field rather than a textarea: the browser
+  // would raise its keyboard over the document, and its text and caret are not
+  // the ones Windows draws. It answers the same interface, so the editing code
+  // below is unchanged.
+  var editor = createTextField({
+    multiline: true,
+    wrap: 'soft',
+    className: 'np-editor',
+    label: 'Notepad editor'
+  });
   editorWrap.appendChild(editor);
   root.appendChild(editorWrap);
 

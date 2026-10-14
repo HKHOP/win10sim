@@ -77,7 +77,9 @@
   color: #222;
 }
 
-.task-search-input::placeholder {
+/* A shell field rather than an input, so the placeholder is a drawn element
+   rather than ::placeholder - see css/textfield.css. */
+.task-search-input .sim-field-placeholder {
   color: #666;
 }
 

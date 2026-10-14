@@ -1,4 +1,5 @@
 import { FOLDER_SRC, FILE_SRC, NOTEPAD_RECENT_MAX } from '../../global/constants.js';
+import { createTextField } from '../../core/textfield.js';
 
 // Notepad's Open and Save As dialogs: the classic Win10 shape with a
 // "Look in" path, a file list you navigate by double-clicking folders, a
@@ -51,10 +52,11 @@ function fileDialog(context, opts) {
   var lookLabel = document.createElement('label');
   lookLabel.className = 'np-label';
   lookLabel.textContent = 'Look in:';
-  var lookInput = document.createElement('input');
-  lookInput.type = 'text';
-  lookInput.className = 'np-input np-input-grow';
-  lookInput.value = state.dir;
+  var lookInput = createTextField({
+    className: 'np-input np-input-grow',
+    value: state.dir,
+    label: 'Look in'
+  });
   lookInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -87,10 +89,11 @@ function fileDialog(context, opts) {
   var nameLabel = document.createElement('label');
   nameLabel.className = 'np-label';
   nameLabel.textContent = 'File name:';
-  var nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.className = 'np-input np-input-grow';
-  nameInput.value = opts.initialName || '';
+  var nameInput = createTextField({
+    className: 'np-input np-input-grow',
+    value: opts.initialName || '',
+    label: 'File name'
+  });
   nameRow.appendChild(nameLabel);
   nameRow.appendChild(nameInput);
   root.appendChild(nameRow);
