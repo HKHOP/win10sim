@@ -57,6 +57,7 @@ import { isRawDevicePress } from './cursor.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
   getRecentlyAdded,
+  getPins,
   pinApp,
   isPinned,
   unpinApp,

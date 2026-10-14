@@ -3,6 +3,34 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.1] - The Start menu opens again
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **The Start menu failed to open at all.** Hiding the pinned section when there
+  is nothing in it needed the pinned tile list, and that list was read by a name
+  the file had never brought in - so the very first thing the menu did on opening
+  threw, every time. Nothing in the syntax checks or the import checks can see
+  that kind of mistake: a missing import is not a syntax error, and an import
+  that resolves says nothing about the names a file *uses*. The verification now
+  includes a check for the other half of the same question - a name exported
+  somewhere in the tree, used in a file, and neither imported nor declared there
+  - which is what catches it, and which the tree now passes
+
 ## [1.19.0] - Dialogs that belong to their window
 
 2026-10-14
