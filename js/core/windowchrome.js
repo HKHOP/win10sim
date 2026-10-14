@@ -25,7 +25,7 @@ function captionButton(svg, label, onClick) {
   return button;
 }
 
-// win: { title, icon } — everything else is updated by the manager.
+// win: { title, icon, frameless } — everything else is updated by the manager.
 // handlers: onCaption(action), onPress(target), onSystemMenu(x, y) where
 // x/y are client coordinates.
 export function buildWindowFrame(win, handlers) {
@@ -76,7 +76,17 @@ export function buildWindowFrame(win, handlers) {
   var body = document.createElement('div');
   body.className = 'win-body';
 
-  el.appendChild(titlebar);
+  // A frameless window is one whose app draws its own chrome - a browser, which
+  // puts its tabs and its own caption buttons where a title bar would be. The
+  // titlebar is still built, because the manager keeps updating the title text
+  // for the taskbar button, but it is not put in the frame: the app's own strip
+  // takes that row, and it says which part of it drags the window (see
+  // win.setDragHandle).
+  if (!win.frameless) {
+    el.appendChild(titlebar);
+  } else {
+    el.classList.add('win-frameless');
+  }
   el.appendChild(body);
   RESIZE_ZONES.forEach(function (zone) {
     var grip = document.createElement('div');

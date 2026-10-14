@@ -50,6 +50,12 @@ var windows = [];
 var listeners = [];
 var gesture = null;
 
+// What counts as something to be pressed rather than the window's own surface:
+// used inside an app's drag region, where a tab or a field is pressed and the
+// empty strip around it is dragged.
+var PRESSABLE_SELECTOR = 'button, input, textarea, select, a, [role="button"], ' +
+  '[data-no-drag], .sim-field';
+
 export function initWindowSystem(windowLayer, cursorApi) {
   layer = windowLayer;
   cursor = cursorApi;
@@ -189,6 +195,10 @@ export function createWindow(opts) {
     appId: options.appId || 'app',
     title: options.title || 'Window',
     icon: options.icon || '',
+    // An app that draws its own chrome - a browser's tabs and caption buttons -
+    // asks for no title bar, and says which of its own parts drags the window.
+    frameless: !!options.frameless,
+    dragEl: null,
     rect: clampRect({
       x: options.x != null ? options.x : baseX,
       y: options.y != null ? options.y : baseY,
@@ -258,6 +268,12 @@ export function createWindow(opts) {
   win.api = {
     id: win.id,
     body: win.bodyEl,
+    // Which of the app's own parts drags the window, for a window with no title
+    // bar to do it. A press on something pressable inside that part - a tab, a
+    // button, a field - stays that thing's press.
+    setDragHandle: function (el) {
+      win.dragEl = el || null;
+    },
     setTitle: function (text) {
       win.title = text;
       win.titleEl.textContent = text;
@@ -580,6 +596,16 @@ function startWindowGesture(win, target, origin) {
   }
   var bar = target && target.closest ? target.closest('.win-titlebar') : null;
   if (bar) {
+    beginGesture(win, 'move', origin);
+    return;
+  }
+  // An app that draws its own chrome - a browser, whose tab strip is where a
+  // title bar would be - says which part of it drags the window. Inside that
+  // region a press on something meant to be pressed is that thing's press and not
+  // the window's, which is the same rule the title bar follows with its caption
+  // buttons: a tab, a button or a field is pressed, the empty strip is dragged.
+  if (win.dragEl && target && win.dragEl.contains(target) &&
+    !(target.closest && target.closest(PRESSABLE_SELECTOR))) {
     beginGesture(win, 'move', origin);
   }
 }

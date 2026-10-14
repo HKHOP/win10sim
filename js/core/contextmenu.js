@@ -98,6 +98,16 @@ function buildMenu(items) {
       menu.appendChild(sep);
       return;
     }
+    // A row that is not a list item: a control an app drew itself, such as the
+    // zoom row in a browser's menu, which is a minus, a number and a plus rather
+    // than something you press once.
+    if (item.node) {
+      var row = document.createElement('div');
+      row.className = 'win-ctx-row';
+      row.appendChild(item.node);
+      menu.appendChild(row);
+      return;
+    }
     var el = document.createElement('button');
     el.type = 'button';
     el.className = 'win-ctx-item' + (item.disabled ? ' is-disabled' : '');

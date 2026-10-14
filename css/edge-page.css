@@ -1,0 +1,364 @@
+/* What a tab shows: the new tab page with its drawn picture, the page a browser
+   draws when the network is not there, and the rooms Edge carries with itself. */
+
+.edge-page {
+  min-height: 100%;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+  font-size: 13px;
+}
+
+/* --- the new tab page ---------------------------------------------------- */
+
+.edge-newtab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  overflow: hidden;
+}
+
+/* The picture is drawn rather than photographed - see newtab.js for why - and
+   covers the whole tab, cropped to whatever shape the window is. */
+.edge-newtab-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.edge-newtab-middle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.edge-newtab-mark {
+  width: 96px;
+  height: 96px;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
+}
+
+.edge-newtab-search {
+  display: flex;
+  align-items: center;
+  width: 380px;
+  max-width: 80vw;
+  height: 34px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 17px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+
+.edge-newtab-glass {
+  display: flex;
+  flex: 0 0 16px;
+  margin-right: 8px;
+  color: #4a4a4a;
+}
+
+.edge-newtab-glass svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.edge-newtab-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  background: transparent;
+  border: 0;
+  font-size: 13px;
+}
+
+/* The row under the search box: the pages the browser can actually show. */
+.edge-newtab-tiles {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.edge-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 88px;
+  padding: 10px 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  cursor: default;
+}
+
+.edge-tile:hover,
+.edge-tile.sim-hover {
+  background: #ffffff;
+}
+
+.edge-tile-art {
+  display: flex;
+  color: #0f6cbd;
+}
+
+.edge-tile-art svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.edge-tile-label {
+  font-size: 11.5px;
+  color: #1f1f1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* --- the rooms Edge carries ---------------------------------------------- */
+
+.edge-page-title {
+  margin: 0;
+  padding: 22px 28px 14px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.edge-page-note {
+  margin: 0;
+  padding: 8px 28px 24px;
+  color: #5f5f5f;
+  max-width: 640px;
+}
+
+.edge-rows {
+  padding: 0 20px 24px;
+}
+
+.edge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+}
+
+.edge-row:hover,
+.edge-row.sim-hover {
+  background: #f0f0f0;
+}
+
+.edge-row-art {
+  display: flex;
+  flex: 0 0 18px;
+  color: #0f6cbd;
+}
+
+.edge-row-art svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.edge-row-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edge-row-where {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: 8px;
+  color: #767676;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The empty state Edge shows for a room with nothing in it. */
+.edge-empty {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+}
+
+.edge-empty-art {
+  display: flex;
+  color: #9a9a9a;
+}
+
+.edge-empty-art svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.edge-empty-title {
+  margin: 0;
+  font-size: 14px;
+}
+
+.edge-empty-note {
+  margin: 4px 0 0;
+  color: #5f5f5f;
+  max-width: 520px;
+}
+
+/* --- settings ------------------------------------------------------------ */
+
+.edge-settings-group {
+  padding: 0 28px 18px;
+  max-width: 720px;
+}
+
+.edge-settings-group h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.edge-settings-group dl {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) 1fr;
+  row-gap: 4px;
+  column-gap: 16px;
+  margin: 0;
+}
+
+.edge-settings-group dt {
+  color: #3c3c3c;
+}
+
+.edge-settings-group dd {
+  margin: 0;
+  color: #5f5f5f;
+}
+
+/* --- about --------------------------------------------------------------- */
+
+.edge-about {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 28px 28px;
+  max-width: 720px;
+}
+
+.edge-about-mark {
+  width: 64px;
+  height: 64px;
+}
+
+.edge-about-version {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.edge-about-line {
+  margin: 0 0 8px;
+  color: #3c3c3c;
+}
+
+/* --- the one website Windows ships with ---------------------------------- */
+
+.edge-site-banner {
+  padding: 18px 28px 6px;
+}
+
+.edge-site-word {
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  color: #5e5e5e;
+}
+
+.edge-site-lead {
+  margin: 0;
+  padding: 0 28px 16px;
+  color: #3c3c3c;
+  max-width: 640px;
+}
+
+/* --- the page a browser shows when the network is not there --------------- */
+
+.edge-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px;
+  background: #ffffff;
+}
+
+.edge-error-box {
+  max-width: 480px;
+  text-align: center;
+}
+
+.edge-error-face {
+  width: 96px;
+  height: 96px;
+  display: block;
+  margin: 0 auto 14px;
+}
+
+.edge-error-words h1 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.edge-error-address {
+  margin: 0 0 12px;
+  color: #5f5f5f;
+  word-break: break-all;
+}
+
+.edge-error-because {
+  margin: 0 0 8px;
+  color: #3c3c3c;
+}
+
+.edge-error-again {
+  margin: 0 0 18px;
+  color: #5f5f5f;
+}
+
+.edge-error-reload {
+  padding: 7px 22px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #f7f7f7;
+  font-size: 12.5px;
+  cursor: default;
+}
+
+.edge-error-reload:hover,
+.edge-error-reload.sim-hover {
+  background: #ececec;
+}

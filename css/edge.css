@@ -1,0 +1,566 @@
+/* Microsoft Edge's own window furniture: the tab strip, the toolbar, the
+   address bar, the find bar and the profile flyout.
+
+   This is Edge's light theme - the one Edge opens in and the one the reference
+   it was built from is in. The browser lives inside a shell window, so the
+   shell's title bar sits above all of this, the way a menu bar does in Notepad.
+
+   Hover is authored as :hover, .sim-hover because the capture layer keeps the
+   browser's own pointer off the UI entirely (see cursor.js). */
+
+.edge {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.edge button {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* --- the tab strip ------------------------------------------------------- */
+
+.edge-tabstrip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 34px;
+  padding: 4px 0 0 6px;
+  background: #f3f3f3;
+  overflow: hidden;
+}
+
+.edge-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 220px;
+  min-width: 60px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  cursor: default;
+  overflow: hidden;
+}
+
+.edge-tab:hover,
+.edge-tab.sim-hover {
+  background: #eaeaea;
+}
+
+/* The tab you are on is part of the page below it, which is why it is white and
+   why its border stops before the bottom. */
+.edge-tab.is-active {
+  background: #ffffff;
+  border-color: #e0e0e0;
+}
+
+.edge-tab.is-private .edge-tab-fav img {
+  opacity: 0.55;
+}
+
+.edge-tab-fav {
+  display: flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.edge-tab-fav img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.edge-tab-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edge-tab-close {
+  display: flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  opacity: 0;
+  cursor: default;
+}
+
+.edge-tab:hover .edge-tab-close,
+.edge-tab.sim-hover .edge-tab-close,
+.edge-tab.is-active .edge-tab-close {
+  opacity: 0.7;
+}
+
+.edge-tab-close:hover,
+.edge-tab-close.sim-hover {
+  background: #d9d9d9;
+  opacity: 1;
+}
+
+.edge-tab-close svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+  margin: 3px;
+}
+
+.edge-tab-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: default;
+}
+
+.edge-tab-new:hover,
+.edge-tab-new.sim-hover {
+  background: #e4e4e4;
+}
+
+.edge-tab-new svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* --- the window's own caption buttons -------------------------------------
+   A browser has no title bar: its tab strip is in that row, and the buttons that
+   would close the window sit at the end of it, the way Edge draws them. They are
+   pushed to the right so the tabs take the width that is left. */
+
+.edge-caps {
+  display: flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  height: 30px;
+  margin-left: auto;
+}
+
+.edge-cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: #3c3c3c;
+  cursor: default;
+}
+
+.edge-cap:hover,
+.edge-cap.sim-hover {
+  background: #e5e5e5;
+}
+
+.edge-cap-close:hover,
+.edge-cap-close.sim-hover {
+  background: #e81123;
+  color: #ffffff;
+}
+
+.edge-cap svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+}
+
+/* Maximise and restore are one button with both glyphs in it; the window's own
+   state decides which one is showing. */
+.edge-cap-restore-glyph {
+  display: none;
+}
+
+.win-maximized .edge-cap-max-glyph {
+  display: none;
+}
+
+.win-maximized .edge-cap-restore-glyph {
+  display: block;
+}
+
+/* --- the toolbar --------------------------------------------------------- */
+
+.edge-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 6px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.edge-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #3c3c3c;
+  cursor: default;
+}
+
+.edge-btn:hover,
+.edge-btn.sim-hover {
+  background: #e9e9e9;
+}
+
+.edge-btn[disabled] {
+  color: #bdbdbd;
+  background: transparent;
+}
+
+.edge-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.edge-btn.is-on {
+  color: #0f6cbd;
+}
+
+/* The address bar: a field in a grey well, with the magnifier at its left the way
+   Edge draws it. */
+.edge-omni {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  margin: 0 6px;
+  padding: 0 8px 0 6px;
+  background: #f0f0f0;
+  border: 1px solid transparent;
+  border-radius: 14px;
+}
+
+.edge-omni:focus-within {
+  background: #ffffff;
+  border-color: #c8c8c8;
+}
+
+.edge-omni-glass {
+  display: flex;
+  flex: 0 0 16px;
+  color: #5f5f5f;
+}
+
+.edge-omni-glass svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* The field itself paints nothing: the grey well around it is the bar, and a
+   field with its own background would draw a box inside a box. */
+.edge-omni-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 26px;
+  background: transparent;
+  border: 0;
+  font-size: 12.5px;
+}
+
+.edge-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+/* --- the pages ----------------------------------------------------------- */
+
+.edge-pages {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #ffffff;
+}
+
+/* --- find on page -------------------------------------------------------- */
+
+.edge-find {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+}
+
+/* A bar that says `hidden` and is told `display` by the rule above is not hidden:
+   the attribute only works while nothing overrides it. */
+.edge-find[hidden] {
+  display: none;
+}
+
+.edge-find-box {
+  display: flex;
+  align-items: center;
+  width: 200px;
+  height: 24px;
+  padding: 0 6px;
+  background: #f0f0f0;
+  border-radius: 12px;
+}
+
+.edge-find-field {
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+}
+
+.edge-find-count {
+  min-width: 66px;
+  color: #5f5f5f;
+  text-align: right;
+}
+
+.edge-find-step {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13px;
+  cursor: default;
+}
+
+.edge-find-step:hover,
+.edge-find-step.sim-hover {
+  background: #e9e9e9;
+}
+
+/* The marks Find on page leaves behind: the one the cursor is on is the one it
+   will jump to next. */
+.edge-find-mark {
+  background: #ffe58a;
+  color: inherit;
+  border-radius: 2px;
+}
+
+.edge-find-mark-current {
+  background: #ff9f38;
+}
+
+/* --- the profile flyout -------------------------------------------------- */
+
+.edge-flyout {
+  position: absolute;
+  z-index: 6;
+  min-width: 300px;
+  padding: 8px 0;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  cursor: default;
+}
+
+.edge-profile-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 12px;
+}
+
+.edge-profile-pic {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.edge-profile-id {
+  min-width: 0;
+}
+
+.edge-profile-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.edge-profile-mail {
+  margin: 1px 0 0;
+  font-size: 11.5px;
+  color: #5f5f5f;
+}
+
+.edge-profile-sync {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: #107c10;
+}
+
+.edge-profile-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #107c10;
+}
+
+.edge-profile-settings {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #3c3c3c;
+}
+
+.edge-profile-settings:hover,
+.edge-profile-settings.sim-hover {
+  background: #e9e9e9;
+}
+
+.edge-profile-settings svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  margin: 6px;
+}
+
+.edge-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+}
+
+.edge-profile-row:hover:not([disabled]),
+.edge-profile-row.sim-hover:not([disabled]) {
+  background: #f0f0f0;
+}
+
+.edge-profile-row[disabled] {
+  color: #333;
+}
+
+.edge-profile-row-art {
+  display: flex;
+  flex: 0 0 20px;
+  color: #3c3c3c;
+}
+
+.edge-profile-row-art svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.edge-profile-row-words {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.edge-profile-row-name {
+  font-size: 12px;
+}
+
+.edge-profile-row-note {
+  font-size: 11px;
+  color: #5f5f5f;
+}
+
+.edge-profile-row-arrow {
+  display: flex;
+  flex: 0 0 14px;
+  color: #5f5f5f;
+}
+
+.edge-profile-row-arrow svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+/* --- the zoom row in the Settings and more menu --------------------------- */
+
+.edge-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 14px 8px;
+}
+
+.edge-zoom-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #3c3c3c;
+}
+
+.edge-zoom-step:hover,
+.edge-zoom-step.sim-hover {
+  background: #e9e9e9;
+}
+
+.edge-zoom-step svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.edge-zoom-level {
+  min-width: 46px;
+  text-align: center;
+  font-size: 12px;
+}

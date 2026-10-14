@@ -3,6 +3,77 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.15.0] - Microsoft Edge
+
+2026-10-14
+
+### Added
+
+- **`js/apps/edge/`**: Microsoft Edge, the app the taskbar has been pinning a
+  button for since before there was one behind it. The browser draws its own
+  furniture - tab strip, toolbar, address bar - inside a shell window, the way
+  Notepad's menu bar is, so the shell's title bar and window rules still hold it
+- **The tab strip**: favicons, titles, a close button on each, the new-tab button,
+  and per-tab history, so Back and Forward have somewhere to go and the address
+  bar greys out when there is nowhere to go
+- **The toolbar**: back, forward, refresh, home, the address bar ("Search or enter
+  web address", which is the shell's own text field like every other box in the
+  shell), and Edge's five tools on the right - collections, favorites, browser
+  essentials, the account, and the three dots
+- **The Settings and more menu**, item for item the way Edge draws it: the three
+  new things at the top, the zoom row drawn as a row (`- 100% +` and full screen)
+  rather than as list items, then favorites, history, downloads, apps,
+  extensions, browser essentials, print, screenshot, find on page, more tools,
+  settings, help and feedback, and the way out
+- **The profile flyout**: the account, its address, "Sync is on", and Work,
+  Profile 1, set up a new personal profile, other profiles
+- **The new tab page**: the Edge mark over a drawn lake, a "Search the web" box
+  that takes the focus as the page opens, and a row of the pages it can show. The
+  picture Edge really shows is a Bing photograph, which is Microsoft's own artwork
+  and not something this project can ship, so the picture is drawn in SVG and
+  `newtab.js` says why
+- **The pages Edge carries**: `edge://favorites`, `edge://history`,
+  `edge://downloads`, `edge://settings`, `edge://about`, and one website Windows
+  ships with. Everything else gets "Hmmm... can't reach this page", because there
+  is no internet on this computer and a browser that invented pages would teach
+  the wrong thing
+- **Find on page**, which really highlights: the count of what it found, the mark
+  on each match, the one the cursor is on, and next/previous
+- **Favorites** the star actually keeps, **Save page as** and **Create shortcut**
+  writing real files through the volume, and honest answers from print (no
+  printer), screenshot (no Print Screen key) and browser essentials (nothing to
+  keep ready)
+- **Edge's shortcuts**: Ctrl+T, Ctrl+N, Ctrl+Shift+N for InPrivate, Ctrl+H,
+  Ctrl+J, Ctrl+F, Ctrl+D, Ctrl+P, Ctrl+Shift+S, Ctrl+Shift+O, F5, Alt+Left,
+  Alt+Right and Alt+F
+- **A window with no title bar.** An app that draws its own chrome asks for
+  `createWindow({ frameless: true })` and says which of its parts drags the window
+  with `win.setDragHandle(element)`; the frame is built without a title bar, and a
+  press inside that region moves the window - Aero Snap included - unless it
+  landed on something meant to be pressed. Edge uses it: its tab strip is where a
+  title bar would be, its own caption buttons sit at the end of that strip and
+  call the same window API the shell's do, and dragging the empty strip moves the
+  window the way dragging a title bar does
+- Twenty glyphs Edge's chrome needs added to the Segoe MDL2 table in
+  `tools/build_mdl2_icons.py` and regenerated into `js/global/mdl2.js` - the star,
+  history, print, camera, help, InPrivate, new window, open in new, bookmarks,
+  zoom in and out, clear, share, stop, the chevron and others - each looked up in
+  Microsoft's own icon list rather than remembered. Three Edge buttons the font
+  has no shape for (browser essentials, extensions, Copilot) are drawn, which is
+  the one case where hand-drawing is the honest answer
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- None
+
 ## [1.14.0] - The shell's own text fields
 
 2026-10-14
