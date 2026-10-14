@@ -3,32 +3,110 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
-## [1.21.2] - The app list carries the search pane's scrollbar
+## [1.21.4] - Edge's error page draws a dropped ice cream, and centres by layout
 
 2026-10-14
 
 ### Added
 
-- None
+- **The dropped ice cream (`js/apps/edge/errorpage.js`)**: the illustration on
+  Edge's "can't reach this page" is now the scene Windows 10's Edge uses - the
+  scoop resting on the ground with the cone fallen beside it, a ground line, two
+  impact marks where it hit, and a frown on each piece. Drawn as line art in the
+  page's own palette on a 200x140 scene, replacing the old face.
+
+- **Layout centring (`css/edge-page.css`)**: `.edge-error` is a column of flex
+  with `align-items: center`, and the box is `width: 100%` capped by
+  `max-width: 460px`. Centring is now structural rather than a row of flex: a
+  row with `justify-content: center` pushes an item wider than its container
+  half out of frame on the left, where it cannot be scrolled back, which is what
+  had the whole page sitting against one edge. Long addresses break
+  (`overflow-wrap: anywhere`) rather than widening the box.
 
 ### Removed
 
-- None
+- The sad face: a face trying to look sad reads as broken, and the drawing was
+  not doing it. The old one's mouths were drawn as arcs.
 
 ### Changed
 
-- `css/search.css`: the left pane no longer scrolls. A section's rows now carry
-  the pane's only scrollbar (`.search-scroll-list`), so its heading stays put
-  and the sections either side of it do not move - Top apps stays visible while
-  the Recent list, or the Apps list under a query, scrolls under its own
-  heading. The Best match and Search the web rows sit either side of it and
-  never move.
+- `.edge-error-face` is `.edge-error-art` (200x140 rather than a 96x96 circle).
 
 ### Fixed
 
-- None
+- The two mouth curves were smiles - a quadratic's control point sat above the
+  ends of the curve, so it bulged the wrong way. Both now sit below.
 
-## [1.21.1] - Search panel and its taskbar box come down to 600px
+## [1.21.3] - File dialog API, desktop folders open, Save As enters directories
+
+2026-10-14
+
+### Added
+
+- **File dialog API (`js/apis/saveas/`)**: a shared Save As / Open dialog that
+  apps describe and the shell builds. What the app provides:
+  - `title`, `icon`, `directory`, `suggestedName`
+  - `types`: `[{ label, extension }]` — the Save as type / Files of type row
+  - `encoding`: optional dropdown with label
+  - `owner`: the window the dialog is modal to
+  - `onSave` / `onOpen`: the app does the write / read with the volume it was
+    given; returning false or rejecting keeps the dialog open with the error
+    under the fields
+  - What the app receives: `{ path, directory, name, type, extension, encoding }`
+
+- **Folder browser widget (`browser.js`)**: the address bar (back/forward/up,
+  breadcrumb trail, refresh, search), toolbar (Organize ▾, New folder, view
+  switcher: Tiles / List / Details), navigation pane (Quick access shortcuts +
+  the drive's folder tree with expandable nodes), and the file list (double-tap
+  opens a folder, single press puts the name in the box). Everything reads the
+  emulated volume and never writes.
+
+- **Path arithmetic (`places.js`)**: `trailOf`, `leafOf`, `dirOf`,
+  `shortcutPlaces` — pure functions, no volume, so they run under node and
+  are checked by `tools/check_saveas_paths.js`.
+
+- **Slim path checks**: `tools/check_saveas_paths.js` (25 cases), plus the
+  general graph validator `tools/check_graph.js` (runs without Python).
+
+- **Notepad rewired**: File ▸ Open / Save As now use the shell dialog API
+  (`owner: win.id` so it is a real modal dialog); `currentDir()` /
+  `volumeReady()` are Notepad's own helpers, not the old filedialog's.
+
+- **Desktop folders open**: double-click on a desktop folder now launches
+  Explorer on that folder, and double-click on a file opens it with the
+  registered app — the entry's `place` was `undefined` before, so nothing
+  opened.
+
+### Removed
+
+- `js/apps/notepad/filedialog.js` (the old Notepad-only browser, 309 lines).
+
+### Changed
+
+- `js/core/desktop.js`: desktop icons now carry the correct `place`, so
+  opening one launches Explorer with that path. `iconFor` reads `entry.name`
+  (not `entry.label`) because a listing entry has a name, not a label.
+
+- `js/apps/notepad/notepad.js`: Save on an existing file no longer throws
+  (the `writeFile` helper moved inside `openNotepad` where its names are in
+  scope); Save As and Open use the new API; `finalSavePath` is gone (the
+  dialog appends the chosen type's extension).
+
+- `css/notepad.css`: deleted the old `.np-filedlg-*` rules.
+
+- `index.html`: added `css/saveas.css`.
+
+### Fixed
+
+- **Save As could not enter directories**: two ways to walk into a folder now
+  work — double-tap the row in the list, or type its path in the File name box
+  and press Save (Windows does both). The arithmetic is `pathOfTyped` /
+  `folderOfTyped`, which resolve relative paths against the open folder, and a
+  bare drive letter is the drive root.
+
+- **Desktop folders were dead**: `desktopEntryFor` read `entry.place`, but the
+  volume's `listDir` returns only `{ name, type, size, modified }` — no place.
+  Now the place is threaded in from the loop that lists the desktop folder.
 
 2026-10-14
 

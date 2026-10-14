@@ -306,25 +306,37 @@
 
 /* --- the page a browser shows when the network is not there --------------- */
 
+/* Centred by layout rather than by a row of flex: the box is a column's item,
+   sized to the width it is given and capped, so nothing can be wider than the
+   tab and end up pushed off to one side. A row of flex with `center` puts an
+   item that is too wide half out of frame on the left, where it cannot be
+   scrolled to - which is what had the whole page sitting against the right
+   edge. */
 .edge-error {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100%;
+  box-sizing: border-box;
   padding: 24px;
   background: #ffffff;
 }
 
 .edge-error-box {
-  max-width: 480px;
+  width: 100%;
+  max-width: 460px;
+  flex: 0 0 auto;
+  /* A URL longer than the box is broken rather than pushing it wider. */
+  overflow-wrap: anywhere;
   text-align: center;
 }
 
-.edge-error-face {
-  width: 96px;
-  height: 96px;
+.edge-error-art {
+  width: 200px;
+  height: 140px;
   display: block;
-  margin: 0 auto 14px;
+  margin: 0 auto 16px;
 }
 
 .edge-error-words h1 {
