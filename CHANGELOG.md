@@ -3,6 +3,39 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.4] - Context menus scale to the emulated screen
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **Every context menu was drawn far too large on a small screen.** A menu is
+  built on the document body rather than inside `#monitor-stage` - context menus
+  float above the taskbar, and the stage's own stacking context would paint them
+  underneath it - which meant the stage's scale-down never reached them. On a
+  phone the whole emulated monitor shrinks to fit the viewport while a menu kept
+  its full desktop size: a right-click menu covered most of the screen it was
+  opened on, ran past its edges, and needed its labels ellipsized to fit at all.
+  A menu is now scaled by exactly the factor the stage is scaled by (measured,
+  not recomputed - `stageScale()`), and its maximum width and height are worked
+  out in emulated-monitor pixels and then scaled onto the page. A menu therefore
+  covers the same share of the virtual screen on a phone as it does on a desktop,
+  and a submenu still cascades off its parent correctly, since both are scaled
+  by the same factor. A stage that is not laid out yet measures zero and the menu
+  is left unscaled rather than scaled to nothing.
+
 ## [1.19.3] - Message box buttons answer again
 
 2026-10-14

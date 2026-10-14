@@ -3,7 +3,10 @@
 //
 // Placement: the menu opens right under the press, nudged a couple of
 // pixels like Win10, and flips at the viewport edges so it can never slide
-// out of sight or behind the taskbar.
+// out of sight or behind the taskbar. Menus live on the document body rather
+// than inside the emulated screen, so they are scaled by whatever the stage is
+// scaled by and are sized against the virtual screen - a menu covers the same
+// share of the monitor on a phone as it does on a desktop.
 //
 // Submenus open on hover after a one-second dwell (Win10's behaviour) and
 // fold away shortly after the pointer leaves. Hover is read two ways: real
@@ -13,6 +16,7 @@
 // fallback for touch.
 
 import { isRawDevicePress } from './cursor.js';
+import { stageScale } from './stage.js';
 
 var currentMenu = null;
 
@@ -198,12 +202,32 @@ function screenBounds() {
   return { left: left, top: top, right: right, bottom: bottom };
 }
 
+// A menu is drawn on the document body rather than inside the stage - context
+// menus float above the taskbar, and the stage's own stacking context would
+// paint them under it - which means the stage's scale does not reach them. On a
+// phone the whole emulated monitor is scaled down to fit and a menu left at its
+// own size sits on that monitor several times too big, taller than the screen
+// it is meant to be on and wide enough to need its labels cut. So a menu is
+// scaled by exactly what the stage is scaled by, and covers the same share of
+// the virtual screen at any viewport size.
+function menuScale() {
+  var scale = stageScale(document.getElementById('monitor-stage'));
+  // A stage that is not laid out yet measures zero: nothing to scale against,
+  // and a menu scaled to nothing is a menu nobody can press.
+  return scale > 0.05 ? scale : 1;
+}
+
 // Win10 flips the menu up or left when the press is near an edge, so the
 // list never runs off-screen or under the taskbar.
 function placeMenu(menu, x, y, hostEl) {
   var bounds = screenBounds();
-  var availWidth = bounds.right - bounds.left;
-  var availHeight = bounds.bottom - bounds.top;
+  var scale = menuScale();
+  // The bounds are page pixels and the layout is not: the menu's own width and
+  // height are measured in emulated-monitor pixels and scaled up to the page on
+  // screen, so the room it is allowed is the room on the emulated monitor.
+  var availWidth = (bounds.right - bounds.left) / scale;
+  var availHeight = (bounds.bottom - bounds.top) / scale;
+  menu.style.transform = 'scale(' + scale + ')';
   // The screen gets the last word on both sizes before the position is even
   // considered. A menu taller than the screen scrolls; one wider than it is
   // narrowed and its labels ellipsize, the way Windows does - because a menu
@@ -211,14 +235,18 @@ function placeMenu(menu, x, y, hostEl) {
   menu.style.maxWidth = availWidth + 'px';
   menu.style.maxHeight = availHeight + 'px';
   if (availWidth < MIN_MENU_WIDTH_PX) {
-    // A screen narrower than a menu is the emulated display on a phone held
-    // upright: the menu gives up its minimum rather than hanging off both edges.
+    // A screen narrower than a menu: the menu gives up its minimum rather than
+    // hanging off both edges.
     menu.style.minWidth = '0';
   }
+  // The rect of a scaled element is its drawn size, which is what the placement
+  // below compares against the page bounds with.
   var rect = menu.getBoundingClientRect();
   var left;
   var top;
   if (hostEl) {
+    // A submenu cascades off its parent, which is inside a menu that is scaled
+    // the same way - so both rects here are already page pixels and line up.
     var host = hostEl.getBoundingClientRect();
     left = host.right - MENU_OFFSET_PX;
     if (left + rect.width > bounds.right) {

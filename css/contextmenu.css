@@ -19,6 +19,12 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2px 0;
+  /* The menu is drawn on the document body, outside #monitor-stage, so the
+     stage's scale-down does not reach it. placeMenu (contextmenu.js) scales it
+     by the same factor the stage is scaled by, and the top-left corner is kept
+     on the point it is placed at so the scale moves the menu out from under its
+     own edges rather than out from under the press. */
+  transform-origin: top left;
   background: #f9f9f9;
   border: 1px solid #d9d9d9;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
