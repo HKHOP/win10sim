@@ -3,6 +3,42 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.16.0] - The Microsoft Store, which does not start
+
+2026-10-14
+
+### Added
+
+- **`js/apps/store/`**: Microsoft Store, the second app the taskbar was already
+  pinning a button for. Pressing it raises what Windows raises when a program that
+  is not there is asked for, because nothing installed a store on this computer
+- The path in the message is the real one. The Store is a packaged app rather than
+  an ordinary program, so its executable is not on the PATH or in Program Files
+  proper: it lives in the protected `WindowsApps` folder, in a folder named for
+  the package and the exact build installed -
+  `C:\Program Files\WindowsApps\Microsoft.WindowsStore_12005.1001.1.0_x64__8wekyb3d8bbwe\WinStore.App.exe`
+  - which is exactly why asking for it by path is the thing that comes back with
+  this error
+- It asks for no window and no permissions: the one thing the Store can do on a
+  computer it was never installed on is say so
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **A dialog's mark was drawn as text.** The popup handed the glyph it leads with -
+  the red cross, the warning triangle, the information circle - to the helper that
+  puts *words* into an element, so it came out as its own source code printed
+  across the message. Every word a dialog says is text and belongs there; a mark
+  is markup and now goes in as such. Nothing in the shell had used `glyph:` before,
+  which is why it had gone unnoticed
+
 ## [1.15.0] - Microsoft Edge
 
 2026-10-14

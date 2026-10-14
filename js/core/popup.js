@@ -144,7 +144,13 @@ export function openPopup(context, spec) {
   if (shownIcon) {
     // The kind rides along in a class so the skin can colour the mark the way
     // Windows colours it - the glyph itself is currentColor.
-    head.appendChild(el('span', 'popup-glyph popup-glyph-' + (options.glyph || 'icon'), shownIcon));
+    var mark = el('span', 'popup-glyph popup-glyph-' + (options.glyph || 'icon'));
+    // A mark is markup - the shell's own outlines, or an image element for an app
+    // that brought its own - so it is put in as such. Everything else el() is
+    // handed is a word, and a word goes in as text: handed the glyph as text, a
+    // dialog printed its own source code across the message.
+    mark.innerHTML = shownIcon;
+    head.appendChild(mark);
   }
   var text = el('div', 'popup-text');
   if (options.heading) {
