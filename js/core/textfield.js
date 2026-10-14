@@ -2,6 +2,7 @@ import { createFieldView } from './textfield-view.js';
 import { createKeyHandler } from './textfield-keys.js';
 import { applyInputApi } from './textfield-input.js';
 import { attachPointer } from './textfield-pointer.js';
+import { isRawDevicePress } from './cursor.js';
 
 // A text field the emulated OS owns.
 //
@@ -332,6 +333,18 @@ export function createTextField(options) {
 
   // --- the pointer -------------------------------------------------------
 
+  // A press outside the field, while it has the focus. See the focus listener
+  // below for why the shell has to do this itself.
+  var outsidePress = function (event) {
+    if (event.target === host || (host.contains && host.contains(event.target))) {
+      return;
+    }
+    if (isRawDevicePress(event)) {
+      return;
+    }
+    host.blur();
+  };
+
   var pointer = attachPointer(host, doc, {
     state: state,
     view: view,
@@ -344,6 +357,16 @@ export function createTextField(options) {
   });
 
   host.addEventListener('keydown', function (event) {
+    // The ring is for ARRIVING by keyboard, which is what Tab does. Typing is not
+    // arriving: the person is already in the field, the caret says where they
+    // are, and a ring round a box they are typing into is the debugging look
+    // this ring was taken away for. :focus-visible could not have told the two
+    // apart, because a text field matches it whenever it has the focus.
+    if (event.key === 'Tab') {
+      host.classList.add('is-keyboard-focus');
+    } else {
+      host.classList.remove('is-keyboard-focus');
+    }
     keys.handle(event);
   });
   host.addEventListener('keyup', function () {
@@ -359,9 +382,24 @@ export function createTextField(options) {
     host.hasCaret = true;
     valueAtFocus = state.value;
     view.keepCaretVisible(state);
+    // While the field has the focus, a press anywhere else takes it away - the
+    // way clicking the page does in a browser.
+    //
+    // Nothing else can do it for us: the emulated cursor dispatches its presses,
+    // and a dispatched event runs none of the browser's default actions, so no
+    // blur ever happens on its own. A field that kept the focus went on taking
+    // every key afterwards, which is what "it will not let go" looks like. The
+    // listener lives only as long as the focus does, so a window full of fields
+    // costs nothing, and a press the device made is ignored - that one landed on
+    // the capture layer and says nothing about what was pressed.
+    document.addEventListener('mousedown', outsidePress, true);
   });
   host.addEventListener('blur', function () {
     host.hasCaret = false;
+    document.removeEventListener('mousedown', outsidePress, true);
+    // The ring goes with the focus: a field that is not being typed in has
+    // nothing to point at.
+    host.classList.remove('is-keyboard-focus');
     // A field says what changed once the caret leaves it, as a real one does -
     // not after every keystroke.
     if (valueAtFocus != null && valueAtFocus !== state.value) {

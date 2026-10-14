@@ -173,10 +173,18 @@ export function mountTouchpad(win, driver) {
     var t = now();
     var dt = lastScrollAt ? Math.max(1, t - lastScrollAt) : 16;
     lastScrollAt = t;
+    // The vertical sign is turned over here, at the one place a scroll leaves the
+    // touchpad: fingers going up take you up the page, the other way round from
+    // dragging the content along with them. It is done to the numbers rather than
+    // to the call below so that the coast - which is measured from the same numbers
+    // - carries on the way the fingers were already going. Sideways is left alone:
+    // a pad has no "up the page" for a sideways scroll to be confused with.
+    var scrollX = pending.x;
+    var scrollY = -pending.y;
     // Smoothed, so one stuttered frame does not throw the coast.
-    velocity.x = velocity.x * 0.6 + (pending.x / dt) * 0.4;
-    velocity.y = velocity.y * 0.6 + (pending.y / dt) * 0.4;
-    driver.scroll(pending.x, pending.y);
+    velocity.x = velocity.x * 0.6 + (scrollX / dt) * 0.4;
+    velocity.y = velocity.y * 0.6 + (scrollY / dt) * 0.4;
+    driver.scroll(scrollX, scrollY);
     pending.x = 0;
     pending.y = 0;
     pending.active = false;

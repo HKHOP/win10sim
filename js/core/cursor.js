@@ -76,16 +76,29 @@ var inputLayer = null;
 // makes the emulated cursor the only thing that can address the UI.
 export function hitTestThroughInputLayer(clientX, clientY) {
   var layer = inputLayer || document.querySelector('.' + INPUT_LAYER_CLASS);
-  if (!layer) {
-    return document.elementFromPoint(clientX, clientY);
+  // Page chrome - the virtual keyboard, the handset button - is the device's own
+  // furniture, not the emulated screen: a finger presses it directly and the
+  // emulated pointer must not address it at all. So it is stepped past here too,
+  // which is what stops the cursor hovering a key, lighting it up, and pressing
+  // it while the keyboard is drawn over the bottom of the screen.
+  var chrome = document.querySelectorAll(CHROME_SELECTOR);
+  var hidden = [];
+  for (var i = 0; i < chrome.length; i++) {
+    if (chrome[i].style.pointerEvents !== 'none') {
+      hidden.push(chrome[i]);
+      chrome[i].style.pointerEvents = 'none';
+    }
   }
-  var wasHitTestable = layer.style.pointerEvents !== 'none';
-  if (wasHitTestable) {
+  var wasHitTestable = layer && layer.style.pointerEvents !== 'none';
+  if (layer && wasHitTestable) {
     layer.style.pointerEvents = 'none';
   }
   var found = document.elementFromPoint(clientX, clientY);
-  if (wasHitTestable) {
+  if (layer && wasHitTestable) {
     layer.style.pointerEvents = '';
+  }
+  for (var j = 0; j < hidden.length; j++) {
+    hidden[j].style.pointerEvents = '';
   }
   return found;
 }

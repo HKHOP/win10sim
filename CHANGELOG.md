@@ -3,6 +3,60 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.16.1] - The fields let go, and the pad scrolls the other way
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **The virtual keyboard is black and flat**: rectangle keys with one fill and a
+  hairline above it, no bevel, no gradient and no shadow. Over a picture on a
+  phone the old hairline-and-shadow keyboard read as a separate object sitting on
+  the screen rather than as part of the handset, so what each state says is now
+  carried by the fill alone, and being dragged is said by the grip
+
+### Fixed
+
+- **A text box no longer wears a blue ring for being touched.** `:focus-visible`
+  cannot tell a click from a key for a text field - a text box matches it whenever
+  it has the focus, clicked or focused by script alike - so every box you touched
+  came out ringed, which is the debugging look the ring was taken away for. The
+  field now remembers which of the two reached it and the ring follows that: Tab
+  rings the box it arrives at, and clicking or typing does not. The sign-in box,
+  which says "the border is the focus" with a rule of its own, answers at the same
+  weight rather than by stylesheet order
+- **A field's placeholder sits in the middle of the box** rather than along the top
+  of it. The rule that centres a placeholder was being overridden for an *empty*
+  field by one that switched it to a block, so the text sat high - and only while
+  the box was empty, which is why it looked right the moment anything was typed
+- **Pressing elsewhere lets a field go.** Nothing blurred one: the emulated cursor
+  dispatches its presses, a dispatched event runs none of the browser's default
+  actions, and so a field kept the focus and went on swallowing every key after it.
+  A field now watches for a press outside itself while it has the focus - the
+  listener lives only as long as the focus does, so a window full of fields costs
+  nothing
+- **The virtual keyboard sits above the emulated cursor**, which is where phone
+  furniture belongs: it covers the bottom of the screen while it is open, and a
+  pointer drawn on top of its keys looked as though the PC's mouse were sitting in
+  the middle of the handset's keyboard
+- **The emulated cursor cannot address the keyboard or the site chrome at all.**
+  The hit test stepped past the capture layer but not past the chrome, so the
+  cursor could hover a key, light it up and press it. Page chrome is stepped past
+  too - a finger presses it directly, and the emulated pointer addresses the
+  emulated screen
+- **Two fingers going up now scroll the page down**, and fingers going down take
+  you up it. The sign is turned over at the one place a scroll leaves the touchpad,
+  and to the numbers rather than to the call, so the coast carries on the way the
+  fingers were already going. Sideways is untouched
+
 ## [1.16.0] - The Microsoft Store, which does not start
 
 2026-10-14

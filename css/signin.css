@@ -88,8 +88,12 @@
    their own. So the field takes the whole space between the two buttons, has no
    height of its own (the row's is the box's), and paints nothing - which also
    means there is no inner rectangle that could stop short of the buttons and
-   read as a small box in the corner. */
-.signin-password {
+   /* read as a small box in the corner.
+
+   The selector carries the row because the field's focus ring has to be answered
+   at the same weight: that ring is the shell's own rule (see textfield.css), and
+   this box is saying "the border is the focus here, not a ring". */
+.signin-form .signin-password {
   flex: 1 1 0;
   align-self: stretch;
   min-width: 0;

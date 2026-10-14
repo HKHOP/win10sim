@@ -157,10 +157,11 @@
   align-items: flex-start;
 }
 
-.sim-field.is-empty .sim-field-placeholder {
-  display: block;
-}
-
+/* An empty field shows its placeholder and a full one does not. The way it is
+   said is by taking the placeholder out of the flow entirely, rather than by
+   changing how it is displayed: the rule that draws it centres its text, and an
+   empty field that switched that to a block put its placeholder along the top of
+   the box instead of through the middle of it. */
 .sim-field:not(.is-empty) .sim-field-placeholder {
   display: none;
 }
@@ -180,13 +181,20 @@
    the feedback, and a blue outline round every box you touch reads as a
    debugging aid rather than as Windows. The ring comes back for keyboard
    navigation, where there is no caret to see and nothing else says where the
-   focus is - unless the surface has already answered the question itself, which
-   is why these are defaults rather than rules. */
+   focus is.
+
+   It cannot be drawn from :focus-visible, because that cannot tell the two apart
+   for a text field: a field matches it whenever it has focus, clicked or
+   script-focused alike - which is why every box came out ringed. So the field
+   remembers which of the two reached it (textfield.js) and the ring follows that.
+   This rule is not a default in a :where(), because it is the ring itself: a
+   surface that draws its own focus - the sign-in box tints its border - sets
+   outline at a specificity of its own to say so. */
 :where(.sim-field:focus) {
   outline: none;
 }
 
-:where(.sim-field:focus-visible) {
+.sim-field.is-keyboard-focus {
   outline: 1px solid #0078d7;
   outline-offset: -1px;
 }

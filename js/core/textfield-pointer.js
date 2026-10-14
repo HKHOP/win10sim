@@ -35,6 +35,10 @@ export function attachPointer(host, doc, ops) {
     }
     var at = ops.view.indexAt(event.clientX, event.clientY);
     host.focus({ preventScroll: true });
+    // A field reached with the pointer has no ring round it: the caret is the
+    // feedback, and the ring is for someone arriving by keyboard. See the note
+    // in textfield.js on why :focus-visible could not do this on its own.
+    host.classList.remove('is-keyboard-focus');
     if (event.detail >= 3) {
       // Three clicks take the line the caret is on, as they do in Windows.
       var bounds = ops.lineBounds(at);
