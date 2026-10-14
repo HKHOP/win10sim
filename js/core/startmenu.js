@@ -77,8 +77,7 @@ import {
   setTileLaunchHandler
 } from './starttiles.js';
 import { createPointerTracker } from './pointer.js';
-
-var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+import { prefersReducedMotion } from './motion.js';
 
 var menuEl = null;
 var railEl = null;
@@ -574,7 +573,7 @@ export function closeStartMenu() {
   window.removeEventListener('touchstart', onOutsidePress, true);
   window.removeEventListener('keydown', onMenuKey, true);
   window.removeEventListener('mousemove', onRailPointerMove);
-  if (REDUCED) {
+  if (prefersReducedMotion()) {
     menuEl.hidden = true;
     menuEl.classList.remove('start-open');
     return;

@@ -147,6 +147,18 @@ export function openPopup(context, spec, ownerId) {
   });
 
   var root = el('div', 'popup');
+  // A dialog is a dialog to a screen reader as well as to the eye: it is a
+  // window with a name, and nothing behind it can be used until it has been
+  // answered. The context menu sets role="menu"; this is the same declaration
+  // for the surface every app's dialogs are built from.
+  root.setAttribute('role', 'dialog');
+  if (!options.behind) {
+    // Everything behind the dialog is unusable until it is answered - except
+    // for the one kind of dialog that is asked to sit behind its owner and leave
+    // it there, where claiming the rest of the page is gone would be untrue.
+    root.setAttribute('aria-modal', 'true');
+  }
+  root.setAttribute('aria-label', options.title || context.name || 'Dialog');
   win.body.appendChild(root);
 
   // ---- heading and body ----

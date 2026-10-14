@@ -3,6 +3,86 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.20.0] - A reference checker, and the shell findings it goes with
+
+2026-10-14
+
+### Added
+
+- **`tools/check_refs.py`** - walks every way a file in this repo can name
+  another file and fails on anything that does not resolve: ES module imports
+  and re-exports (static and dynamic), `new URL('../x', import.meta.url)`, the
+  `<link>` and `<script>` tags in `index.html`, and the icons, `start_url` and
+  `scope` in `manifest.webmanifest`. It exists because the service worker spent
+  its whole life registered one directory too high, and the only symptom was a
+  console line nobody was reading - the registration is best-effort by design,
+  so a 404 there costs the cache busting silently. Run: `py tools\check_refs.py`,
+  exit code 1 on a miss.
+
+- **`tools/check_boot_graph.py`** - walks the module graph from `index.html` down
+  and reports what only the graph as a whole can show: a module that is missing
+  (which takes the boot down rather than logging anything), a module under `js/`
+  that nothing reaches, and **circular imports**. A cycle is legal ES that fails
+  at run time - one module sees the other's exports still undefined - and
+  AGENTS.md forbids them with nothing enforcing the rule. The cycle is printed
+  as the whole ring, so what to move is visible from the output. Both scripts
+  read the repo and write nothing. Run:
+  `py tools\check_boot_graph.py`.
+
+- **`js/core/motion.js`** - `prefersReducedMotion()`, the one place the question
+  is now asked.
+
+### Removed
+
+- None
+
+### Changed
+
+- **Page chrome is registered with the cursor rather than queried on every
+  pointer move** (`js/core/cursor.js`, `sitechrome.js`, `keyboard.js`). The
+  emulated cursor hit-tests straight past the page's own furniture - the virtual
+  keyboard, the fullscreen button, the install button - so it was hiding them for
+  the length of one lookup. That cost a `querySelectorAll` and a round of inline
+  style writes on **every mousemove** and three or four times a click, which is
+  the most frequent event the shell has. The chrome mounts once, so it is now
+  registered as it is mounted (`registerChromeNode`) and unregistered when the
+  install offer takes its button away, and chrome that is not on screen is left
+  out of the round trip entirely - both sheets already carry an explicit
+  `[hidden] { display: none }`, so a hidden panel is genuinely untouchable.
+
+### Fixed
+
+- **`prefers-reduced-motion` was decided once per page load.** `windowmanager.js`,
+  `startmenu.js` and `boot.js` each sampled it into a module-level constant as
+  they were first evaluated, so a session that began with motion on kept
+  animating after the setting was turned off - which is exactly when someone who
+  needs it least is the one changing it. The stylesheets already follow the
+  setting live through their own `@media` blocks; the JavaScript half now does
+  too, reading it when it is used rather than at load.
+
+- **A dialog raised by the desktop was filed under Explorer** (`js/core/desktop.js`).
+  The desktop builds its message boxes against the window system and stamped
+  every one of them `appId: 'explorer'`. Start and the tile grid both read
+  "running" off the window snapshot's app id, so opening a `.sys` file nothing
+  could handle - which raises *"There is no app installed that can open..."* -
+  turned Explorer into a running app in the tile grid until the box was closed.
+  These windows are now the shell's.
+
+- **A dialog now says what it is to a screen reader.** `popup.js` is the surface
+  every app's dialogs are built from, and it declared nothing: no `role`, no
+  name. It now carries `role="dialog"` and an `aria-label` from its title, and
+  `aria-modal` when it really is modal - not for the one dialog asked to sit
+  behind its owner and leave it there, where the rest of the page is still in
+  use.
+
+- **The service worker path is verified rather than assumed.** Confirmed over
+  HTTP that `/sw.js` answers 200 and the old `/js/sw.js` answers 404, so
+  1.19.5's fix is the path that is actually served. `CACHE_VERSION` stays at
+  `v1`: §3.10 bumps it only when the caching *strategy* changes, and this
+  release does not change it. Worth one manual check in a browser - Application
+  ▸ Service Workers showing `sw.js` activated, and the emulator booting with the
+  network off - since the worker has never actually run before.
+
 ## [1.19.5] - The service worker was never registering
 
 2026-10-14

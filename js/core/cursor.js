@@ -71,22 +71,54 @@ var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], [role
 
 var inputLayer = null;
 
+// Page chrome - the virtual keyboard, the handset button - is the device's own
+// furniture, not the emulated screen: a finger presses it directly and the
+// emulated pointer must not address it at all. So it is stepped past here too,
+// which is what stops the cursor hovering a key, lighting it up, and pressing
+// it while the keyboard is drawn over the bottom of the screen.
+//
+// The chrome is registered as it is mounted rather than found by query each
+// time. Hit-testing runs on every pointer move and three or four times a click,
+// so a `querySelectorAll` here was a DOM query on the most frequent event the
+// shell has; the list is a handful of nodes that mount once at boot, plus the
+// install button whenever the browser decides to offer one.
+var chromeNodes = [];
+
+export function registerChromeNode(node) {
+  if (node && chromeNodes.indexOf(node) < 0) {
+    chromeNodes.push(node);
+  }
+}
+
+// Chrome that leaves the document leaves the list with it: the install offer
+// takes its button away again once it has been taken up.
+export function unregisterChromeNode(node) {
+  var at = chromeNodes.indexOf(node);
+  if (at >= 0) {
+    chromeNodes.splice(at, 1);
+  }
+}
+
+// Chrome that is not on screen is already untouchable by elementFromPoint - the
+// fullscreen button goes hidden once it is full screen, the keyboard when it is
+// closed - so those are left out of the round trip rather than written to and
+// written back on every move. Both sheets carry an explicit [hidden] rule for
+// it, because `.site-chrome` and `.sim-keyboard` are display:flex and would
+// otherwise keep a hidden panel laid out and still hit-testable.
+function isHitTestable(node) {
+  return !node.hidden && node.style.pointerEvents !== 'none';
+}
+
 // Hit-testing has to see past the capture layer, which by definition covers
 // everything. Dropping its hit-test for the duration of one lookup is what
 // makes the emulated cursor the only thing that can address the UI.
 export function hitTestThroughInputLayer(clientX, clientY) {
   var layer = inputLayer || document.querySelector('.' + INPUT_LAYER_CLASS);
-  // Page chrome - the virtual keyboard, the handset button - is the device's own
-  // furniture, not the emulated screen: a finger presses it directly and the
-  // emulated pointer must not address it at all. So it is stepped past here too,
-  // which is what stops the cursor hovering a key, lighting it up, and pressing
-  // it while the keyboard is drawn over the bottom of the screen.
-  var chrome = document.querySelectorAll(CHROME_SELECTOR);
   var hidden = [];
-  for (var i = 0; i < chrome.length; i++) {
-    if (chrome[i].style.pointerEvents !== 'none') {
-      hidden.push(chrome[i]);
-      chrome[i].style.pointerEvents = 'none';
+  for (var i = 0; i < chromeNodes.length; i++) {
+    if (isHitTestable(chromeNodes[i])) {
+      hidden.push(chromeNodes[i]);
+      chromeNodes[i].style.pointerEvents = 'none';
     }
   }
   var wasHitTestable = layer && layer.style.pointerEvents !== 'none';

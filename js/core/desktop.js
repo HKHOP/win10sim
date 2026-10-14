@@ -43,6 +43,11 @@ var DESKTOP_ICONS = [
   { label: 'Recycle Bin', src: RECYCLE_BIN_SRC, appId: 'explorer', args: { path: 'recyclebin' } }
 ];
 
+// Windows a dialog raised by the desktop itself belongs to. It is not an app:
+// nothing launches it, and nothing lists it in Start. It only names the windows
+// the shell owns so they are not mistaken for one of the running apps.
+var SHELL_APP_ID = 'shell';
+
 var USER_DESKTOP = 'C:\\Users\\User\\Desktop';
 
 function iconFor(entry) {
@@ -345,9 +350,16 @@ export function createDesktop(cursor, stage) {
 
   // The desktop has no app of its own, so the one message box it needs is built
   // against the window system directly.
+  //
+  // Its windows are filed under the shell rather than under Explorer. A dialog
+  // the desktop raises - a shortcut that has gone, a file with nothing installed
+  // to open it - belongs to the shell, and borrowing Explorer's app id filed it
+  // under that app: Start and the tile grid both read "running" off the window
+  // snapshot's app id, so a dialog saying that a .sys file has nothing to open
+  // it turned Explorer into a running app in the tile grid until it was closed.
   var shellContext = {
     createWindow: function (opts) {
-      var merged = Object.assign({ appId: 'explorer' }, opts);
+      var merged = Object.assign({ appId: SHELL_APP_ID }, opts);
       return createWindow(merged);
     }
   };

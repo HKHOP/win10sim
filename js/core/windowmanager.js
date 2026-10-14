@@ -21,6 +21,7 @@ import { buildWindowFrame } from './windowchrome.js';
 import { openWindowMenu, startGuidedMode, stopGuidedMode } from './windowmenu.js';
 import { createPointerTracker } from './pointer.js';
 import { beginDrag, endDrag } from '../system/drag.js';
+import { prefersReducedMotion } from './motion.js';
 
 // Floating window system: window records and chrome, focus z-order,
 // minimize / maximize / Aero Snap state, Aero shake, and the drag / resize
@@ -36,8 +37,6 @@ var RESTORE_MS = 200;
 // How far below the held titlebar a window torn out of a snap reappears,
 // matching Win10's restore-under-cursor behaviour.
 var SNAP_FREE_DROP_PX = 15;
-
-var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 var layer = null;
 var cursor = null;
@@ -268,7 +267,7 @@ export function createWindow(opts) {
   }
   paint(win);
   focusWindow(win);
-  if (!REDUCED) {
+  if (!prefersReducedMotion()) {
     frame.el.classList.add('win-opening');
     frame.el.addEventListener('animationend', function openingDone() {
       frame.el.removeEventListener('animationend', openingDone);
@@ -382,7 +381,7 @@ function focusedWindow() {
 
 function setMinimized(win, on) {
   win.minimized = on;
-  if (REDUCED) {
+  if (prefersReducedMotion()) {
     win.el.style.display = on ? 'none' : '';
     if (!on) {
       paint(win);
@@ -556,7 +555,7 @@ function closeWindow(win) {
     focusWindow(back);
   }
   emit();
-  if (REDUCED) {
+  if (prefersReducedMotion()) {
     removeWindowEl(win);
     return;
   }

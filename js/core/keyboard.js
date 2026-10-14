@@ -5,6 +5,7 @@ import { LETTERS_LAYER, SYMBOLS_LAYER } from './keyboard-layout.js';
 import { pressKey } from './textfield-keys.js';
 import { activeField } from './textfield.js';
 import { stageScale } from './stage.js';
+import { registerChromeNode } from './cursor.js';
 
 // The virtual keyboard.
 //
@@ -73,6 +74,10 @@ export function createVirtualKeyboard() {
   toggle.setAttribute('aria-pressed', 'false');
   toggle.innerHTML = KEYBOARD_SVG;
   document.body.appendChild(toggle);
+  // Both the toggle and the panel are the device's own furniture, not the
+  // emulated screen, so the emulated cursor hit-tests past them rather than
+  // pressing a key it was never pointed at (see cursor.js).
+  registerChromeNode(toggle);
 
   var repeatTimer = null;
   var repeatEvery = null;
@@ -349,6 +354,7 @@ export function createVirtualKeyboard() {
 
   setLayer(LETTERS_LAYER);
   document.body.appendChild(panel);
+  registerChromeNode(panel);
 
   return {
     open: function () { setOpen(true); },

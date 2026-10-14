@@ -13,6 +13,7 @@ import { createCursor } from '../core/cursor.js';
 import { createDesktop } from '../core/desktop.js';
 import { createSiteChrome } from '../core/sitechrome.js';
 import { createVirtualKeyboard } from '../core/keyboard.js';
+import { prefersReducedMotion } from '../core/motion.js';
 import { createLockLayer } from './lockscreen.js';
 import { createSignInLayer } from './signin.js';
 // App registrations (side effects): taskbar, desktop and Start menu launch
@@ -234,7 +235,7 @@ function init() {
     bootEl.querySelector('.boot-logo').classList.add('boot-logo-gone');
     var spinnerWrap = bootEl.querySelector('.boot-spinner-wrap');
     spinnerWrap.style.display = 'none';
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceMotion = prefersReducedMotion();
     if (!reduceMotion) {
       later(function () {
         spinnerWrap.style.display = '';

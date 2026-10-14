@@ -1,4 +1,5 @@
 import { FULLSCREEN_SVG, DOWNLOAD_SVG } from '../global/icons.js';
+import { registerChromeNode, unregisterChromeNode } from './cursor.js';
 
 // Browser chrome around the emulated OS — not part of the OS.
 //
@@ -96,6 +97,9 @@ export function createSiteChrome() {
   button.setAttribute('aria-label', 'Full screen');
   button.innerHTML = FULLSCREEN_SVG;
   document.body.appendChild(button);
+  // Page chrome, which the emulated cursor hit-tests straight past rather than
+  // pressing by accident (see cursor.js).
+  registerChromeNode(button);
 
   function sync() {
     button.hidden = !!fullscreenElement();
@@ -167,10 +171,12 @@ function createInstallOffer() {
       }
     });
     document.body.appendChild(installButton);
+    registerChromeNode(installButton);
   }
 
   function hideOffer() {
     if (installButton && installButton.parentNode) {
+      unregisterChromeNode(installButton);
       installButton.parentNode.removeChild(installButton);
     }
     installButton = null;
