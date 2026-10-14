@@ -17,6 +17,7 @@ import {
 import { launchApp } from './apps.js';
 import { subscribeWindows, showWindowSystemMenu } from './windowmanager.js';
 import { toggleStartMenu, subscribeStartOpen } from './startmenu.js';
+import { openSearch, subscribeSearchOpen } from './search.js';
 
 // Win10 light-theme taskbar: Start button, search box, Task view, pinned
 // apps, running-app area, and the tray (chevron, network, volume, language,
@@ -89,7 +90,7 @@ export function buildTaskbar() {
   });
   bar.appendChild(start);
 
-  // Search box: typeable, but results arrive in a later iteration.
+  // Search box: opens the Search flyout on focus or typing.
   var search = document.createElement('div');
   search.className = 'task-search';
   var searchIcon = document.createElement('span');
@@ -99,6 +100,17 @@ export function buildTaskbar() {
     className: 'task-search-input',
     placeholder: 'Type here to search',
     label: 'Search'
+  });
+  // Clicking the search box (or the icon) opens the Search flyout.
+  [search, searchIcon, searchInput].forEach(function (el) {
+    el.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openSearch('');
+    });
+  });
+  // Typing into the field opens the flyout with the query.
+  searchInput.addEventListener('input', function () {
+    openSearch(searchInput.value);
   });
   search.appendChild(searchIcon);
   search.appendChild(searchInput);

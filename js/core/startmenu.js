@@ -78,6 +78,11 @@ import {
 } from './starttiles.js';
 import { createPointerTracker } from './pointer.js';
 import { prefersReducedMotion } from './motion.js';
+import { on, emit } from '../system/events.js';
+import { SEARCH_OPENED } from './search.js';
+
+export const START_MENU_OPENED = 'start-menu-opened';
+export const START_MENU_CLOSED = 'start-menu-closed';
 
 var menuEl = null;
 var railEl = null;
@@ -535,10 +540,12 @@ export function openStartMenu() {
   menuEl.classList.add('start-open');
   open = true;
   emitOpen();
+  emit(START_MENU_OPENED);
   startLiveTiles(tileGrid);
   window.addEventListener('mousedown', onOutsidePress, true);
   window.addEventListener('touchstart', onOutsidePress, true);
   window.addEventListener('keydown', onMenuKey, true);
+  window.addEventListener('keydown', onStartMenuType, true);
   window.addEventListener('mousemove', onRailPointerMove);
   // Deliberately not sampled once here. Start is opened from the taskbar's
   // Start button, which sits directly below the column in the same 48px strip,
@@ -569,9 +576,11 @@ export function closeStartMenu() {
   cancelTileDrag();
   stopLiveTiles();
   emitOpen();
+  emit(START_MENU_CLOSED);
   window.removeEventListener('mousedown', onOutsidePress, true);
   window.removeEventListener('touchstart', onOutsidePress, true);
   window.removeEventListener('keydown', onMenuKey, true);
+  window.removeEventListener('keydown', onStartMenuType, true);
   window.removeEventListener('mousemove', onRailPointerMove);
   if (prefersReducedMotion()) {
     menuEl.hidden = true;
@@ -656,6 +665,27 @@ function onMenuKey(event) {
     next = 0;
   }
   visible[next].focus({ preventScroll: true });
+}
+
+function onStartMenuType(event) {
+  // Ignore if the event target is an editable field (shouldn't happen in Start menu)
+  var target = event.target;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+    return;
+  }
+  // Ignore modifier keys and non-printable keys
+  var key = event.key;
+  if (key.length !== 1) {
+    return;
+  }
+  // Ignore keys that are just modifiers or control keys
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  event.preventDefault();
+  closeStartMenu();
+  // Emit event for search to pick up the typed character
+  emit('start-menu-type-to-search', key);
 }
 
 // --- Icon column: views, and how it opens ---------------------------------
@@ -989,6 +1019,13 @@ export function buildStartMenu(cursor, stage) {
       runningApps[item.appId] = true;
     });
     applyRunning();
+  });
+
+  // When search opens, close the Start menu (Win10 behavior).
+  on(SEARCH_OPENED, function () {
+    if (open) {
+      closeStartMenu();
+    }
   });
 
   // Launching from a tile folds the menu away, like Win10.

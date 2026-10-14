@@ -27,6 +27,7 @@ import {
 import { on, emit, VOLUME_CHANGED } from '../system/events.js';
 import { showContextMenu } from './contextmenu.js';
 import { buildStartMenu } from './startmenu.js';
+import { buildSearchMenu } from './search.js';
 
 // Desktop shell: hero wallpaper, grid-snapped icons, taskbar pinned to the
 // bottom. Click selects, Ctrl+click toggles a multi-selection, dragging
@@ -778,6 +779,8 @@ export function createDesktop(cursor, stage) {
   desktop.appendChild(buildTaskbar());
   // The Start menu paints above everything, including the windows layer.
   desktop.appendChild(buildStartMenu(cursor, stage));
+  // Search flyout paints above Start.
+  desktop.appendChild(buildSearchMenu(cursor, stage));
 
   return desktop;
 }
