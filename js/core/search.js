@@ -242,7 +242,11 @@ function renderContent() {
     recentTitle.textContent = 'Recent';
     leftPane.appendChild(recentTitle);
 
-    apps.slice(0, 3).forEach(function (app) {
+    // The Recent rows carry the pane's only scrollbar: the Top apps grid above
+    // them stays where it is, and the pane itself never scrolls.
+    var recentList = document.createElement('div');
+    recentList.className = 'search-scroll-list';
+    apps.slice(0, 5).forEach(function (app) {
       var row = document.createElement('button');
       row.type = 'button';
       row.className = 'search-result-row';
@@ -269,8 +273,9 @@ function renderContent() {
         launchApp(app.id);
         closeSearch();
       });
-      leftPane.appendChild(row);
+      recentList.appendChild(row);
     });
+    leftPane.appendChild(recentList);
 
     var rightPane = document.createElement('div');
     rightPane.className = 'search-right-pane';
@@ -358,6 +363,11 @@ function renderContent() {
     appsTitle.textContent = 'Apps';
     leftPane.appendChild(appsTitle);
 
+    // The Apps list is the one section that can grow long, so it is the one
+    // that scrolls: the Best match row above it and the Search the web row
+    // below it stay where they are, and the pane never scrolls as a whole.
+    var appsList = document.createElement('div');
+    appsList.className = 'search-scroll-list';
     matchedApps.slice(1).forEach(function (app) {
       var row = document.createElement('button');
       row.type = 'button';
@@ -385,8 +395,9 @@ function renderContent() {
         launchApp(app.id);
         closeSearch();
       });
-      leftPane.appendChild(row);
+      appsList.appendChild(row);
     });
+    leftPane.appendChild(appsList);
   }
 
   // Web search row

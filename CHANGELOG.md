@@ -3,6 +3,31 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.21.2] - The app list carries the search pane's scrollbar
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `css/search.css`: the left pane no longer scrolls. A section's rows now carry
+  the pane's only scrollbar (`.search-scroll-list`), so its heading stays put
+  and the sections either side of it do not move - Top apps stays visible while
+  the Recent list, or the Apps list under a query, scrolls under its own
+  heading. The Best match and Search the web rows sit either side of it and
+  never move.
+
+### Fixed
+
+- None
+
 ## [1.21.1] - Search panel and its taskbar box come down to 600px
 
 2026-10-14
