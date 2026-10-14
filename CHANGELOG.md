@@ -3,6 +3,48 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.20.2] - The dialog fit was out of scope and never ran
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **Every dialog opened at the full height of the work area** - the regressions
+  from 1.20.1. `fitToContent()` was placed at module level in
+  `js/core/popup.js`, below `openPopup`, while the four values it reads - the
+  window handle, the content root, the declared width and the declared height -
+  are that call's own locals. The first reference threw `ReferenceError:
+  win is not defined`, so the dialog never resized, never took the keyboard, and
+  never focused a field: a full-height box with the message at the top, the
+  buttons at the bottom, and a dead gap between them. `visible` because the
+  button handlers, the Escape/Enter handling and the promise were all attached
+  before the throw, so the dialog worked in every way but its size.
+
+  The function now sits inside `openPopup`, next to the values it reads.
+
+  This is worth recording because nothing automated caught it, and the reason is
+  worth writing down. A scoping mistake is not a syntax error, so
+  `node --check` passed, `check_refs.py` passed (`win` was not a module
+  specifier) and `check_boot_graph.py` passed (`openPopup` is still called, just
+  short of working). All three are structural checks and this was a semantic
+  one. Verified by walking brace depth through the file, which reports where
+  each function is nested: `fitToContent` at depth 0 in the broken version,
+  depth 1 now - and it is the only function in the file other than the four
+  module-level helpers, so the check that would have caught it is the shape of
+  this file.
+
 ## [1.20.1] - Dialogs size themselves to what they have to say
 
 2026-10-14

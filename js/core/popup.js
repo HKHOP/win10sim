@@ -563,28 +563,15 @@ export function openPopup(context, spec, ownerId) {
     result: result
   };
 
-  // The dialog is sized before anything takes the keyboard: focusing a field can
-  // scroll the body to reach it, and a body that is about to be resized is no
-  // place to have scrolled.
-  fitToContent();
-
-  // A dialog takes the keyboard when it opens, the way a Win32 dialog does. What
-  // is focused is the content rather than the default button: Enter on a real
-  // button answers the dialog on the browser's own, and this dialog answers it
-  // itself - and most message boxes have nothing in them worth focusing.
-  root.tabIndex = -1;
-  root.focus();
-
-  // An app usually wants the textbox it named to be ready for typing.
-  var firstText = state.fields.filter(function (f) { return f.type === 'text' || f.type === 'password'; })[0];
-  if (firstText) {
-    api.focus(firstText.name);
-  }
-
-  return api;
-}
-
-// The dialog is the size of what it has to say.
+  // The dialog is the size of what it has to say.
+//
+// This lives inside openPopup because it reads the window, the content and the
+// sizes the caller asked for, all of which are that call's. It used to sit at
+// module level, where it could see none of them: every reference threw a
+// ReferenceError on the first line, the window was left at the height it had
+// opened at - the whole work area - and the dialog arrived as a full-height box
+// with its buttons at the bottom of it. A scoping mistake is not a syntax
+// error, so `node --check` passed and only the browser could say so.
 //
 // Height is measured, not guessed: the content is briefly released from the
 // height of the window it is in, so a flex column can report the height of its
@@ -607,27 +594,48 @@ export function openPopup(context, spec, ownerId) {
 // factor the whole screen is drawn at, and the window would be resized to fit a
 // number that has nothing to do with the monitor.
 function fitToContent() {
-  // An explicit height is the author's, not the layout's: it is a floor the
-  // dialog never draws shorter than, and content taller than it still grows the
-  // window, because a dialog that scrolls when it did not have to is the thing
-  // being fixed here.
-  var frame = win.body.parentNode;
-  var chromeHeight = frame.offsetHeight - win.body.offsetHeight;
-  var wasHeight = root.style.height;
-  root.style.height = 'auto';
-  var contentHeight = root.offsetHeight;
-  root.style.height = wasHeight;
-  var contentWidth = root.scrollWidth;
+    // An explicit height is the author's, not the layout's: it is a floor the
+    // dialog never draws shorter than, and content taller than it still grows the
+    // window, because a dialog that scrolls when it did not have to is the thing
+    // being fixed here.
+    var frame = win.body.parentNode;
+    var chromeHeight = frame.offsetHeight - win.body.offsetHeight;
+    var wasHeight = root.style.height;
+    root.style.height = 'auto';
+    var contentHeight = root.offsetHeight;
+    root.style.height = wasHeight;
+    var contentWidth = root.scrollWidth;
 
-  // The pixel of slack is deliberate. offsetHeight is a rounded measurement and
-  // the content it measured can need a fraction more than it reported, which is
-  // exactly how a dialog ends up a pixel short of its own content and shows the
-  // scrollbar this is here to remove.
-  var height = contentHeight + chromeHeight + 1;
-  if (declaredHeight) {
-    height = Math.max(height, declaredHeight);
+    // The pixel of slack is deliberate. offsetHeight is a rounded measurement and
+    // the content it measured can need a fraction more than it reported, which is
+    // exactly how a dialog ends up a pixel short of its own content and shows the
+    // scrollbar this is here to remove.
+    var height = contentHeight + chromeHeight + 1;
+    if (declaredHeight) {
+      height = Math.max(height, declaredHeight);
+    }
+    win.setSize(Math.max(declaredWidth, contentWidth), height);
   }
-  win.setSize(Math.max(declaredWidth, contentWidth), height);
+
+  // The dialog is sized before anything takes the keyboard: focusing a field can
+  // scroll the body to reach it, and a body that is about to be resized is no
+  // place to have scrolled.
+  fitToContent();
+
+  // A dialog takes the keyboard when it opens, the way a Win32 dialog does. What
+  // is focused is the content rather than the default button: Enter on a real
+  // button answers the dialog on the browser's own, and this dialog answers it
+  // itself - and most message boxes have nothing in them worth focusing.
+  root.tabIndex = -1;
+  root.focus();
+
+  // An app usually wants the textbox it named to be ready for typing.
+  var firstText = state.fields.filter(function (f) { return f.type === 'text' || f.type === 'password'; })[0];
+  if (firstText) {
+    api.focus(firstText.name);
+  }
+
+  return api;
 }
 
 export { DIALOG_GLYPHS };
