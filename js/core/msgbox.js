@@ -37,13 +37,21 @@ export function showMessageBox(context, opts) {
       };
     }),
     onSubmit: function (value, values, popup) {
+      var chosen = buttons[Number(String(value).slice(1))];
+      // Only a button that brings behaviour of its own is handled here. Every
+      // other button - the plain OK, Cancel, Continue of a message that has
+      // nothing to do but be read - is answered by popup.js closing the box,
+      // which is what returning true means. Refusing the close here is what a
+      // button has to do to keep a validating dialog up, and a message box has
+      // nothing to validate: refusing every plain button left OK, Cancel and
+      // Continue silent, so only the caption buttons could get a person out.
+      if (!chosen || !chosen.action) {
+        return true;
+      }
       // A caller's own button behaviour runs once the dialog is gone, which is
       // when the old hand-built box ran it.
-      var chosen = buttons[Number(String(value).slice(1))];
-      if (chosen && chosen.action) {
-        popup.close();
-        chosen.action();
-      }
+      popup.close();
+      chosen.action();
       return false;
     }
   }, options.ownerId !== undefined ? options.ownerId : focusedWindowId());

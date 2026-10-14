@@ -3,6 +3,39 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.3] - Message box buttons answer again
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **Every message box in the shell refused its own buttons.** The shell's message
+  box (`js/core/msgbox.js`) hooked `onSubmit`, and a popup treats `false` coming
+  back from `onSubmit` as "this button refuses to close the dialog" - which is
+  how a validating dialog stays up. The message box returned `false` whatever was
+  pressed, so a button that brought no behaviour of its own - the plain **OK**,
+  **Cancel**, **Continue** - was pressed and then did nothing at all: the box just
+  sat there. Every shell message box was affected (the desktop's "There is no app
+  installed that can open…", Explorer's path and permission errors, the rename
+  prompt's **Cancel**), and only the caption buttons got a person out of them,
+  which is what made it look like the buttons themselves were dead rather than
+  the whole row. `onSubmit` now declines only the buttons that carry an `action`
+  of their own - **Replace** and friends, which still close the box first and run
+  their behaviour after it, as before - and lets the popup close itself for
+  everything else.
+
 ## [1.19.2] - The cursor keeps its place when the phone's own buttons are pressed
 
 2026-10-14
