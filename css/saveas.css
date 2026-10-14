@@ -1,0 +1,717 @@
+/* The Save As dialog: the Win10 shape, from the address row down to the File
+   name / Save as type / Save / Cancel row.
+
+   The whole thing is one column: the browser takes every pixel it can get, and
+   the two fixed rows underneath it are as tall as their controls need. Nothing
+   here scrolls except the browser's own file list and navigation pane, which is
+   what lets the dialog be small on a phone without losing its buttons. */
+
+.sa-dialog {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  font-family: inherit;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ---- glyphs ---- */
+
+.sa-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+.sa-glyph svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.sa-glyph-sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---- the address row ---- */
+
+.sa-addr {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e1e1e1;
+  background: #fff;
+}
+
+.sa-addr-btn {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #444;
+}
+
+.sa-addr-btn svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.sa-addr-btn:hover:not(:disabled),
+.sa-addr-btn.sim-hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.sa-addr-btn:disabled {
+  color: #b8b8b8;
+  cursor: default;
+}
+
+.sa-addr-path {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  background: #fff;
+  border: 1px solid #c8c8c8;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sa-crumb {
+  border: 0;
+  padding: 2px 4px;
+  background: transparent;
+  font: inherit;
+  color: #222;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.sa-crumb:hover,
+.sa-crumb.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.sa-crumb.is-current {
+  font-weight: 500;
+}
+
+.sa-crumb-sep {
+  flex: 0 0 auto;
+  color: #9a9a9a;
+}
+
+.sa-addr-search {
+  flex: 0 0 180px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  background: #fff;
+  border: 1px solid #c8c8c8;
+  border-radius: 2px;
+}
+
+.sa-addr-search:focus-within {
+  border-color: #0078d7;
+}
+
+.sa-addr-search .sa-glyph {
+  color: #888;
+  flex: 0 0 auto;
+}
+
+.sa-addr-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- the toolbar ---- */
+
+.sa-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e1e1e1;
+  background: #fafafa;
+  position: relative;
+}
+
+.sa-tools-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  font: inherit;
+  color: #222;
+  cursor: pointer;
+}
+
+.sa-tools-btn svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.sa-tools-btn:hover:not(:disabled),
+.sa-tools-btn.sim-hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.sa-tools-btn.is-open {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.sa-tools-btn-icon {
+  padding: 0 6px;
+}
+
+.sa-tools-views {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid #d4d4d4;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.sa-view-btn {
+  width: 26px;
+  height: 22px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+.sa-view-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.sa-view-btn:hover,
+.sa-view-btn.sim-hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.sa-view-btn.is-active {
+  background: rgba(0, 120, 215, 0.15);
+  border-color: rgba(0, 120, 215, 0.4);
+  color: #005a9e;
+}
+
+/* The Organize menu: the dialog's own, anchored to the button that opened it. */
+.sa-menu {
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  z-index: 5;
+  min-width: 160px;
+  padding: 4px 0;
+  background: #fff;
+  border: 1px solid #c8c8c8;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.sa-menu-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 6px 14px;
+  background: transparent;
+  font: inherit;
+  color: #222;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sa-menu-item:hover,
+.sa-menu-item.sim-hover {
+  background: rgba(0, 120, 215, 0.12);
+}
+
+/* ---- the browser body ---- */
+
+.sa-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0;
+  background: #fff;
+}
+
+.sa-nav {
+  flex: 0 0 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  border-right: 1px solid #e5e5e5;
+  background: #fbfbfb;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sa-nav-section {
+  flex: 0 0 auto;
+}
+
+.sa-nav-head {
+  padding: 4px 10px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sa-nav-kids {
+  padding-left: 14px;
+}
+
+.sa-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sa-nav-row:hover,
+.sa-nav-row.sim-hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sa-nav-row.is-current {
+  background: rgba(0, 120, 215, 0.12);
+}
+
+.sa-nav-twisty {
+  flex: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.sa-nav-twisty svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+}
+
+.sa-nav-icon {
+  flex: 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-nav-icon img,
+.sa-nav-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.sa-nav-icon svg {
+  color: #dcb67a;
+}
+
+.sa-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sa-list-wrap {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px;
+  background: #fff;
+}
+
+.sa-list-empty {
+  padding: 24px 12px;
+  color: #888;
+  text-align: center;
+}
+
+/* Tiles: the large-icon view Win10's Save As opens on. */
+.sa-list.sa-view-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 96px);
+  gap: 8px;
+  align-content: start;
+}
+
+.sa-list.sa-view-tiles .sa-item {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 8px 4px;
+}
+
+.sa-list.sa-view-tiles .sa-item-icon img {
+  width: 44px;
+  height: 44px;
+}
+
+.sa-list.sa-view-tiles .sa-item-name {
+  max-width: 88px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* List: names only, one per line. */
+.sa-list.sa-view-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sa-list.sa-view-list .sa-item {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+}
+
+.sa-list.sa-view-list .sa-item-icon img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Details: name, date, type, size in columns. */
+.sa-list.sa-view-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sa-list.sa-view-details .sa-item {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+}
+
+.sa-list.sa-view-details .sa-item-icon img {
+  width: 16px;
+  height: 16px;
+}
+
+.sa-list.sa-view-details .sa-item-name {
+  flex: 0 0 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-list.sa-view-details .sa-item-col {
+  flex: 1;
+  min-width: 0;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-item {
+  display: flex;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: default;
+  outline: none;
+}
+
+.sa-item:hover,
+.sa-item.sim-hover {
+  background: rgba(0, 120, 215, 0.08);
+  border-color: rgba(0, 120, 215, 0.2);
+}
+
+.sa-item.is-selected {
+  background: rgba(0, 120, 215, 0.18);
+  border-color: rgba(0, 120, 215, 0.45);
+}
+
+.sa-item-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sa-item-name {
+  font-size: 12px;
+  color: #111;
+}
+
+/* ---- the fold: Hide Folders and Encoding ---- */
+
+.sa-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 12px;
+  border-top: 1px solid #e1e1e1;
+  background: #fafafa;
+}
+
+.sa-foot-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 3px 4px;
+  background: transparent;
+  font: inherit;
+  color: #444;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.sa-foot-toggle svg {
+  width: 11px;
+  height: 11px;
+  display: block;
+  transition: transform 0.1s ease;
+}
+
+.sa-foot-toggle:hover,
+.sa-foot-toggle.sim-hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+/* Win10's collapse is a chevron that has been turned on its side. */
+.sa-foot-toggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+
+.sa-foot-enc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-foot-label {
+  color: #444;
+}
+
+/* "Hide Folders" puts the tree and the toolbar away and lets the file list have
+   the width they were using - it does not take the list away too. */
+.sa-no-folders .sa-nav,
+.sa-no-folders .sa-tools {
+  display: none;
+}
+
+/* ---- the row under everything ---- */
+
+.sa-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 12px;
+  border-top: 1px solid #e1e1e1;
+  background: #fff;
+}
+
+.sa-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sa-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-field-label {
+  flex: 0 0 auto;
+  width: 80px;
+  color: #222;
+  text-align: right;
+}
+
+/* The name box is the widest control in the dialog: it is the one thing here
+   a person types into, and the width Win10 gives it is the room a path takes. */
+.sa-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  border: 1px solid #8a8a8a;
+  border-radius: 2px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.sa-name-input:focus-within {
+  border-color: #0078d7;
+  box-shadow: 0 0 0 1px #0078d7;
+}
+
+.sa-select-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sa-select {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  border: 1px solid #8a8a8a;
+  border-radius: 2px;
+  padding: 0 22px 0 6px;
+  background: #fff;
+  font: inherit;
+  color: #111;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.sa-select:focus {
+  border-color: #0078d7;
+  outline: none;
+  box-shadow: 0 0 0 1px #0078d7;
+}
+
+.sa-select-chevron {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #555;
+}
+
+.sa-select-chevron svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+}
+
+/* A refused save says why, in place, under the row that refused it. */
+.sa-error {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #a80000;
+}
+
+.sa-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-btn {
+  min-width: 76px;
+  height: 26px;
+  border: 1px solid #adadad;
+  border-radius: 2px;
+  padding: 0 12px;
+  background: #f0f0f0;
+  font: inherit;
+  color: #111;
+  cursor: pointer;
+}
+
+.sa-btn:hover,
+.sa-btn.sim-hover {
+  background: #e5f1fb;
+  border-color: #0078d7;
+}
+
+.sa-btn.is-primary {
+  background: #0078d7;
+  border-color: #0078d7;
+  color: #fff;
+}
+
+.sa-btn.is-primary:hover,
+.sa-btn.is-primary.sim-hover {
+  background: #106ebe;
+  border-color: #106ebe;
+}
+
+.sa-btn:disabled {
+  background: #e6e6e6;
+  border-color: #c8c8c8;
+  color: #9a9a9a;
+  cursor: default;
+}
+
+/* Slim scrollbars, the ones the rest of the shell draws. */
+.sa-nav::-webkit-scrollbar,
+.sa-list-wrap::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sa-nav::-webkit-scrollbar-thumb,
+.sa-list-wrap::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.sa-nav::-webkit-scrollbar-track,
+.sa-list-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-foot-toggle svg {
+    transition: none;
+  }
+}

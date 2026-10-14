@@ -287,61 +287,6 @@
   line-height: 1.5;
 }
 
-/* --- File dialogs ------------------------------------------------------ */
-
-.np-filedlg-lookin {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.np-filedlg-up {
-  margin-bottom: 4px;
-}
-
-.np-filedlg-upbtn {
-  width: 26px;
-  height: 20px;
-  background: #e1e1e1;
-  border: 1px solid #adadad;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.np-filedlg-list {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  background: #fff;
-  border: 1px solid #adadad;
-  padding: 2px;
-}
-
-.np-filedlg-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 6px;
-  cursor: pointer;
-}
-
-.np-filedlg-item.is-selected {
-  background: rgba(0, 120, 215, 0.2);
-}
-
-.np-filedlg-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.np-filedlg-name {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 /* --- About ------------------------------------------------------------- */
 
 .np-dialog-about .np-dialog-content {

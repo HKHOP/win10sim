@@ -10,10 +10,9 @@ import {
 import { createTextField } from '../../core/textfield.js';
 import { buildMenuBar } from './menus.js';
 import {
-  showOpenDialog,
   showSaveAsDialog,
-  pushRecent
-} from './filedialog.js';
+  showOpenDialog
+} from '../../apis/saveas/saveas.js';
 import {
   showMessageBox,
   showFindDialog,
@@ -27,6 +26,22 @@ import { noteUsed } from '../../apis/quickaccess.js';
 // Microsoft Notepad, Win10 edition: menu bar, monospace editor, status bar,
 // and the full command set (file I/O on the emulated C: volume, find and
 // replace, go to line, time/date, word wrap, font, zoom).
+//
+// File I/O goes through the shell's file dialog API (apis/saveas/saveas.js):
+// Notepad describes the dialog it wants and the shell builds it, which is why
+// there is no browser in this file.
+
+// Notepad's File ▸ Recent documents: the last few paths, most recent first,
+// capped the way the real menu is.
+function pushRecent(list, path) {
+  var next = [path];
+  list.forEach(function (item) {
+    if (item !== path && next.length < NOTEPAD_RECENT_MAX) {
+      next.push(item);
+    }
+  });
+  return next;
+}
 
 function baseName(path) {
   var parts = String(path || '').split('\\');
@@ -318,11 +333,19 @@ export function openNotepad(context, args) {
   function doOpen() {
     confirmDiscard(function () {
       showOpenDialog(context, {
+        icon: NOTEPAD_SRC,
+        owner: win.id,
         getVolume: volumeReady,
-        startDir: currentDir(),
-        initialName: doc.path ? baseName(doc.path) : '',
-        onAccept: function (path) {
-          loadFile(path);
+        directory: currentDir(),
+        suggestedName: doc.path ? baseName(doc.path) : '',
+        // The two rows below the name are the whole of what an app has to say
+        // about the files it can read.
+        types: [
+          { label: 'Text Documents (*.txt)', extension: 'txt' },
+          { label: 'All Files (*.*)', extension: '' }
+        ],
+        onOpen: function (answer) {
+          loadFile(answer.path);
         }
       });
     });
@@ -381,53 +404,69 @@ export function openNotepad(context, args) {
     }
   }
 
+  // Writing to a path that already exists: no dialog, no name to work out, no
+  // extension to add. This sits inside openNotepad because it is the app's own
+  // state it writes - it was at module level once, where every name it read was
+  // undefined, and Save on an open file threw instead of writing.
+  function writeFile(path, then) {
+    volumeReady().then(function (vol) {
+      if (!vol || !vol.available) {
+        throw new Error('Storage is unavailable');
+      }
+      return vol.writeFile(path, editor.value);
+    }).then(function () {
+      doc.dirty = false;
+      updateTitle();
+      if (then) {
+        then();
+      }
+    }).catch(function () {
+      showMessageBox(context, {
+        title: 'Notepad',
+        icon: 'error',
+        message: 'Cannot save \'' + path + '\'. Check the path and try again.'
+      });
+    });
+  }
+
   function saveAs(then) {
     showSaveAsDialog(context, {
+      icon: NOTEPAD_SRC,
+      // Notepad's window owns it: the dialog stays above the document it is
+      // saving, and comes back to it when answered - which is what makes it a
+      // modal dialog rather than a window that happens to be in front.
+      owner: win.id,
       getVolume: volumeReady,
-      startDir: currentDir(),
-      initialName: doc.path ? baseName(doc.path) : '*.txt',
-      onAccept: function (path) {
-        writeFile(path, then);
+      directory: currentDir(),
+      suggestedName: doc.path ? baseName(doc.path) : 'Untitled.txt',
+      // What the file will be, which is what the Save as type row answers - and
+      // what makes a name typed without an extension come out as a .txt one.
+      types: [
+        { label: 'Text Documents (*.txt)', extension: 'txt' },
+        { label: 'All Files (*.*)', extension: '' }
+      ],
+      onSave: function (answer) {
+        // The write is the app's, and so is the failure: a rejected promise
+        // leaves the dialog open with the reason under the fields, rather than
+        // closing it on a file that was never written.
+        return volumeReady().then(function (vol) {
+          if (!vol || !vol.available) {
+            throw new Error('Storage is unavailable.');
+          }
+          return vol.writeFile(answer.path, editor.value);
+        }).then(function () {
+          doc.path = answer.path;
+          doc.dirty = false;
+          doc.recent = pushRecent(doc.recent, answer.path);
+          noteUsed({ place: answer.path, name: baseName(answer.path), type: 'file' });
+          updateTitle();
+          if (then) {
+            then();
+          }
+        });
       }
     });
   }
-
-function writeFile(path, then) {
-  volumeReady().then(function (vol) {
-    if (!vol || !vol.available) {
-      throw new Error('Storage is unavailable');
-    }
-    return vol.writeFile(finalSavePath(path), editor.value).then(finalSavePath.bind(null, path));
-  }).then(function (finalPath) {
-    doc.path = finalPath;
-    doc.dirty = false;
-    doc.recent = pushRecent(doc.recent, finalPath);
-    noteUsed({ place: finalPath, name: baseName(finalPath), type: 'file' });
-    updateTitle();
-    if (then) {
-      then();
-    }
-  }).catch(function () {
-    showMessageBox(context, {
-      title: 'Notepad',
-      icon: 'error',
-      message: 'Cannot save \'' + path + '\'. Check the path and try again.'
-    });
-  });
-}
-
-// The Save As box opens on Notepad's "*.txt" default. A name that still
-// holds the wildcard (or nothing) becomes Untitled.txt, and a name with no
-// extension gets one, exactly like Notepad's text-document filter.
-function finalSavePath(path) {
-  var name = baseName(path);
-  if (!name || name.indexOf('*') >= 0) {
-    name = 'Untitled.txt';
-  } else if (!/\.[a-z0-9]+$/i.test(name)) {
-    name += '.txt';
-  }
-  return parentDir(path) + '\\' + name;
-}
 
   function setZoom(percent) {
     doc.zoom = percent;

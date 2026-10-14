@@ -51,12 +51,14 @@ var SHELL_APP_ID = 'shell';
 
 var USER_DESKTOP = 'C:\\Users\\User\\Desktop';
 
-function iconFor(entry) {
-  if (entry.type === 'dir') {
-    return KNOWN_FOLDER_SRC[entry.label] || FOLDER_SRC;
+  function iconFor(entry) {
+    // A listing entry carries a name, not a label: the label is what this
+    // function's caller derives from it further down.
+    if (entry.type === 'dir') {
+      return KNOWN_FOLDER_SRC[entry.name] || FOLDER_SRC;
+    }
+    return FILE_SRC;
   }
-  return FILE_SRC;
-}
 
 var SLOT_W = 88;
 var SLOT_H = 96;
@@ -151,9 +153,14 @@ export function createDesktop(cursor, stage) {
     return dot > 0 ? name.slice(0, dot) : name;
   }
 
-  function desktopEntryFor(entry) {
+  // The place is handed in because a listing entry only carries a name: the
+  // volume answers with { name, type, size, modified } and says nothing about
+  // where it is, so the folder being listed is what supplies that. Reading it
+  // off the entry left every desktop item place-less, and opening one stopped
+  // at `if (!def.place) return` - which is why nothing on the desktop opened.
+  function desktopEntryFor(entry, place) {
     return {
-      place: entry.place,
+      place: place,
       label: labelOf(entry.name),
       name: entry.name,
       type: entry.type,
@@ -193,7 +200,7 @@ export function createDesktop(cursor, stage) {
         }).forEach(function (entry) {
           var place = USER_DESKTOP + '\\' + entry.name;
           seen.push(place);
-          var def = desktopEntryFor(entry);
+          var def = desktopEntryFor(entry, place);
           var existing = entries.filter(function (candidate) {
             return candidate.def.place === place;
           })[0];
