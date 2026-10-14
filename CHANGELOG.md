@@ -3,6 +3,49 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.19.5] - The service worker was never registering
+
+2026-10-14
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **The service worker had never once registered: its path was off by one
+  directory.** `js/boot/boot.js` resolved it as `new URL('../sw.js', …)`, which
+  from `js/boot/` is `js/sw.js` - a file that does not exist. The worker lives at
+  the repository root, so the path needed two levels up, and the site had been
+  answering Chrome with a 404 every load: *"A bad HTTP response code (404) was
+  received when fetching the script."* What that cost was quiet and total: no
+  network-first cache busting, so a phone could keep running a `js/core/*.js`
+  from last week out of its own HTTP cache, and no offline fallback at all, so
+  the emulated machine could not open with the network gone. The registration now
+  resolves to `../../sw.js`, which also lands the worker at the root scope and so
+  covers the site on a project subpath as well as on a domain root. The
+  registration has been best-effort since it was written - a refused worker must
+  never keep the simulator from booting - and that is what let the failure be
+  invisible: it is a console line, not a broken screen. Every module import,
+  `new URL(…, import.meta.url)` target, stylesheet link and manifest icon in the
+  repo was checked for the same mistake and is present.
+
+- The *"Banner not shown: beforeinstallprompt preventDefault() called"* console
+  line is **not** a fault and needs no fix. It is what Chrome logs when a page
+  cancels the browser's own install banner and then never opens it - and
+  cancelling it is exactly what `js/core/sitechrome.js` does, on purpose, so the
+  offer is the site's own install button rather than an unprompted dialog the
+  visitor never asked for. The line appears only on the loads where the browser
+  decides to fire `beforeinstallprompt` at all, which is why it comes and goes.
+
 ## [1.19.4] - Context menus scale to the emulated screen
 
 2026-10-14

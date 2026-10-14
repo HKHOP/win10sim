@@ -189,7 +189,15 @@ function registerServiceWorker() {
     return;
   }
   try {
-    navigator.serviceWorker.register(new URL('../sw.js', import.meta.url), {
+    // '../../sw.js', not '../sw.js': this module lives at js/boot/boot.js and
+    // the worker is at the repository root, so one level up is js/sw.js - a path
+    // that does not exist. Chrome answers that 404 with "A bad HTTP response
+    // code (404) was received when fetching the script" and the worker never
+    // registers, which quietly costs the site the whole cache-busting strategy
+    // and its offline fallback. Two levels up is the root, which also gives the
+    // worker the root scope for free and so covers the site on a project subpath
+    // as well as on a domain root.
+    navigator.serviceWorker.register(new URL('../../sw.js', import.meta.url), {
       updateViaCache: 'none'
     }).catch(function () {
       // A refused worker (private mode, storage denied) must never keep the
