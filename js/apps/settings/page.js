@@ -21,12 +21,22 @@ export function buildPage(page, ops) {
   // and the rail in the other, rather than the rail being one more group at the
   // bottom of a list that is otherwise a single column. Display, Bluetooth and
   // Game bar are all made this way.
+  // The two columns live inside a wrapper rather than being siblings of the
+  // title. A grid places each of its children in a cell in order, so making the
+  // page itself the grid put the heading in the first column, the settings in the
+  // second - the narrow one - and the rail on the next row, far below the fold.
+  // The wrapper is what makes "two columns" mean two columns rather than three
+  // children in a two-column grid.
   var main = root;
+  var body = null;
   if ((page.rail || []).length) {
     root.classList.add('set-page--with-rail');
+    body = document.createElement('div');
+    body.className = 'set-page-body';
     main = document.createElement('div');
     main.className = 'set-page-main';
-    root.appendChild(main);
+    body.appendChild(main);
+    root.appendChild(body);
   }
 
   // Every control on the page, so a write from anywhere can be reflected here
@@ -78,8 +88,8 @@ export function buildPage(page, ops) {
     main.appendChild(section);
   });
 
-  if ((page.rail || []).length) {
-    root.appendChild(buildRail(page.rail, ops));
+  if (body) {
+    body.appendChild(buildRail(page.rail, ops));
   }
 
   return {

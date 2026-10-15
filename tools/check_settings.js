@@ -10,6 +10,9 @@
 
 import { CATEGORIES, NAV_CATEGORIES, INDEX, pageById, allDefaults, normalizePageId, HOME_PAGE_ID } from '../js/apps/settings/catalogue.js';
 import { KINDS, isKnownKind, keyOf, defaultOf, coerce, searchSettings } from '../js/apps/settings/schema.js';
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as GLYPHS from '../js/apps/settings/glyphs.js';
 
 var checks = 0;
@@ -34,8 +37,12 @@ function eq(label, got, want) {
 // --- the shape of the catalogue --------------------------------------------
 
 ok('there are categories', CATEGORIES.length > 0);
-ok('the home screen has fourteen categories, as Windows has',
-  CATEGORIES.length === 14, 'got ' + CATEGORIES.length);
+// Thirteen, as Windows has since 19H2 removed Cortana. A fourteenth would be a
+// tile for a feature the machine cannot have.
+ok('the home screen has thirteen categories, as Windows has',
+  CATEGORIES.length === 13, 'got ' + CATEGORIES.length);
+ok('there is no Cortana tile, because Cortana left Windows in 19H2',
+  CATEGORIES.every(function (category) { return category.id !== 'cortanaHome'; }));
 
 var seenCategoryIds = {};
 // A page names its glyph the way the page is named - "appsFeatures",
@@ -61,16 +68,9 @@ CATEGORIES.forEach(function (category) {
   ok('category "' + category.id + '" has pages', (category.pages || []).length > 0);
 });
 
-// Win10 names a category's blurb after what is *in* it, and Cortana is the one
-// that must not be a nav group.
-var cortana = CATEGORIES.filter(function (c) { return c.id === 'cortanaHome'; });
-eq('Cortana is on the home screen once', cortana.length, 1);
-ok('Cortana is not a nav group', cortana[0].navHidden === true);
-ok('Cortana names where its tile goes', cortana[0].goto === 'cortana');
-ok('the Cortana tile target exists', !!pageById(cortana[0].goto));
-
 // Every category that is not navHidden must appear in the nav, in order.
-eq('the nav has one row per visible category', NAV_CATEGORIES.length, CATEGORIES.length - 1);
+eq('the nav has one row per visible category', NAV_CATEGORIES.length,
+  CATEGORIES.filter(function (category) { return !category.navHidden; }).length);
 
 function pageGlyph(page) {
   return exportNameFor(page.glyph);
@@ -205,6 +205,82 @@ CATEGORIES.forEach(function (category) {
 Object.keys(KINDS).forEach(function (kind) {
   ok('kind "' + kind + '" is used by at least one page', kindsUsed[kind] > 0);
 });
+
+// --- every class the app draws is a class the stylesheet knows --------------
+//
+// A class the JS emits and the CSS does not define does not throw and does not
+// look wrong in a diff. It draws as an unstyled element: a <button> with no rule
+// is centred by the UA, so "Default apps" rendered each file type as a line of
+// text floating in the middle of an empty box. Nothing else in the app would
+// have noticed.
+//
+// The scan reads the two files rather than a hand-written list, so a class added
+// to a widget is covered the moment it is added. Classes the JS emits only as a
+// modifier are still expected to exist - a modifier with no base rule is the same
+// mistake wearing a hat.
+var HERE = dirname(fileURLToPath(import.meta.url));
+var SETTINGS_DIR = join(HERE, '..', 'js', 'apps', 'settings');
+
+function jsFilesIn(dir) {
+  var out = [];
+  readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
+    var full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out = out.concat(jsFilesIn(full));
+    } else if (entry.name.endsWith('.js')) {
+      out.push(full);
+    }
+  });
+  return out;
+}
+
+var settingsCss = readFileSync(join(HERE, '..', 'css', 'settings.css'), 'utf8');
+var classScan = {};
+jsFilesIn(SETTINGS_DIR).forEach(function (file) {
+  var text = readFileSync(file, 'utf8');
+  // Matches any set- token. A token that appears only as part of a custom
+  // property name (--set-accent) is not a class and is filtered out below.
+  var found = text.match(/set-[a-z0-9-]+/g) || [];
+  found.forEach(function (name) {
+    classScan[name] = true;
+  });
+});
+Object.keys(classScan).sort().forEach(function (name) {
+  // A custom property is written with two dashes; a class is written with one
+  // and a dot in the stylesheet.
+  var isProperty = settingsCss.indexOf('--' + name) >= 0;
+  ok('class "' + name + '" has a rule in settings.css',
+    isProperty || settingsCss.indexOf('.' + name) >= 0);
+});
+
+// And the other way: a class the stylesheet defines that nothing emits is a rule
+// that can never apply. Not an error - modifiers are often written up front - but
+// worth being able to see, so it is counted rather than hidden.
+//
+// A modifier whose name is assembled at runtime counts as emitted when its base
+// is: Game bar's recording switch is `'set-switch--' + variant`, so
+// .set-switch--amber is drawn by a page that only ever writes "set-switch".
+var emitted = Object.keys(classScan);
+var unusedRules = [];
+var ruleRe = /\.((?:set)-[a-z0-9-]+)/g;
+var ruleMatch;
+while ((ruleMatch = ruleRe.exec(settingsCss))) {
+  var name = ruleMatch[1];
+  if (emitted.indexOf(name) >= 0) {
+    continue;
+  }
+  // The base of a modifier: everything before the last "--".
+  var base = name.replace(/--[a-z0-9-]+$/, '');
+  if (base !== name && emitted.indexOf(base) >= 0) {
+    continue;
+  }
+  unusedRules.push(name);
+}
+checks += 1;
+if (unusedRules.length) {
+  console.log('  note: ' + unusedRules.length + ' rule(s) in settings.css are not emitted by any ' +
+    'module today: ' + unusedRules.join(', '));
+}
 
 // --- coercion: a stored value can never strand a control --------------------
 

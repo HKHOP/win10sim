@@ -36,8 +36,7 @@ import {
 import {
   GAMING,
   EASE_OF_ACCESS,
-  SEARCH,
-  CORTANA
+  SEARCH
 } from './pages/personal.js';
 import {
   PRIVACY,
@@ -60,10 +59,11 @@ import {
 // Update & Security on the last row - because a Settings that ordered its tiles
 // differently would be the thing you notice first.
 //
-// Cortana is here because Windows puts it here, and navHidden because Windows
-// shows Cortana as a home tile *and* as a page inside Search rather than as a
-// nav group of its own. It navigates to the page Search already owns; see
-// indexPages' note on a page id belonging to the first category that claims it.
+// There are thirteen, not fourteen. Cortana was a tile here in 1809 and it is
+// gone from 19H2 on: Microsoft removed Cortana from Windows, and a tile for a
+// feature the machine cannot have is a tile that goes nowhere. The Cortana page
+// itself is still declared, because Search still has a row for it and a page that
+// a nav row links to cannot simply stop existing.
 export var CATEGORIES = [
   SYSTEM,
   DEVICES,
@@ -76,17 +76,6 @@ export var CATEGORIES = [
   GAMING,
   EASE_OF_ACCESS,
   SEARCH,
-  {
-    id: 'cortanaHome',
-    title: 'Cortana',
-    blurb: 'Cortana language, permissions, notifications',
-    glyph: 'cortana',
-    // The tile's target is the Cortana page that Search owns, so the home
-    // screen and the nav pane cannot drift into showing two Cortanas.
-    goto: 'cortana',
-    navHidden: true,
-    pages: [CORTANA]
-  },
   PRIVACY,
   UPDATE_SECURITY
 ];

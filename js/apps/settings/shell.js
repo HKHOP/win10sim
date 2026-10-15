@@ -782,7 +782,7 @@ function buildCaptions(win) {
     return button;
   }
 
-  box.appendChild(caption('set-cap-min', 'Minimize', CAPT_MIN_SVG, function () { win.minimize(); }));
+  box.appendChild(caption('', 'Minimize', CAPT_MIN_SVG, function () { win.minimize(); }));
   box.appendChild(caption('set-cap-max', 'Maximize',
     '<span class="set-cap-max-glyph">' + CAPT_MAX_SVG + '</span>' +
     '<span class="set-cap-restore-glyph">' + CAPT_RESTORE_SVG + '</span>',

@@ -488,18 +488,16 @@ function buttonControl(item, ops) {
   button.className = 'set-button' +
     (item.variant === 'primary' ? ' set-button--primary' : '') +
     (item.wide ? ' set-button--wide' : '');
+  // The mark goes in as its own element so it can sit beside the words rather
+  // than inside them; the gap is the mark's own right margin, so the words
+  // themselves are just the button's text.
   if (item.icon) {
     var art = document.createElement('span');
     art.className = 'set-button-art';
     art.innerHTML = glyphFor(item.icon);
     button.appendChild(art);
-    var words = document.createElement('span');
-    words.className = 'set-button-words';
-    words.textContent = item.label || '';
-    button.appendChild(words);
-  } else {
-    button.textContent = item.label || '';
   }
+  button.appendChild(document.createTextNode(item.label || ''));
   button.addEventListener('click', function () {
     ops.run(item.action);
   });
@@ -517,13 +515,8 @@ function linkControl(item, ops) {
     art.className = 'set-button-art';
     art.innerHTML = glyphFor(item.icon);
     button.appendChild(art);
-    var words = document.createElement('span');
-    words.className = 'set-button-words';
-    words.textContent = item.label || '';
-    button.appendChild(words);
-  } else {
-    button.textContent = item.label || '';
   }
+  button.appendChild(document.createTextNode(item.label || ''));
   button.addEventListener('click', function () {
     // A link with a page goes to that page; one with an action runs it. Win10
     // has both on the same rows and the difference is only in what pressing it

@@ -349,6 +349,14 @@
 
 /* --- "Find a setting" ---------------------------------------------------- */
 
+/* The slot the search box is moved into. On the home screen the box is moved into
+   the middle of the grid instead (see .set-home-search), so the slot is empty
+   there and takes no room - flex: 0 0 auto is what makes an empty div collapse
+   rather than stretch to fill the pane. */
+.set-nav-search {
+  flex: 0 0 auto;
+}
+
 /* The find box is a bordered well with the glass and the field side by side
    inside it, rather than an icon laid over a padded field. The shell's text
    field draws its placeholder and its text in layers pinned to the box with
@@ -478,6 +486,13 @@
   flex: 0 0 auto;
 }
 
+/* The same box back at the top of the nav pane. It is given this class as well as
+   losing --home, so the rule that undoes the home layout does not depend on
+   --home having been removed for any other reason. */
+.set-find--nav {
+  flex: 1 1 auto;
+}
+
 .set-home-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -579,6 +594,13 @@
 .set-row-label {
   font-size: 14px;
   color: var(--set-ink);
+}
+
+/* A switch on its own row. It carries the word On or Off itself, so there is no
+   label beside it - the switch sits at the start of the row, not centred in it,
+   which matters when the row is ever a grid column rather than a flex column. */
+.set-row--switch {
+  justify-content: flex-start;
 }
 
 /* A select's label sits above the box, not beside it: the box is as wide as the
@@ -916,6 +938,14 @@
 .set-check-box svg {
   width: 14px;
   height: 14px;
+}
+
+/* The words beside the box. min-width: 0 because the row is an inline-flex and a
+   label as long as "Show me a summary of what I missed while focus assist was
+   on" would otherwise refuse to wrap - a flex item's automatic minimum is its
+   longest word, and never smaller. */
+.set-check-text {
+  min-width: 0;
 }
 
 .set-check.is-on .set-check-box {
@@ -1346,17 +1376,20 @@
    question?" and "Make Windows better". It is a sibling of the settings column
    rather than a group at the bottom of it, which is what keeps it beside the
    settings at every window width instead of below them once. */
-.set-page--with-rail {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 230px;
-  gap: 48px;
-  max-width: none;
-  align-items: start;
-}
-
 .set-page-main {
   min-width: 0;
   max-width: 780px;
+}
+
+/* The grid is on the wrapper rather than on the page itself, so that the page's
+   heading is not one of its cells. A page that is itself the grid has its three
+   children auto-placed: heading in column one, settings in column two - the
+   narrow rail column - and the rail wrapped to the next row. */
+.set-page-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 48px;
+  align-items: start;
 }
 
 .set-rail {
@@ -1364,6 +1397,11 @@
   flex-direction: column;
   gap: 26px;
   padding-top: 4px;
+}
+
+.set-rail-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .set-rail-title {
@@ -1419,6 +1457,53 @@
 .is-disabled .set-switch.is-on .set-switch-track {
   background: #a6a6a6;
   border-color: #a6a6a6;
+}
+
+/* --- default apps --------------------------------------------------------- */
+
+/* One file type per row: the mark, then the kind of file over the app that opens
+   it. Windows stacks the two - the type is the row's name and the app is what is
+   chosen for it - which is why the body is a column and not a row. */
+.set-default-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: #fff;
+  font: inherit;
+  color: var(--set-ink);
+  text-align: left;
+  cursor: default;
+}
+
+.set-default-row:hover,
+.set-default-row.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-default-art {
+  flex: 0 0 26px;
+  font-size: 18px;
+  color: var(--set-ink-soft);
+  text-align: center;
+}
+
+.set-default-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.set-default-kind {
+  font-size: 13px;
+  color: var(--set-ink);
+}
+
+.set-default-app {
+  font-size: 11px;
+  color: var(--set-ink-soft);
 }
 
 /* --- lists --------------------------------------------------------------- */
@@ -1514,6 +1599,11 @@
   font-size: 20px;
   color: var(--set-ink-soft);
   text-align: center;
+}
+
+.set-device-body {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .set-device-name {
@@ -1686,6 +1776,13 @@
   padding: 2px;
 }
 
+/* The app's name inside a filled slot. A slot is 52px wide, so the name has to
+   be allowed to break across lines rather than widen the row of eight slots. */
+.set-lock-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .set-lock-slot.is-filled {
   background: #fff;
   color: var(--set-ink);
@@ -1751,6 +1848,12 @@
 .set-preview-tile.is-active {
   border-left: 2px solid var(--preview-accent, var(--set-accent));
   font-weight: 600;
+}
+
+/* The tile's name under its colour. Block, so it sits on its own line inside the
+   miniature Start menu rather than running on from the swatch beside it. */
+.set-preview-tile-name {
+  display: block;
 }
 
 .set-preview-clock {
@@ -2104,8 +2207,17 @@
   display: block;
 }
 
+/* The name and the two lines under it stack. Without this they run together on
+   one line, because a span is inline by default and the card is a flex row. */
+.set-profile-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .set-profile-name {
   font-size: 15px;
+  font-weight: 600;
 }
 
 .set-profile-sub {
