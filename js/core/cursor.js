@@ -206,6 +206,9 @@ export function setCursorBusy(busy) {
   }
 }
 
+// Set once, by the one createCursor() the session makes. See pointerClient().
+var activeClientPoint = null;
+
 export function createCursor(stage) {
   var x = Math.floor(DISPLAY_WIDTH / 2);
   var y = Math.floor(DISPLAY_HEIGHT / 2);
@@ -860,6 +863,12 @@ function updateHover(target) {
     setBusy: setBusy
   };
 
+  // Published so a control that follows the pointer can find it without being
+  // handed the cursor down the boot chain. `clientPoint` is the one answer: the
+  // emulated cursor's position in the page's own coordinates, which is the space
+  // `getBoundingClientRect` speaks.
+  activeClientPoint = clientPoint;
+
   return {
     element: el,
     getPosition: function () {
@@ -872,4 +881,17 @@ function updateHover(target) {
     setBusy: setBusy,
     setBooted: setBooted
   };
+}
+
+// Where the emulated pointer is, in page coordinates, or null before there is
+// a cursor to ask.
+//
+// A control that has to follow the pointer should read this rather than take
+// the position off the event it was handed. The event's clientX is the
+// *browser's* pointer, and under pointer lock that pointer is frozen: the OS
+// pointer has been captured and only movementX moves, so an event's clientX
+// says nothing about where the emulated cursor is. This is why the desktop's
+// icon drags take no event argument at all and call getPosition() instead.
+export function pointerClient() {
+  return activeClientPoint ? activeClientPoint() : null;
 }

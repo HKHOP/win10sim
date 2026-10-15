@@ -3,6 +3,57 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.7] - The mouse drags, and the thing that stopped it
+
+2026-10-15
+
+### Added
+
+- **`js/core/cursor.js`: `pointerClient()`** — where the emulated pointer is, in
+  the page's own coordinates, or `null` before there is a cursor to ask.
+  Published at the module level rather than handed down the boot chain, because
+  a control that follows the pointer should not have to be wired to the cursor
+  to ask where the cursor is.
+
+### Removed
+
+- **`js/apps/settings/sliderdrag.js`: the `simEcho` check on the press.** It is
+  what stopped this, and it was mine, added two versions ago.
+
+### Changed
+
+- **`js/apps/settings/sliderdrag.js`** and **`js/core/textfield-pointer.js`**
+  both now follow the pattern the shell's working drags already use
+  (`desktop.js`'s `onMove` takes no event argument at all and calls
+  `getPosition()`):
+  - **the position comes from `pointerClient()`, not off the event.** Under
+    pointer lock the browser's pointer is frozen and only `movementX` moves, so
+    an event's `clientX` says nothing about where the emulated cursor is.
+  - **the move is listened for on the window *and* the document.** A listener on
+    the control hears nothing while the capture layer keeps the browser's
+    pointer off the emulated UI; the window carries a mouse and the document
+    carries a finger on the touchpad. Setting a selection to the pointer, or a
+    value to the pointer, is idempotent, so being called from both costs nothing
+    and being called from only one still works.
+
+### Fixed
+
+- **Nothing the mouse dragged on a desktop, and the mark that told it to ignore
+  every press.** `simEcho` means "this routed press accompanies a real one". On
+  a mouse, `cursor.js` routes the press by handing `synthClick` the *real*
+  trusted event, so the routed press it delivers — the only press a control
+  inside the emulated UI ever sees, because the real one lands on the capture
+  layer — is marked as the echo. Skipping it, as `desktop.js` correctly does for
+  *its* window-level press bookkeeping, meant the slider ignored every press on
+  a desktop and worked perfectly on a phone. The mark is about a shell surface
+  seeing two presses; a control sees one, and must not skip it.
+
+- **Dragging a text selection with a mouse still did nothing**, in every text
+  field in the app — Notepad, the Explorer address bar, find boxes, search. Two
+  causes, both fixed above: the position came from `event.clientX`, which is
+  frozen under pointer lock, and the move was listened for on the document
+  only, which carries a finger but not a mouse.
+
 ## [1.23.6] - A mouse drag reaches the controls that follow the pointer
 
 2026-10-15

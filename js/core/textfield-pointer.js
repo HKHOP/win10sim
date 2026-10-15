@@ -6,10 +6,29 @@
 // listeners - which only exist while a selection is being dragged - out of the
 // field that owns them, so a window full of fields costs nothing until a finger
 // or a pointer actually goes down on one.
+//
+// The position comes from `pointerClient()` rather than off the event, and the
+// move is listened for on both the window and the document. Both matter, and for
+// the same reasons as the desktop's icon drag (see desktop.js's onMove, which
+// takes no event argument at all): a listener on the field hears nothing while
+// the capture layer keeps the browser's pointer off the emulated UI, and under
+// pointer lock the browser's pointer is frozen, so an event's clientX says
+// nothing about where the emulated cursor is. The window carries a mouse; the
+// document carries a finger on the touchpad. Setting a selection to the pointer
+// is idempotent, so being called from both costs nothing.
+
+import { pointerClient } from './cursor.js';
 
 export function attachPointer(host, doc, ops) {
   var dragAnchor = null;
   var dragging = false;
+
+  // Where the emulated pointer is in the field, or null before there is a
+  // cursor to ask.
+  function caretAtPointer() {
+    var at = pointerClient();
+    return at ? ops.view.indexAt(at.x, at.y) : null;
+  }
 
   function selectWordAt(at) {
     var value = ops.state.value;
@@ -33,7 +52,10 @@ export function attachPointer(host, doc, ops) {
       // The right button belongs to the context menu, not to the caret.
       return;
     }
-    var at = ops.view.indexAt(event.clientX, event.clientY);
+    var at = caretAtPointer();
+    if (at === null) {
+      return;
+    }
     host.focus({ preventScroll: true });
     // A field reached with the pointer has no ring round it: the caret is the
     // feedback, and the ring is for someone arriving by keyboard. See the note
@@ -60,22 +82,41 @@ export function attachPointer(host, doc, ops) {
     }
   }
 
-  function onMouseMove(event) {
+  function onMouseMove() {
     if (dragAnchor == null) {
       return;
     }
-    var at = ops.view.indexAt(event.clientX, event.clientY);
+    var at = caretAtPointer();
+    if (at === null) {
+      return;
+    }
     ops.state.start = Math.min(dragAnchor, at);
     ops.state.end = Math.max(dragAnchor, at);
     ops.paint();
     ops.keepCaretVisible();
   }
 
-  function onMouseUp() {
+  // Attaches the move and release listeners to both the window and the document.
+// See the note at the top: the window carries a mouse, the document carries a
+// finger, and neither alone is the whole shell.
+function listenMove() {
+  window.addEventListener('mousemove', onMouseMove);
+  doc.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+  doc.addEventListener('mouseup', onMouseUp);
+}
+
+function stopListening() {
+  window.removeEventListener('mousemove', onMouseMove);
+  doc.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener('mouseup', onMouseUp);
+  doc.removeEventListener('mouseup', onMouseUp);
+}
+
+function onMouseUp() {
     if (dragging) {
       dragging = false;
-      doc.removeEventListener('mousemove', onMouseMove);
-      doc.removeEventListener('mouseup', onMouseUp);
+      stopListening();
     }
     if (dragAnchor == null) {
       return;
@@ -90,8 +131,7 @@ export function attachPointer(host, doc, ops) {
       return;
     }
     dragging = true;
-    doc.addEventListener('mousemove', onMouseMove);
-    doc.addEventListener('mouseup', onMouseUp);
+    listenMove();
   });
 
   return {
@@ -100,8 +140,7 @@ export function attachPointer(host, doc, ops) {
         return;
       }
       dragging = false;
-      doc.removeEventListener('mousemove', onMouseMove);
-      doc.removeEventListener('mouseup', onMouseUp);
+      stopListening();
     }
   };
 }
