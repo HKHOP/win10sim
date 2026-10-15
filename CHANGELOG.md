@@ -108,8 +108,6 @@ and Themes.
 
 ## [1.26.0] - Cortana leaves, and two layouts that were never right
 
-## [1.26.0] - Cortana leaves, and two layouts that were never right
-
 2026-10-15
 
 ### Added
