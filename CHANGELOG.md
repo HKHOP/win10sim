@@ -3,6 +3,49 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.5] - Sliders can be dragged with the pointer
+
+2026-10-15
+
+### Added
+
+- **`js/apps/settings/sliderdrag.js`** — the drag for a range input, done here
+  rather than left to the browser. One helper rather than a copy per control,
+  because two sliders that drag differently is a thing you only notice on the
+  second one.
+
+### Removed
+
+- None
+
+### Changed
+
+- **`js/apps/settings/widgets.js`**: the app volume sliders on
+  System > Sound are draggable too. They were native range inputs with an
+  `input` listener and nothing else, so they had the same dead thumb.
+
+### Fixed
+
+- **The emulated pointer cannot drag a slider at all.** Three things in
+  `cursor.js` add up to it:
+  - **There is no `pointerdown`.** The cursor dispatches MouseEvents only, so the
+    `pointerdown` handler that was there never ran — not once, for any slider,
+    on any platform. A keyboard works, because arrow keys raise `input`
+    themselves.
+  - **`mousemove` is dispatched on the document, with `bubbles: false`.** That is
+    deliberate, so the shell's own window and tile drags are not fed twice — but
+    it means a control that wants to follow the pointer must listen on the
+    document, which is what a text selection does (`textfield-pointer.js`) and
+    what this now does.
+  - **The browser's own drag races ours**, so the default is declined and the
+    focus taken by hand; declining the default is also what stops the browser
+    focusing the input, which is why the focus is not just left to it.
+
+  The value is mapped so the thumb's *centre* follows the pointer — travel is
+  the track less the thumb — and snapped to the step here too, so the store is
+  never handed a value the control would immediately round differently. An echo
+  press is skipped, following the device press, as `desktop.js` does.
+
 ## [1.23.4] - The switch knob sits in the middle of its track
 
 2026-10-15

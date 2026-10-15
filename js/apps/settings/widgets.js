@@ -10,6 +10,10 @@
 // Forty camera permissions are forty settings, not one object that grows, which
 // is what lets a single one be reset and what lets "Find a setting" find it.
 
+// The Apps & features, Start-up and volume-mixer lists all build real range
+// inputs, so they all need the drag helper rather than only the value controls.
+import { attachSlider } from './sliderdrag.js';
+
 function el(tag, className, text) {
   var node = document.createElement(tag);
   if (className) {
@@ -352,9 +356,12 @@ export function deviceList(item, ops) {
 }
 
 // The app volume mixer: one slider per app, which is what Settings > Sound shows
-// under "App volume and device preferences".
+// under "App volume and device preferences". They are real range inputs and they
+// are draggable, through the same helper the value controls use - the emulated
+// pointer cannot drive a native one (see sliderdrag.js).
 export function appVolumeList(item, ops) {
   var box = el('div', 'set-list');
+  var disposers = [];
   ops.apps().filter(function (app) { return !app.hidden; }).forEach(function (app) {
     var row = el('div', 'set-mixer-row');
     row.appendChild(el('span', 'set-mixer-name', app.name));
@@ -363,23 +370,33 @@ export function appVolumeList(item, ops) {
     input.className = 'set-slider set-slider--slim';
     input.min = '0';
     input.max = '100';
+    input.step = '1';
     input.setAttribute('aria-label', app.name + ' volume');
     var key = 'sound.app.' + app.id;
-    input.value = String(ops.value(key));
-    // The filled part of the track is a gradient over --fill; without it the
-    // slider would draw as an empty grey line whatever the volume is.
-    input.style.setProperty('--fill', Math.max(0, Math.min(100, Number(input.value))) + '%');
-    var readout = el('span', 'set-slider-value', input.value);
-    input.addEventListener('input', function () {
-      ops.write(key, Number(input.value));
-      input.style.setProperty('--fill', Math.max(0, Math.min(100, Number(input.value))) + '%');
-      readout.textContent = input.value;
+    var readout = el('span', 'set-slider-value');
+    var slider = attachSlider(input, {
+      min: 0,
+      max: 100,
+      step: 1,
+      write: function (value) {
+        ops.write(key, value);
+      },
+      paint: function (value) {
+        readout.textContent = String(value);
+      }
     });
+    slider.sync(ops.value(key));
+    disposers.push(slider.dispose);
     row.appendChild(input);
     row.appendChild(readout);
     box.appendChild(row);
   });
-  return { el: box };
+  return {
+    el: box,
+    dispose: function () {
+      disposers.forEach(function (fn) { fn(); });
+    }
+  };
 }
 
 // Cameras, with the Configure and Disable pair Windows puts on each.

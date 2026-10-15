@@ -15,6 +15,7 @@
 
 import { CHEVRON_SVG } from '../../global/icons.js';
 import { defaultOf } from './schema.js';
+import { attachSlider } from './sliderdrag.js';
 
 function row(className, labelText) {
   var el = document.createElement('div');
@@ -227,55 +228,26 @@ function sliderControl(item, ops) {
   track.appendChild(readout);
   el.appendChild(track);
 
-  // Pressing the track jumps the thumb there rather than waiting for a drag,
-  // which is what makes a slider usable with a finger and with the emulated
-  // cursor. Nothing is prevented, so a real drag still works afterwards.
-  input.addEventListener('pointerdown', function (event) {
-    var box = input.getBoundingClientRect();
-    if (!box.width) {
-      return;
+  // The drag is ours rather than the browser's - see sliderdrag.js for why it
+  // has to be, and for what the keyboard still gets from the UA.
+  var slider = attachSlider(input, {
+    min: item.min,
+    max: item.max,
+    step: item.step || 1,
+    write: function (value) {
+      ops.write(item.key, value);
+    },
+    paint: function (value) {
+      readout.textContent = value + (item.suffix || '');
     }
-    var at = (event.clientX - box.left) / box.width;
-    var min = Number(item.min);
-    var max = Number(item.max);
-    var next = min + Math.max(0, Math.min(1, at)) * (max - min);
-    input.value = String(next);
-    ops.write(item.key, Number(input.value));
-  });
-  input.addEventListener('input', function () {
-    ops.write(item.key, Number(input.value));
-  });
-  input.addEventListener('keydown', function (event) {
-    // The arrows change the value, and the value has to be stored, so the write
-    // happens here rather than waiting for an `input` the synthetic keystroke
-    // may not raise.
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' &&
-        event.key !== 'ArrowUp' && event.key !== 'ArrowDown' &&
-        event.key !== 'PageUp' && event.key !== 'PageDown' &&
-        event.key !== 'Home' && event.key !== 'End') {
-      return;
-    }
-    window.setTimeout(function () {
-      ops.write(item.key, Number(input.value));
-    }, 0);
   });
 
   return {
     el: el,
     sync: function () {
-      var current = ops.value(item.key);
-      // Only move the thumb when it is not the one being used: writing the value
-      // back mid-drag makes the handle jump under the pointer.
-      if (document.activeElement !== input && !input.matches(':active')) {
-        input.value = String(current);
-      }
-      var min = Number(item.min);
-      var max = Number(item.max);
-      var span = max - min;
-      var pct = span > 0 ? Math.round(((current - min) / span) * 100) : 0;
-      input.style.setProperty('--fill', Math.max(0, Math.min(100, pct)) + '%');
-      readout.textContent = current + (item.suffix || '');
-    }
+      slider.sync(ops.value(item.key));
+    },
+    dispose: slider.dispose
   };
 }
 
