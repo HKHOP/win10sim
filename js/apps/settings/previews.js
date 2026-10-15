@@ -393,64 +393,75 @@ export function displayBoxes(item, ops) {
   return { el: frame };
 }
 
-// Storage: the "See what's new" tiles, and the category bars for the system
-// drive. Both are read off the volume, which is the only place that knows how
-// much of the disk is used.
-export function storageUsage(item, ops) {
-  var box = el('div', 'set-storage-tiles');
-  var tiles = [
-    { name: 'Temporary files', icon: '◱', key: 'storage.temp' },
-    { name: 'Downloads', icon: '⇩', key: 'storage.downloads' },
-    { name: 'Recycle Bin', icon: '⌫', key: 'storage.recycle' }
-  ];
-  tiles.forEach(function (tile) {
-    var cell = el('button', 'set-storage-tile');
-    cell.type = 'button';
-    cell.appendChild(el('span', 'set-storage-art', tile.icon));
-    cell.appendChild(el('span', 'set-storage-name', tile.name));
-    cell.appendChild(el('span', 'set-storage-size', '0 bytes'));
-    cell.addEventListener('click', function () {
-      ops.run('storage.open', tile.key);
-    });
-    box.appendChild(cell);
-  });
+// The drive itself, off the top of the Storage page: its name and capacity as a
+// heading, then the used and free figures either side of the bar.
+//
+// The numbers come off the volume, which is the only thing that knows them, and
+// the drive is named as Windows names it. A page that claimed a fixed figure for
+// a disk that is not that size would be the one place on this page where the
+// picture was not the machine.
+export function storageDrive(item, ops) {
+  var box = el('div', 'set-drive');
+  var usage = ops.storageUsage();
+  box.appendChild(el('div', 'set-drive-name', 'New Volume (C:) - ' + capacityText(usage.total)));
+  var caption = el('div', 'set-drive-caption');
+  caption.appendChild(el('span', 'set-drive-used', bytesText(usage.used) + ' used'));
+  caption.appendChild(el('span', 'set-drive-free', bytesText(usage.total - usage.used) + ' free'));
+  box.appendChild(caption);
+  var bar = el('div', 'set-drive-bar');
+  var fill = el('span', 'set-drive-fill');
+  fill.style.width = (usage.total ? Math.max(1, (usage.used / usage.total) * 100) : 0) + '%';
+  bar.appendChild(fill);
+  box.appendChild(bar);
   return { el: box };
 }
 
-export function storageBreakdown(item, ops) {
-  var box = el('div', 'set-storage');
-  var rows = [
-    { name: 'Apps & features', colour: '#0078d7', key: 'storage.apps' },
-    { name: 'Documents', colour: '#00b294', key: 'storage.documents' },
-    { name: 'Pictures, videos, music', colour: '#e97000', key: 'storage.media' },
-    { name: 'Temporary files', colour: '#8764b8', key: 'storage.temp' },
-    { name: 'System & reserved', colour: '#7a7574', key: 'storage.system' }
-  ];
-  function paint() {
-    box.textContent = '';
-    var total = ops.storageUsage();
-    var bar = el('div', 'set-storage-bar');
-    var legend = el('div', 'set-storage-legend');
-    rows.forEach(function (rowInfo) {
-      var bytes = ops.value(rowInfo.key) || 0;
-      var part = el('span', 'set-storage-part');
-      part.style.background = rowInfo.colour;
-      part.style.width = (total.used ? Math.max(1, (bytes / total.used) * 100) : 0) + '%';
-      bar.appendChild(part);
-      var entry = el('div', 'set-storage-legend-row');
-      var dot = el('span', 'set-storage-dot');
-      dot.style.background = rowInfo.colour;
-      entry.appendChild(dot);
-      entry.appendChild(el('span', 'set-storage-legend-name', rowInfo.name));
-      entry.appendChild(el('span', 'set-storage-legend-size', bytesText(bytes)));
-      legend.appendChild(entry);
-    });
-    box.appendChild(el('div', 'set-storage-caption', 'C:  ' + bytesText(total.used) + ' used of ' + bytesText(total.total)));
-    box.appendChild(bar);
-    box.appendChild(legend);
+// A disk size the way Windows writes it: "68.8 GB", not "68.8GB", and in the same
+// units bytesText() already works in.
+function capacityText(bytes) {
+  if (!bytes) {
+    return '0 GB';
   }
-  paint();
-  return { el: box, refresh: paint };
+  return bytesText(bytes);
+}
+
+// What the drive is full of: one row per category, with the glyph, the category
+// and its explanation, and how much of the disk it has.
+//
+// The sizes are read off the volume. A category this machine has decided to keep
+// reads zero bytes, which is the truth rather than a placeholder. The glyph is a
+// real MDL2 outline rather than a character, so it colours like every other mark
+// on the page.
+export function storageList(item, ops) {
+  var box = el('div', 'set-list');
+  (item.items || []).forEach(function (row) {
+    var node = el('button', 'set-storage-row');
+    node.type = 'button';
+    var art = el('span', 'set-storage-row-art');
+    art.innerHTML = glyphFor(row.glyph) || '';
+    if (!art.innerHTML) {
+      art.classList.add('is-empty');
+    }
+    node.appendChild(art);
+    var body = el('div', 'set-storage-row-body');
+    body.appendChild(el('span', 'set-storage-row-name', row.name));
+    if (row.sub) {
+      body.appendChild(el('span', 'set-storage-row-sub', row.sub));
+    }
+    node.appendChild(body);
+    node.appendChild(el('span', 'set-storage-row-size', bytesText(ops.value(row.key) || 0)));
+    node.addEventListener('click', function () {
+      // A row that names where it goes opens that; the rest are Windows' own
+      // dialogs, which this machine has not got, and say so.
+      if (row.to) {
+        ops.navigate(row.to);
+      } else if (row.action) {
+        ops.run(row.action);
+      }
+    });
+    box.appendChild(node);
+  });
+  return { el: box };
 }
 
 function bytesText(bytes) {
@@ -556,8 +567,8 @@ export var PREVIEW_WIDGETS = {
   themeGallery: themeGallery,
   themePicker: themePicker,
   displayBoxes: displayBoxes,
-  storageUsage: storageUsage,
-  storageBreakdown: storageBreakdown,
+  storageDrive: storageDrive,
+  storageList: storageList,
   usageChart: usageChart,
   specList: specList,
   clock: clock,

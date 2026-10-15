@@ -162,16 +162,41 @@ export var USER_ACCOUNTS = {
 
 export var OTHER_PEOPLE = {
   id: 'otherPeople',
-  title: 'Other people',
-  glyph: 'signin',
+  title: 'Family & other users',
+  glyph: 'family',
   groups: [
     {
-      id: 'list',
-      title: 'Other people',
+      id: 'other',
+      title: 'Other users',
       items: [
-        { kind: 'accountList', label: 'Other people', source: 'other' },
-        { kind: 'button', label: 'Add someone else to this PC', action: 'accounts.addOther' },
-        { kind: 'button', label: 'Set up a family', action: 'accounts.setUpFamily' }
+        { kind: 'text', text: 'Allow people who are not part of your family to sign in with their own accounts. This won’t add them to your family.' },
+        { kind: 'button', label: 'Add someone else to this PC', action: 'accounts.addOther', icon: 'add', wide: true },
+        { kind: 'accountRow', name: 'admin_demo', role: 'Administrator', account: 'Local account' }
+      ]
+    },
+    {
+      id: 'kiosk',
+      title: 'Set up a kiosk',
+      items: [
+        {
+          kind: 'ruleRow',
+          key: 'accounts.kioskAssignedAccess',
+          icon: 'desktopIcons',
+          label: 'Assigned access',
+          sublabel: 'Set up this device as a kioskâ€”this could be a digital sign, an interactive display, a public browser, among other things.',
+          default: true
+        }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Help from the web',
+      links: [
+        { label: 'Creating a local user account', action: 'accounts.help.local' },
+        { label: 'Switching to a local account', action: 'accounts.help.switchLocal' },
+        { label: 'Setting screen time limits', action: 'accounts.help.screenTime' },
+        { label: 'Switching users', action: 'accounts.help.switch' }
       ]
     }
   ]
@@ -231,7 +256,7 @@ export var WORKPLACE = {
       id: 'workplace',
       title: 'If your organization uses Azure Active Directory (Azure AD)',
       items: [
-        { kind: 'note', text: 'You haven’t connected any work or school accounts to this device.' }
+        { kind: 'note', text: 'You havenâ€™t connected any work or school accounts to this device.' }
       ]
     },
     {
@@ -354,7 +379,7 @@ export var LANGUAGE_REGION = {
           options: [
             { value: 'English (United States)', label: 'English (United States)' },
             { value: 'Deutsch (Deutschland)', label: 'Deutsch (Deutschland)' },
-            { value: 'Español (España)', label: 'Español (España)' }
+            { value: 'EspaÃ±ol (EspaÃ±a)', label: 'EspaÃ±ol (EspaÃ±a)' }
           ]
         },
         {
@@ -499,7 +524,7 @@ export var INPUT_METHOD = {
         {
           kind: 'toggle',
           key: 'time.useOsTextInput',
-          label: 'Let me use my computer’s default text input settings',
+          label: 'Let me use my computerâ€™s default text input settings',
           default: false
         }
       ]

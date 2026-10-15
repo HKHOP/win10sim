@@ -14,6 +14,7 @@
 // inputs, so they all need the drag helper rather than only the value controls.
 import { attachSlider } from './sliderdrag.js';
 import { glyphFor } from './glyphmap.js';
+import { ACCOUNT_PIC_SRC } from '../../global/constants.js';
 
 function el(tag, className, text) {
   var node = document.createElement(tag);
@@ -110,8 +111,8 @@ export function appsList(item, ops) {
           name: app.name,
           icon: app.icon,
           subtitle: (manifest ? manifest.publisher : 'Microsoft Corporation') +
-            '   ·   ' + (APP_SIZES[app.id] || '1.20 MB') +
-            '   ·   ' + (manifest ? manifest.version : '10.0.19041.1')
+            '   Â·   ' + (APP_SIZES[app.id] || '1.20 MB') +
+            '   Â·   ' + (manifest ? manifest.version : '10.0.19041.1')
         }, { right: right }));
       });
     if (!elBox.childElementCount) {
@@ -160,7 +161,7 @@ export function startupSort(item, ops) {
   button.type = 'button';
   var current = 'Name';
   function paint() {
-    button.textContent = current + '  ' + '▾';
+    button.textContent = current + '  ' + 'â–¾';
   }
   button.addEventListener('click', function () {
     current = current === 'Name' ? 'Impact' : 'Name';
@@ -309,7 +310,7 @@ export function defaultApps(item, ops) {
     rows.forEach(function (rowInfo) {
       var row = el('button', 'set-default-row');
       row.type = 'button';
-      var art = el('span', 'set-default-art', rowInfo.icon || '▢');
+      var art = el('span', 'set-default-art', rowInfo.icon || 'â–¢');
       row.appendChild(art);
       var body = el('span', 'set-default-body');
       body.appendChild(el('span', 'set-default-kind', rowInfo.kind));
@@ -331,6 +332,38 @@ export function defaultApps(item, ops) {
   return { el: box, refresh: paint };
 }
 
+// An account on Family & other users: the avatar, the name, what it is, and the
+// two things Windows lets you do to it. Not a list of accounts the shell reports
+// - there is no other user table to ask, and this machine has exactly one local
+// account, so the page names it rather than inventing a second.
+//
+// The two buttons are in the row rather than beside it, because that is how
+// Windows draws a selected account: the row becomes the card the buttons live in.
+export function accountRow(item, ops) {
+  var row = el('button', 'set-account');
+  row.type = 'button';
+  var art = el('div', 'set-account-art');
+  var img = document.createElement('img');
+  img.src = ACCOUNT_PIC_SRC;
+  img.alt = '';
+  art.appendChild(img);
+  row.appendChild(art);
+  var body = el('div', 'set-account-body');
+  body.appendChild(el('div', 'set-account-name', item.name || 'Account'));
+  var what = [item.role || item.kind, item.account].filter(Boolean).join(' · ');
+  body.appendChild(el('div', 'set-account-sub', what));
+  row.appendChild(body);
+  var actions = el('div', 'set-account-actions');
+  actions.appendChild(smallButton('Change account type', function () {
+    ops.run('accounts.changeType', item.name);
+  }));
+  actions.appendChild(smallButton('Remove', function () {
+    ops.run('accounts.remove', item.name);
+  }));
+  row.appendChild(actions);
+  return { el: row };
+}
+
 // The device lists Windows shows as "Your devices" and "Printers & scanners".
 var DEVICE_SETS = {
   bluetooth: [
@@ -348,7 +381,7 @@ export function deviceList(item, ops) {
   var box = el('div', 'set-list');
   (DEVICE_SETS[item.source] || []).forEach(function (device) {
     var row = el('div', 'set-device');
-    row.appendChild(el('span', 'set-device-art', '◧'));
+    row.appendChild(el('span', 'set-device-art', 'â—§'));
     var body = el('span', 'set-device-body');
     body.appendChild(el('span', 'set-device-name', device.name));
     body.appendChild(el('span', 'set-device-sub', device.kind));
@@ -451,7 +484,7 @@ export function cameraList(item, ops) {
     right.appendChild(disable);
     var row = appRow({ name: camera.name, icon: '', subtitle: '' }, { right: right });
     row.classList.add('set-app--wide');
-    var mark = el('span', 'set-device-mark', '✓');
+    var mark = el('span', 'set-device-mark', 'âœ“');
     mark.hidden = !on;
     row.insertBefore(mark, row.firstChild);
     box.appendChild(row);
@@ -542,7 +575,7 @@ export function featureList(item, ops) {
 // Manage link. The state is a setting, so it survives being changed here.
 export function protectionRow(item, ops) {
   var row = el('div', 'set-protection');
-  row.appendChild(el('span', 'set-protection-art', item.icon === 'people' ? '☺' : '⬟'));
+  row.appendChild(el('span', 'set-protection-art', item.icon === 'people' ? 'â˜º' : 'â¬Ÿ'));
   var body = el('div', 'set-protection-body');
   body.appendChild(el('div', 'set-protection-title', item.label));
   var state = el('div', 'set-protection-state');
@@ -623,12 +656,12 @@ export function appsFilter(item, ops) {
   field.addEventListener('input', function () {
     ops.setFilter('appsFeatures', { query: field.value.trim().toLowerCase() });
   });
-  var sort = el('button', 'set-filter-button', 'Sort by: Name  ▾');
+  var sort = el('button', 'set-filter-button', 'Sort by: Name  â–¾');
   sort.type = 'button';
   sort.addEventListener('click', function () {
     var next = ops.filterFor('appsFeatures').sort === 'name' ? 'size' : 'name';
     ops.setFilter('appsFeatures', { sort: next });
-    sort.textContent = 'Sort by: ' + (next === 'size' ? 'Size' : 'Name') + '  ▾';
+    sort.textContent = 'Sort by: ' + (next === 'size' ? 'Size' : 'Name') + '  â–¾';
   });
   box.appendChild(field);
   box.appendChild(sort);

@@ -83,8 +83,9 @@ export var KINDS = {
   helpLinks: { value: false },
   specList: { value: false },
   usageChart: { value: false },
-  storageUsage: { value: false },
-  storageBreakdown: { value: false },
+  storageDrive: { value: false },
+  // The rows under the drive: glyph, name, explanation, size.
+  storageList: { value: false },
   dataUsage: { value: false },
   sitePermissions: { value: false },
   profileCard: { value: false },
@@ -97,6 +98,10 @@ export var KINDS = {
   pairedDevices: { value: false },
   appVolumeList: { value: false },
   accountList: { value: false },
+  // A named account with the two things Windows lets you do to it: its type and
+  // whether it exists. Family & other users names its one account outright,
+  // because there is no other-user table on the machine to ask.
+  accountRow: { value: false },
   cameraList: { value: false },
   featureList: { value: false },
   protectionHistory: { value: false },

@@ -437,7 +437,7 @@ export var FOCUS_ASSIST = {
     {
       id: 'intro',
       items: [
-        { kind: 'text', text: 'Choose which notification you’d like to see and hear so you can stay focused. The rest will go straight to action center where you can see them any time.' }
+        { kind: 'text', text: 'Choose which notification youâ€™d like to see and hear so you can stay focused. The rest will go straight to action center where you can see them any time.' }
       ]
     },
     {
@@ -465,11 +465,11 @@ export var FOCUS_ASSIST = {
       id: 'rules',
       title: 'Automatic rules',
       items: [
-        { kind: 'text', text: 'Choose the times and activities when you don’t want to be disturbed, and focus assist will turn on automatically.' },
+        { kind: 'text', text: 'Choose the times and activities when you donâ€™t want to be disturbed, and focus assist will turn on automatically.' },
         { kind: 'ruleRow', key: 'focusassist.ruleTimes', icon: 'clock', label: 'During these times', sublabel: '11:00 PM - 7:00 AM; Priority only', default: false },
-        { kind: 'ruleRow', key: 'focusassist.ruleDuplicatingDisplay', icon: 'tvMonitor', label: 'When I’m duplicating my display', sublabel: 'Alarms only', default: true },
-        { kind: 'ruleRow', key: 'focusassist.rulePlayingGame', icon: 'game', label: 'When I’m playing a game', sublabel: 'Priority only', default: true },
-        { kind: 'ruleRow', key: 'focusassist.ruleFullScreen', icon: 'fullScreen', label: 'When I’m using an app in full screen mode', sublabel: 'Alarms only', default: true },
+        { kind: 'ruleRow', key: 'focusassist.ruleDuplicatingDisplay', icon: 'tvMonitor', label: 'When Iâ€™m duplicating my display', sublabel: 'Alarms only', default: true },
+        { kind: 'ruleRow', key: 'focusassist.rulePlayingGame', icon: 'game', label: 'When Iâ€™m playing a game', sublabel: 'Priority only', default: true },
+        { kind: 'ruleRow', key: 'focusassist.ruleFullScreen', icon: 'fullScreen', label: 'When Iâ€™m using an app in full screen mode', sublabel: 'Alarms only', default: true },
         { kind: 'checkbox', key: 'focusassist.summary', label: 'Show me a summary of what I missed while focus assist was on', default: false }
       ]
     }
@@ -726,41 +726,162 @@ export var POWER_USAGE = {
   ]
 };
 
+// Storage. One page for all of it: the Storage Sense switch and the link that
+// opens it, then the drive, then the breakdown of what is using it, then the
+// related settings.
+//
+// The drive is the volume the shell actually has, so its caption is drawn from
+// what is on it rather than being a name in the declaration. The breakdown is a
+// list of what the drive is full of, one row per category, and the one marked
+// "choose" is the one that opens the Storage Sense page - which is how the two
+// are linked rather than by two links that could point at different places.
 export var STORAGE = {
   id: 'storage',
   title: 'Storage',
   glyph: 'storage',
   groups: [
     {
-      id: 'sensenote',
-      title: 'Manage your space',
+      id: 'sense',
+      items: [
+        { kind: 'text', text: 'Storage Sense can automatically free up space by getting rid of files you donâ€™t need, like temporary files and content in your recycle bin.' },
+        { kind: 'toggle', key: 'storage.sense', label: 'Storage Sense', default: false },
+        { kind: 'link', label: 'Configure Storage Sense or run it now', to: 'storageSense' }
+      ]
+    },
+    {
+      id: 'drive',
+      items: [
+        { kind: 'storageDrive', label: 'Storage' }
+      ]
+    },
+    {
+      id: 'breakdown',
+      title: 'This is how your storage is used and how you can free up space.',
       items: [
         {
-          kind: 'toggle',
-          key: 'storage.sense',
-          label: 'Storage Sense',
-          default: false,
-          note: 'Deletes temporary files that are no longer needed, empties the Recycle Bin automatically, and clears the Downloads folder if it has not been used for 30 days.'
+          kind: 'storageList',
+          label: 'Storage usage',
+          items: [
+            { name: 'OneDrive', glyph: 'cloud', key: 'storage.onedrive', sub: 'Remove unused cloud-backed content' },
+            { name: 'Temporary files', glyph: 'trash', key: 'storage.temp', sub: 'Choose which temporary files to remove', choose: 'storageSense' },
+            { name: 'Apps & features', glyph: 'apps', key: 'storage.apps', sub: 'Uninstall unused or undesired apps & features' },
+            { name: 'Other', glyph: 'folder', key: 'storage.other', sub: 'Manage other large folders' }
+          ]
         }
       ]
     },
     {
-      id: 'usage',
-      title: 'Storage usage',
+      id: 'more',
       items: [
-        { kind: 'storageUsage', label: 'See what’s new' },
-        { kind: 'storageBreakdown', label: 'Storage used on C:' }
+        { kind: 'link', label: 'Show more categories', action: 'storage.showMore' }
       ]
     },
     {
       id: 'related',
-      title: 'Related settings',
+      title: 'More storage settings',
       items: [
-        { kind: 'link', label: 'Default Save locations', to: 'defaultSave' }
+        { kind: 'link', label: 'View storage usage on other drives', action: 'storage.otherDrives' },
+        { kind: 'link', label: 'Change where new content is saved', to: 'defaultSave' }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Keep clutter off your PC',
+      text: 'When Storage sense is turned on, itâ€™ll free up space only when your PC is low on space. To clean up unused files now, select Configure Storage Sense or run it now > Clean now.'
+    },
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Disk management help', action: 'storage.help' },
+        { label: 'Fix low disk space', action: 'storage.help.low' },
+        { label: 'Use disk cleanup', action: 'storage.cleanup' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
       ]
     }
   ]
 };
+
+// Configure Storage Sense or run it now. Its own page, reached from Storage's
+// link, and the reason Storage's "Temporary files" row can say where to go.
+export var STORAGE_SENSE = {
+  id: 'storageSense',
+  title: 'Configure Storage Sense or run it now',
+  glyph: 'storage',
+  groups: [
+    {
+      id: 'temp',
+      title: 'Temporary Files',
+      items: [
+        { kind: 'checkbox', key: 'storage.sense.temp', label: 'Delete temporary files that my apps arenâ€™t using', default: true },
+        {
+          kind: 'select',
+          key: 'storage.sense.recycleDays',
+          label: 'Delete files in my recycle bin if they have been there for over:',
+          default: '1 day',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '1 day', label: '1 day' },
+            { value: '14 days', label: '14 days' },
+            { value: '30 days', label: '30 days' },
+            { value: '60 days', label: '60 days' }
+          ]
+        },
+        {
+          kind: 'select',
+          key: 'storage.sense.downloadsDays',
+          label: 'Delete files in my Downloads folder if they havenâ€™t been opened for more than:',
+          default: '1 day',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '1 day', label: '1 day' },
+            { value: '14 days', label: '14 days' },
+            { value: '30 days', label: '30 days' },
+            { value: '60 days', label: '60 days' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'cloud',
+      title: 'Locally available cloud content',
+      items: [
+        { kind: 'text', text: 'Storage Sense can free up space by removing unused cloud-backed content from your device. Content flagged as "Always keep on this device" will not be affected.' },
+        { kind: 'text', text: 'Click here for more information' },
+        {
+          kind: 'select',
+          key: 'storage.sense.onedriveDays',
+          label: 'Content will become online-only if not opened for more than:',
+          default: '1 day',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '1 day', label: '1 day' },
+            { value: '14 days', label: '14 days' },
+            { value: '30 days', label: '30 days' },
+            { value: '60 days', label: '60 days' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'free',
+      title: 'Free up space now',
+      items: [
+        { kind: 'text', text: 'If youâ€™re low on space, we can try to clean up files now using the settings on this page.' },
+        { kind: 'button', label: 'Clean now', action: 'storage.cleanNow' }
+      ]
+    }
+  ]
+};
+
+// Default save locations, unchanged: it is reached from the link at the foot of
+// Storage and from nowhere else, which is where Windows puts it too.
 
 export var DEFAULT_SAVE = {
   id: 'defaultSave',
@@ -882,20 +1003,20 @@ export var MULTITASKING = {
           kind: 'select',
           key: 'multitasking.taskbarShowOn',
           label: 'On the taskbar, show windows that are open on',
-          default: 'Only the desktop I’m using',
+          default: 'Only the desktop Iâ€™m using',
           options: [
             { value: 'All desktops', label: 'All desktops' },
-            { value: 'Only the desktop I’m using', label: 'Only the desktop I’m using' }
+            { value: 'Only the desktop Iâ€™m using', label: 'Only the desktop Iâ€™m using' }
           ]
         },
         {
           kind: 'select',
           key: 'multitasking.altTabShowOn',
           label: 'Pressing Alt+Tab shows windows that are open on',
-          default: 'Only the desktop I’m using',
+          default: 'Only the desktop Iâ€™m using',
           options: [
             { value: 'All desktops', label: 'All desktops' },
-            { value: 'Only the desktop I’m using', label: 'Only the desktop I’m using' }
+            { value: 'Only the desktop Iâ€™m using', label: 'Only the desktop Iâ€™m using' }
           ]
         }
       ]
@@ -936,7 +1057,7 @@ export var PROJECTING = {
     {
       id: 'status',
       items: [
-        { kind: 'note', text: 'This device doesn’t support receiving Miracast, so you can’t project to it wirelessly.' },
+        { kind: 'note', text: 'This device doesnâ€™t support receiving Miracast, so you canâ€™t project to it wirelessly.' },
         { kind: 'text', text: 'Project your Windows phone or PC to this screen, and use its keyboard, mouse and other devices, too.' }
       ]
     },
@@ -946,7 +1067,7 @@ export var PROJECTING = {
         {
           kind: 'select',
           key: 'projecting.discovery',
-          label: 'Windows PCs and phones can project to this PC when you say it’s OK',
+          label: 'Windows PCs and phones can project to this PC when you say itâ€™s OK',
           default: 'Always Off',
           options: [
             { value: 'Always Off', label: 'Always Off' },
@@ -1040,7 +1161,7 @@ export var CLIPBOARD = {
     {
       id: 'intro',
       items: [
-        { kind: 'text', text: 'When you copy or cut something in Windows, it’s copied to the clipboard for you to paste.' }
+        { kind: 'text', text: 'When you copy or cut something in Windows, itâ€™s copied to the clipboard for you to paste.' }
       ]
     },
     {
@@ -1235,6 +1356,7 @@ export var SYSTEM_PAGES = [
   BATTERY,
   POWER_USAGE,
   STORAGE,
+  STORAGE_SENSE,
   DEFAULT_SAVE,
   TABLET,
   MULTITASKING,

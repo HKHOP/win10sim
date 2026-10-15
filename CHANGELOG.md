@@ -3,6 +3,24 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.27.1] - Settings previews syntax fix
+
+2026-10-15
+
+Fixed syntax error in `js/apps/settings/previews.js` caused by duplicate function declaration and duplicate widget keys.
+
+### Added
+- None
+
+### Removed
+- None
+
+### Changed
+- None
+
+### Fixed
+- Fixed duplicate `bytesText` declaration and duplicate entries in `PREVIEW_WIDGETS` in `js/apps/settings/previews.js` causing a syntax error.
+
 ## [1.27.0] - Personalisation, and the amber that was not amber
 
 2026-10-15

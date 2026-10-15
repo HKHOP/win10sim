@@ -2180,97 +2180,113 @@
 
 /* --- storage ------------------------------------------------------------- */
 
-.set-storage-tiles {
+/* The drive: its name and capacity, the used and free figures either side of the
+   bar, and the bar itself. Windows puts this at the top of the Storage page above
+   the sentence that introduces the breakdown, and it is not inside any of it. */
+.set-drive {
+  margin-bottom: 12px;
+}
+
+.set-drive-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-drive-caption {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.set-storage-tile {
-  width: 120px;
-  border: 1px solid var(--set-rule);
-  background: var(--set-panel);
-  padding: 12px 10px;
-  font: inherit;
-  cursor: default;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.set-storage-tile:hover,
-.set-storage-tile.sim-hover {
-  border-color: var(--set-accent);
-}
-
-.set-storage-art {
-  font-size: 22px;
-  color: var(--set-accent);
-}
-
-.set-storage-name {
-  font-size: 11px;
-}
-
-.set-storage-size {
-  font-size: 11px;
-  color: var(--set-ink-soft);
-}
-
-.set-storage {
-  border: 1px solid var(--set-rule);
-  padding: 12px;
-  max-width: 480px;
-}
-
-.set-storage-caption {
+  justify-content: space-between;
+  gap: 16px;
   font-size: 12px;
   color: var(--set-ink-soft);
-  margin-bottom: 8px;
+  margin-top: 2px;
 }
 
-.set-storage-bar {
-  display: flex;
-  height: 14px;
-  background: var(--set-rule-soft);
-  overflow: hidden;
+.set-drive-used,
+.set-drive-free {
+  font-size: 12px;
+  color: var(--set-ink-soft);
 }
 
-.set-storage-part {
+/* One bar, not a stack of coloured ones. Windows draws a single bar whose width
+   is how much of the disk is used and says the same thing in words beside it. */
+.set-drive-bar {
+  height: 6px;
+  margin-top: 4px;
+  background: #e6e6e6;
+}
+
+.set-drive-fill {
   display: block;
+  height: 100%;
+  background: var(--set-accent);
+}
+
+/* What the drive is full of: glyph, the category and what it would do, and how
+   much of the disk it has. Pressing one does what its own explanation says, which
+   is why the row is a button. */
+.set-storage-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: #fff;
+  font: inherit;
+  color: var(--set-ink);
+  text-align: left;
+  cursor: default;
+}
+
+.set-storage-row:hover,
+.set-storage-row.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-storage-row-art {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  color: var(--set-ink-soft);
+}
+
+.set-storage-row-art svg {
+  width: 100%;
   height: 100%;
 }
 
-.set-storage-legend {
-  margin-top: 10px;
+/* A row whose glyph is missing keeps its space, so the sizes still line up. */
+.set-storage-row-art.is-empty {
+  visibility: hidden;
+}
+
+.set-storage-row-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 
-.set-storage-legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.set-storage-row-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-storage-row-sub {
   font-size: 12px;
-}
-
-.set-storage-dot {
-  width: 10px;
-  height: 10px;
-  flex: 0 0 10px;
-}
-
-.set-storage-legend-name {
-  flex: 1 1 auto;
-}
-
-.set-storage-legend-size {
   color: var(--set-ink-soft);
 }
 
-/* --- charts -------------------------------------------------------------- */
+.set-storage-row-size {
+  font-size: 12px;
+  color: var(--set-ink);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 
 .set-chart {
   display: flex;
@@ -2408,6 +2424,64 @@
 
 .set-protection.is-attention .set-protection-art {
   color: #a4262c;
+}
+
+.set-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: #fff;
+  font: inherit;
+  color: var(--set-ink);
+  text-align: left;
+  cursor: default;
+}
+
+.set-account:hover,
+.set-account.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-account-art {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #ccc;
+}
+
+.set-account-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.set-account-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.set-account-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-account-sub {
+  font-size: 11px;
+  color: var(--set-ink-soft);
+}
+
+.set-account-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 
 /* --- narrow windows ------------------------------------------------------
