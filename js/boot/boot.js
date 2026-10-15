@@ -22,6 +22,7 @@ import '../apps/explorer/app.js';
 import '../apps/notepad/app.js';
 import '../apps/edge/app.js';
 import '../apps/store/app.js';
+import '../apps/settings/app.js';
 
 // Boot flow: black splash with logo + spinner, then the classic Win10 bug
 // (logo and spinner vanish for no reason), a beat of dead black, and the

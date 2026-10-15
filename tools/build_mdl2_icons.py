@@ -122,6 +122,66 @@ GLYPHS = {
     # The virtual keyboard's own toggle and its drag handle.
     "KEYBOARD": (0xE92E, "KeyboardStandard"),
     "GRIP_H": (0xE76F, "GripperBarHorizontal"),
+    # Settings. One glyph per category and per page in the Settings nav, each
+    # the name Microsoft documents for it rather than a name for how it looks -
+    # see README-mdl2.md for why that distinction matters here. The list was
+    # built by name (searching Microsoft's table for "Storage", "Touchpad" and
+    # so on) and then checked by rendering every one of them to a contact sheet
+    # with tools/mdl2_sheet.js, so each is known to be both correctly named and
+    # the shape that name promises.
+    "PERSONALIZE": (0xE771, "Personalize"),
+    "CELL_PHONE": (0xE8EA, "CellPhone"),
+    "ACCOUNTS": (0xE910, "Accounts"),
+    "QUIET_HOURS": (0xE708, "QuietHours"),
+    "AIRPLANE": (0xE709, "Airplane"),
+    "DEVICES": (0xE772, "Devices"),
+    "TIME_LANGUAGE": (0xE775, "TimeLanguage"),
+    "XBOX": (0xE990, "XboxOneConsole"),
+    "BLUETOOTH": (0xE702, "Bluetooth"),
+    "KEYBOARD_CLASSIC": (0xE765, "KeyboardClassic"),
+    "USB": (0xE88E, "USB"),
+    "SPEAKERS": (0xE7F5, "Speakers"),
+    "MEDIA_STORAGE_TOWER": (0xE965, "MediaStorageTower"),
+    "TABLET_MODE": (0xEBFC, "TabletMode"),
+    "DOCK": (0xE952, "Dock"),
+    "DOCK_BOTTOM": (0xE90E, "DockBottom"),
+    "PROJECTOR": (0xE95D, "Projector"),
+    "PICTURE": (0xE8B9, "Picture"),
+    "SET_LOCK_SCREEN": (0xE7B5, "SetlockScreen"),
+    "LIBRARY": (0xE8F1, "Library"),
+    "FONT": (0xE8D2, "Font"),
+    "PERMISSIONS": (0xE8D7, "Permissions"),
+    "DOWNLOAD_MAP": (0xE826, "DownloadMap"),
+    "LIGHTNING_BOLT": (0xE945, "LightningBolt"),
+    "CONTACT_PRESENCE": (0xE8CF, "ContactPresence"),
+    "CALENDAR": (0xE787, "Calendar"),
+    "LANGUAGE_CHT": (0xE88C, "LanguageCht"),
+    "HEADPHONE": (0xE7F6, "Headphone"),
+    "GAME": (0xE7FC, "Game"),
+    "LOCATION": (0xE81D, "Location"),
+    "ADMIN": (0xE7EF, "Admin"),
+    "DEFENDER_APP": (0xE83D, "DefenderApp"),
+    "UPDATE_RESTORE": (0xE777, "UpdateRestore"),
+    "REPAIR": (0xE90F, "Repair"),
+    "REPEAT_ALL": (0xE8EE, "RepeatAll"),
+    "CLOUD": (0xE753, "Cloud"),
+    "CERTIFICATE": (0xEB95, "Certificate"),
+    "CODE": (0xE943, "Code"),
+    "DIAGNOSTIC": (0xE9D9, "Diagnostic"),
+    "VIDEO": (0xE714, "Video"),
+    "TOUCHPAD": (0xE815, "Touch"),
+    "NETWORK": (0xE968, "Network"),
+    "VPN": (0xE705, "VPN"),
+    "WIFI_HOTSPOT": (0xE88A, "WifiHotspot"),
+    "DATA_SENSE": (0xE791, "DataSense"),
+    "CHECKBOX_COMPOSITE": (0xE73A, "CheckboxComposite"),
+    # Settings draws these too, and the shell already used the REFRESH outline
+    # for Restart, which is why Sync - a different codepoint, not an alias - was
+    # not in the list until Settings wanted it.
+    "MICROPHONE": (0xE720, "Microphone"),
+    "MOUSE": (0xE962, "Mouse"),
+    "MAIL": (0xE715, "Mail"),
+    "SYNC": (0xE895, "Sync"),
 }
 
 

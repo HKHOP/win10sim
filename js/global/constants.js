@@ -96,6 +96,11 @@ export const RECYCLE_BIN_SRC = 'assets/recycle-bin.png';
 export const EXPLORER_SRC = 'assets/file-explorer.png';
 export const EDGE_SRC = 'assets/microsoft-edge.png';
 export const STORE_SRC = 'assets/Microsoft_Store_logo_light.png';
+// Settings' own artwork: the gear with a tick, which is the icon Win10 shows
+// for it in the taskbar, on the Start tile and in Apps & features. It is the
+// real Imageres outline from the shell's own icon library, extracted like the
+// rest - see assets/shell/.
+export const SETTINGS_SRC = 'assets/shell/settings-gear.png';
 // Generic item artwork for Explorer listings.
 export const FOLDER_SRC = 'assets/folder.png';
 export const FILE_SRC = 'assets/file.png';

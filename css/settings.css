@@ -1,0 +1,1864 @@
+/* Windows 10 Settings.
+ *
+ * The shape of the whole app: a caption with the back button inside it, a nav
+ * pane on the left carrying the search box and the categories, and a page on the
+ * right. Everything below is one of those three, or a control inside a page.
+ *
+ * Two conventions this file follows throughout, because they are the shell's:
+ *
+ *   - Every interactive element is authored `:hover, .sim-hover`. The capture
+ *     layer keeps the browser's pointer off the emulated UI, so real :hover
+ *     never fires on any of it and .sim-hover is the only hover the OS gets.
+ *   - Colours come from --set-accent rather than being written in, because
+ *     Personalisation > Colors is supposed to be able to change them.
+ */
+
+.set-root {
+  --set-accent: #0078d7;
+  --set-ink: #1a1a1a;
+  --set-ink-soft: #5f6368;
+  --set-rule: #e3e3e3;
+  --set-rule-soft: #f0f0f0;
+  --set-panel: #fafafa;
+  --set-hover: #f3f3f3;
+  --set-pressed: #e8e8e8;
+  /* Win10's Settings body type. */
+  font-family: "Segoe UI", "Segoe UI Web (West European)", Tahoma, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--set-ink);
+  background: #fff;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The accent on a coloured fill is white; on a light one it stays dark or the
+   label disappears. Windows swaps which surfaces carry the accent colour for
+   exactly this reason. */
+.set-root.is-dark-accent {
+  --set-hover: #f6e9e9;
+}
+
+/* --- the caption --------------------------------------------------------- */
+
+.set-caption {
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  flex: 0 0 auto;
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid var(--set-rule);
+  order: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+}
+
+/* The nav button. It is hidden on a window wide enough to show the nav beside
+   the page, and shown on one narrow enough to need it as a drawer - the same
+   question answered twice, by CSS, with nothing in JS to keep in step. */
+.set-nav-toggle {
+  display: none;
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--set-ink);
+  cursor: default;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.set-nav-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.set-nav-toggle:hover,
+.set-nav-toggle.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-back {
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--set-ink);
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.set-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.set-back:hover,
+.set-back.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-back:active,
+.set-back.is-down {
+  background: var(--set-pressed);
+}
+
+/* The back button is greyed on the home screen because there is nowhere behind
+   it to go - Win10 draws it in the disabled colour rather than hiding it. */
+.set-back[disabled] {
+  color: #b6b6b6;
+}
+
+.set-back[disabled]:hover,
+.set-back[disabled].sim-hover {
+  background: transparent;
+}
+
+.set-caption-title {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  /* The caption is the window's drag region, exactly as a title bar is. */
+  -webkit-app-region: drag;
+}
+
+.set-caps {
+  display: flex;
+  align-items: stretch;
+}
+
+.set-cap {
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--set-ink);
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.set-cap svg {
+  width: 10px;
+  height: 10px;
+}
+
+.set-cap:hover,
+.set-cap.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-cap:active,
+.set-cap.is-down {
+  background: var(--set-pressed);
+}
+
+.set-cap-close:hover,
+.set-cap-close.sim-hover {
+  background: #e81123;
+  color: #fff;
+}
+
+.set-cap-close:active,
+.set-cap-close.is-down {
+  background: #f1707a;
+  color: #fff;
+}
+
+/* Maximise holds both glyphs and the window's own state says which shows. */
+.set-cap-max-glyph,
+.set-cap-restore-glyph {
+  display: flex;
+}
+
+.set-cap-restore-glyph {
+  display: none;
+}
+
+.win-maximized .set-cap-max-glyph,
+.win-snapped .set-cap-max-glyph {
+  display: none;
+}
+
+.win-maximized .set-cap-restore-glyph,
+.win-snapped .set-cap-restore-glyph {
+  display: flex;
+}
+
+/* --- layout -------------------------------------------------------------- */
+
+.set-nav {
+  order: 1;
+  width: 290px;
+  flex: 0 0 290px;
+  background: var(--set-panel);
+  border-right: 1px solid var(--set-rule);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 34px;
+}
+
+/* The home screen draws its grid across the whole window, so the pane is taken
+   away entirely rather than left empty. `hidden` on its own would lose to the
+   display:flex above, which is why it is restated here. */
+.set-nav[hidden] {
+  display: none;
+}
+
+.set-content {
+  order: 2;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 34px 0 0 0;
+  background: #fff;
+}
+
+/* --- the nav pane -------------------------------------------------------- */
+
+.set-nav-home,
+.set-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--set-ink);
+  cursor: default;
+  position: relative;
+}
+
+/* The selected row carries a thin accent bar down its left edge, which is how
+   Win10 marks the page you are on. */
+.set-nav-row.is-current {
+  background: #e9eff5;
+}
+
+.set-nav-row.is-current::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--set-accent);
+}
+
+.set-nav-home:hover,
+.set-nav-home.sim-hover,
+.set-nav-row:hover,
+.set-nav-row.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-nav-home.is-current,
+.set-nav-row.is-current:hover,
+.set-nav-row.is-current.sim-hover {
+  background: #e9eff5;
+}
+
+.set-nav-home {
+  font-weight: 600;
+}
+
+.set-nav-art {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--set-ink);
+}
+
+.set-nav-art svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.set-nav-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.set-nav-group-title {
+  margin: 12px 12px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--set-ink-soft);
+}
+
+/* --- "Find a setting" ---------------------------------------------------- */
+
+/* The find box is a bordered well with the glass and the field side by side
+   inside it, rather than an icon laid over a padded field. The shell's text
+   field draws its placeholder and its text in layers pinned to the box with
+   `inset: 0`, so padding on the field cannot move them - only the field being
+   *after* the icon can. Edge's address bar is built the same way. */
+.set-find-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  margin: 8px 12px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid var(--set-rule);
+  border-bottom-color: #b1b1b1;
+}
+
+.set-find-box:focus-within {
+  border-color: var(--set-accent);
+  border-bottom-width: 2px;
+}
+
+.set-find-glass {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: var(--set-ink-soft);
+  pointer-events: none;
+}
+
+.set-find-glass svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.set-find-field.sim-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+}
+
+.set-find-results {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.set-find-row {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: default;
+  border-bottom: 1px solid var(--set-rule-soft);
+}
+
+.set-find-row:hover,
+.set-find-row.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-find-row-name {
+  display: block;
+  font-size: 13px;
+  color: var(--set-ink);
+}
+
+.set-find-row-where {
+  display: block;
+  font-size: 11px;
+  color: var(--set-ink-soft);
+  margin-top: 1px;
+}
+
+/* A page hit is bold, because it is somewhere you go rather than something you
+   change - Win10 sets the two apart the same way. */
+.set-find-row--page .set-find-row-name {
+  font-weight: 600;
+}
+
+/* --- the home screen ----------------------------------------------------- */
+
+.set-home {
+  padding: 28px 32px 40px;
+  max-width: 900px;
+}
+
+.set-home-title {
+  margin: 0 0 22px;
+  font-size: 26px;
+  font-weight: 200;
+  text-align: center;
+  color: var(--set-ink);
+}
+
+.set-home-search {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.set-home-search--inline .set-find-box {
+  width: 300px;
+  margin: 0;
+}
+
+/* On the home screen the box is a centred island rather than the top of a
+   scrolling column, so it sizes to the box instead of filling the row. */
+.set-find--home {
+  flex: 0 0 auto;
+}
+
+.set-home-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 18px;
+}
+
+.set-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 14px 10px;
+  font: inherit;
+  color: var(--set-ink);
+  cursor: default;
+  border-radius: 2px;
+}
+
+.set-tile:hover,
+.set-tile.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-tile-art {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  color: var(--set-accent);
+}
+
+.set-tile-art svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+.set-tile-body {
+  min-width: 0;
+}
+
+.set-tile-name {
+  display: block;
+  font-size: 14px;
+}
+
+.set-tile-blurb {
+  display: block;
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  margin-top: 1px;
+}
+
+/* --- a page -------------------------------------------------------------- */
+
+.set-page {
+  padding: 24px 32px 48px;
+  max-width: 780px;
+}
+
+.set-title {
+  margin: 0 0 26px;
+  font-size: 26px;
+  font-weight: 200;
+  color: var(--set-ink);
+}
+
+.set-group {
+  margin-bottom: 30px;
+}
+
+.set-group-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.set-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.set-row--labelled {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.set-row-label {
+  font-size: 14px;
+  color: var(--set-ink);
+}
+
+/* A select's own label sits above the box rather than beside it, because the
+   box is as wide as the longest answer in it. */
+.set-row--select {
+  display: block;
+}
+
+.set-row--select > .set-row-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.set-row--select .set-select {
+  width: 100%;
+  max-width: 320px;
+}
+
+.set-row--slider {
+  display: block;
+}
+
+.set-row--slider > .set-row-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* The slider. Win10's is a two-pixel line with a narrow upright thumb on it -
+   not the rounded capsule with a round knob a browser gives you - so both the
+ * track and the thumb are drawn here.
+ *
+ * Two things make it come out right. The width is 0 with flex-grow doing the
+ * filling, because a range input's intrinsic width is whatever the browser
+ * feels like and does not reliably fill a column, which is what left it a
+ * sliver with the number on top of it. And the filled part of the track is a
+ * gradient over --fill, since there is no other way to colour the left of a
+ * native track.
+ */
+.set-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 360px;
+}
+
+.set-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: default;
+  outline: none;
+}
+
+.set-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 2px;
+  border: none;
+  background: linear-gradient(
+    to right,
+    var(--set-accent) 0 var(--fill, 0%),
+    #c8c8c8 var(--fill, 0%) 100%
+  );
+}
+
+.set-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 18px;
+  /* Centres the 18px thumb on the 2px track: (2 - 18) / 2. */
+  margin-top: -8px;
+  border-radius: 4px;
+  background: #f4f4f4;
+  border: 1px solid #7a7a7a;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.set-slider:hover::-webkit-slider-thumb,
+.set-slider.sim-hover::-webkit-slider-thumb,
+.set-slider:focus::-webkit-slider-thumb {
+  background: #fff;
+  border-color: var(--set-accent);
+}
+
+.set-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--set-accent);
+}
+
+.set-slider::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  border: none;
+  background: linear-gradient(
+    to right,
+    var(--set-accent) 0 var(--fill, 0%),
+    #c8c8c8 var(--fill, 0%) 100%
+  );
+}
+
+.set-slider::-moz-range-thumb {
+  width: 8px;
+  height: 18px;
+  border-radius: 4px;
+  background: #f4f4f4;
+  border: 1px solid #7a7a7a;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.set-slider:hover::-moz-range-thumb,
+.set-slider.sim-hover::-moz-range-thumb,
+.set-slider:focus::-moz-range-thumb {
+  background: #fff;
+  border-color: var(--set-accent);
+}
+
+.set-slider-value {
+  flex: 0 0 auto;
+  min-width: 52px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--set-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.set-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--set-ink);
+  max-width: 640px;
+}
+
+/* A note is the quiet version: Windows writes the explanation of a setting
+   under it in grey, and it is not the setting's name. */
+.set-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  max-width: 640px;
+}
+
+.set-note--missing {
+  color: #a4262c;
+}
+
+/* The flash a button with nothing behind it leaves behind. */
+.set-flash {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  background: #f3f9fd;
+  border-left: 3px solid var(--set-accent);
+  font-size: 13px;
+  color: var(--set-ink);
+}
+
+/* --- the switch ---------------------------------------------------------- */
+
+.set-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  cursor: default;
+  color: var(--set-ink);
+}
+
+.set-switch-track {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 20px;
+  border-radius: 10px;
+  background: #8a8a8a;
+  border: 1px solid #6f6f6f;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.set-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.55);
+  transition: left 120ms ease;
+}
+
+.set-switch.is-on .set-switch-track,
+.set-row--switch.is-on .set-switch-track {
+  background: var(--set-accent);
+  border-color: var(--set-accent);
+}
+
+.set-row--switch.is-on .set-switch-knob {
+  left: 23px;
+}
+
+.set-switch-state {
+  font-size: 13px;
+  min-width: 22px;
+  text-align: left;
+  color: var(--set-ink-soft);
+}
+
+.set-switch:hover .set-switch-track,
+.set-switch.sim-hover .set-switch-track {
+  opacity: 0.85;
+}
+
+.set-switch:focus-visible .set-switch-track,
+.set-switch.is-focus .set-switch-track {
+  outline: 2px solid var(--set-accent);
+  outline-offset: 2px;
+}
+
+.set-switch--compact .set-switch-track {
+  width: 34px;
+  height: 18px;
+}
+
+.set-switch--compact .set-switch-knob {
+  width: 10px;
+  height: 10px;
+}
+
+.set-switch--compact.is-on .set-switch-knob {
+  left: 20px;
+}
+
+/* --- the checkbox -------------------------------------------------------- */
+
+.set-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--set-ink);
+  cursor: default;
+  text-align: left;
+}
+
+.set-check-box {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #8a8a8a;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+}
+
+.set-check-box svg {
+  width: 14px;
+  height: 14px;
+}
+
+.set-check.is-on .set-check-box {
+  background: var(--set-accent);
+  border-color: var(--set-accent);
+  color: #fff;
+}
+
+.set-check:hover .set-check-box,
+.set-check.sim-hover .set-check-box {
+  border-color: var(--set-accent);
+}
+
+/* --- the select ---------------------------------------------------------- */
+
+.set-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px 0 12px;
+  border: 1px solid #b1b1b1;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--set-ink);
+  cursor: default;
+  text-align: left;
+}
+
+.set-select:hover,
+.set-select.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-select-chevron {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: var(--set-ink-soft);
+  display: flex;
+}
+
+.set-select-chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* The open list drops over the page rather than pushing it, which is what a
+   drop-down does and what keeps the page from jumping under the pointer. */
+.set-select-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  margin-top: 1px;
+  background: #fff;
+  border: 1px solid #b1b1b1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.set-select-option {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--set-ink);
+  cursor: default;
+}
+
+.set-select-option:hover,
+.set-select-option.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-select-option.is-current {
+  background: #e9eff5;
+  font-weight: 600;
+}
+
+/* --- radios -------------------------------------------------------------- */
+
+.set-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.set-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: default;
+}
+
+.set-radio-input {
+  margin: 2px 0 0;
+  accent-color: var(--set-accent);
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.set-radio-body {
+  display: block;
+}
+
+.set-radio-name {
+  display: block;
+  font-size: 14px;
+}
+
+.set-radio-help {
+  display: block;
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  max-width: 560px;
+}
+
+/* --- buttons and links --------------------------------------------------- */
+
+.set-button {
+  border: 1px solid #b1b1b1;
+  background: #fff;
+  padding: 5px 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--set-ink);
+  cursor: default;
+  justify-self: start;
+}
+
+.set-button:hover,
+.set-button.sim-hover {
+  border-color: var(--set-accent);
+  background: #f3f9fd;
+}
+
+.set-button--primary {
+  background: var(--set-accent);
+  border-color: var(--set-accent);
+  color: #fff;
+}
+
+.set-button--primary:hover,
+.set-button--primary.sim-hover {
+  background: #106ebe;
+  border-color: #106ebe;
+}
+
+.set-button[disabled] {
+  color: #a6a6a6;
+  border-color: #d6d6d6;
+  background: #f0f0f0;
+}
+
+.set-small-button {
+  border: 1px solid #b1b1b1;
+  background: #fff;
+  padding: 3px 12px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--set-ink);
+  cursor: default;
+}
+
+.set-small-button:hover,
+.set-small-button.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-small-button[disabled] {
+  color: #a6a6a6;
+  border-color: #d6d6d6;
+  background: #f0f0f0;
+}
+
+.set-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--set-accent);
+  cursor: default;
+  text-align: left;
+  justify-self: start;
+}
+
+.set-link:hover,
+.set-link.sim-hover {
+  color: #005a9e;
+  text-decoration: underline;
+}
+
+.set-link--small {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* --- lists --------------------------------------------------------------- */
+
+.set-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--set-rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.set-list--plain {
+  border: 0;
+}
+
+.set-list > * + * {
+  border-top: 1px solid var(--set-rule-soft);
+}
+
+.set-app {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.set-app--wide {
+  background: var(--set-panel);
+}
+
+.set-app-art {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.set-app-art img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.set-app-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.set-app-name {
+  display: block;
+  font-size: 13px;
+}
+
+.set-app-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--set-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.set-app-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.set-app-impact {
+  font-size: 11px;
+  color: var(--set-ink-soft);
+  min-width: 72px;
+  text-align: right;
+}
+
+.set-device,
+.set-device-row,
+.set-language,
+.set-mixer-row,
+.set-usage-row,
+.set-chart-row,
+.set-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.set-device-row {
+  width: 100%;
+  border: 1px solid var(--set-rule);
+  text-align: left;
+  font: inherit;
+  color: var(--set-ink);
+  cursor: default;
+}
+
+.set-device-row.is-on {
+  border-color: var(--set-accent);
+}
+
+.set-device-art {
+  flex: 0 0 26px;
+  font-size: 20px;
+  color: var(--set-ink-soft);
+  text-align: center;
+}
+
+.set-device-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.set-device-name {
+  display: block;
+  font-size: 13px;
+}
+
+.set-device-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--set-ink-soft);
+}
+
+.set-device-mark {
+  color: var(--set-accent);
+  font-size: 14px;
+}
+
+.set-language-name,
+.set-mixer-name,
+.set-chart-name {
+  flex: 1 1 auto;
+  font-size: 13px;
+}
+
+/* The app mixer rows use the same slider, narrower and a little shorter. The
+   thumb and track are not restyled: Win10 draws the same slider in the volume
+   mixer as everywhere else, only less of it. */
+.set-slider--slim {
+  max-width: 200px;
+  height: 16px;
+}
+
+.set-slider--slim::-webkit-slider-thumb {
+  height: 14px;
+  margin-top: -6px;
+}
+
+.set-slider--slim::-moz-range-thumb {
+  height: 14px;
+}
+
+.set-bar {
+  flex: 1 1 auto;
+  height: 8px;
+  background: var(--set-rule-soft);
+  overflow: hidden;
+}
+
+.set-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--set-accent);
+}
+
+.set-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.set-filter-field {
+  flex: 1 1 auto;
+  max-width: 240px;
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--set-rule);
+  background: #fff;
+  color: var(--set-ink);
+}
+
+.set-filter-field:focus {
+  border-color: var(--set-accent);
+  outline: none;
+}
+
+.set-filter-button,
+.set-sort-button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--set-accent);
+  cursor: default;
+  padding: 4px 0;
+}
+
+.set-sort {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.set-sort-label {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-empty {
+  margin: 0;
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--set-ink-soft);
+  background: var(--set-panel);
+}
+
+/* --- quick actions and lock-screen slots -------------------------------- */
+
+.set-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 2px;
+  background: var(--set-rule);
+  border: 1px solid var(--set-rule);
+  padding: 1px;
+  max-width: 420px;
+}
+
+.set-quick-cell {
+  border: 0;
+  background: #f7f7f7;
+  padding: 14px 6px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--set-ink);
+  cursor: default;
+}
+
+.set-quick-cell.is-on {
+  background: var(--set-accent);
+  color: #fff;
+}
+
+.set-quick-cell:hover,
+.set-quick-cell.sim-hover {
+  background: var(--set-hover);
+}
+
+.set-quick-cell.is-on:hover,
+.set-quick-cell.is-on.sim-hover {
+  background: #106ebe;
+}
+
+.set-quick-name {
+  display: block;
+}
+
+.set-lock-apps {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.set-lock-slot {
+  width: 52px;
+  height: 44px;
+  border: 1px solid var(--set-rule);
+  background: var(--set-panel);
+  color: var(--set-ink-soft);
+  font: inherit;
+  font-size: 9px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2px;
+}
+
+.set-lock-slot.is-filled {
+  background: #fff;
+  color: var(--set-ink);
+  border-color: var(--set-rule);
+}
+
+.set-lock-slot:hover,
+.set-lock-slot.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-lock-plus {
+  font-size: 16px;
+  color: var(--set-ink-soft);
+}
+
+/* --- previews ------------------------------------------------------------ */
+
+.set-preview {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--set-rule);
+  background: #222;
+  margin-bottom: 16px;
+}
+
+.set-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.set-preview--desktop {
+  height: 180px;
+}
+
+.set-preview--lock {
+  height: 110px;
+}
+
+.set-preview--theme {
+  height: 140px;
+}
+
+/* The little Start menu laid over the desktop, so the preview shows what the
+   background is doing behind it rather than only the picture. */
+.set-preview-menu {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  width: 120px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 6px 0;
+}
+
+.set-preview-tile {
+  padding: 4px 10px;
+  font-size: 10px;
+  color: #222;
+}
+
+.set-preview-tile.is-active {
+  border-left: 2px solid var(--preview-accent, var(--set-accent));
+  font-weight: 600;
+}
+
+.set-preview-clock {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 200;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.set-preview.is-colour {
+  background: var(--preview-accent, var(--set-accent));
+}
+
+.set-preview-theme-name {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* --- pickers ------------------------------------------------------------- */
+
+.set-thumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.set-thumb {
+  width: 96px;
+  height: 62px;
+  border: 1px solid var(--set-rule);
+  padding: 0;
+  background: #fff;
+  cursor: default;
+  overflow: hidden;
+}
+
+.set-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.set-thumb--colour {
+  width: 62px;
+}
+
+.set-thumb:hover,
+.set-thumb.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-thumb.is-chosen {
+  border: 2px solid var(--set-accent);
+}
+
+.set-colours {
+  display: grid;
+  grid-template-columns: repeat(6, 34px);
+  gap: 4px;
+}
+
+.set-colour {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 0;
+  cursor: default;
+}
+
+.set-colour:hover,
+.set-colour.sim-hover {
+  border-color: #000;
+}
+
+.set-colour.is-chosen {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--set-accent);
+}
+
+.set-swatches {
+  border: 1px solid var(--set-rule);
+  padding: 10px 12px;
+}
+
+.set-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.set-swatch-label {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-swatch-chip {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.set-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.set-theme {
+  border: 1px solid var(--set-rule);
+  background: #fff;
+  padding: 6px;
+  font: inherit;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.set-theme-sample {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  font-size: 18px;
+}
+
+.set-theme-name {
+  font-size: 11px;
+  color: var(--set-ink-soft);
+}
+
+.set-theme:hover,
+.set-theme.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-theme.is-chosen {
+  border: 2px solid var(--set-accent);
+}
+
+/* --- displays ------------------------------------------------------------ */
+
+.set-displays {
+  background: #f5f5f5;
+  border: 1px solid var(--set-rule);
+  padding: 18px;
+  max-width: 420px;
+}
+
+.set-display-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.set-display {
+  width: 130px;
+  height: 80px;
+  border: 1px solid #7a7a7a;
+  background: #fff;
+  font: inherit;
+  font-size: 34px;
+  font-weight: 200;
+  color: #333;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.set-display.is-selected {
+  border: 2px solid var(--set-accent);
+  background: var(--set-accent);
+  color: #fff;
+}
+
+/* --- storage ------------------------------------------------------------- */
+
+.set-storage-tiles {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.set-storage-tile {
+  width: 120px;
+  border: 1px solid var(--set-rule);
+  background: var(--set-panel);
+  padding: 12px 10px;
+  font: inherit;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.set-storage-tile:hover,
+.set-storage-tile.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-storage-art {
+  font-size: 22px;
+  color: var(--set-accent);
+}
+
+.set-storage-name {
+  font-size: 11px;
+}
+
+.set-storage-size {
+  font-size: 11px;
+  color: var(--set-ink-soft);
+}
+
+.set-storage {
+  border: 1px solid var(--set-rule);
+  padding: 12px;
+  max-width: 480px;
+}
+
+.set-storage-caption {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  margin-bottom: 8px;
+}
+
+.set-storage-bar {
+  display: flex;
+  height: 14px;
+  background: var(--set-rule-soft);
+  overflow: hidden;
+}
+
+.set-storage-part {
+  display: block;
+  height: 100%;
+}
+
+.set-storage-legend {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.set-storage-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.set-storage-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+}
+
+.set-storage-legend-name {
+  flex: 1 1 auto;
+}
+
+.set-storage-legend-size {
+  color: var(--set-ink-soft);
+}
+
+/* --- charts -------------------------------------------------------------- */
+
+.set-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.set-chart-track {
+  flex: 1 1 auto;
+  height: 10px;
+  background: var(--set-rule-soft);
+  overflow: hidden;
+}
+
+.set-chart-fill {
+  display: block;
+  height: 100%;
+  background: var(--set-accent);
+}
+
+.set-chart-value {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+  min-width: 56px;
+  text-align: right;
+}
+
+/* --- specs, clock, profile ----------------------------------------------- */
+
+.set-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.set-spec {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--set-rule-soft);
+  padding-bottom: 5px;
+}
+
+.set-spec-label {
+  flex: 0 0 180px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-spec-value {
+  flex: 1 1 auto;
+  color: var(--set-ink-soft);
+}
+
+.set-clock {
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--set-ink);
+}
+
+.set-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--set-rule);
+  padding: 14px;
+  max-width: 420px;
+}
+
+.set-profile-art img {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+
+.set-profile-name {
+  font-size: 15px;
+}
+
+.set-profile-sub {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+/* --- Windows Security ---------------------------------------------------- */
+
+.set-protection {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 12px;
+  background: var(--set-panel);
+}
+
+.set-protection-art {
+  flex: 0 0 30px;
+  font-size: 26px;
+  color: #0078d7;
+  text-align: center;
+}
+
+.set-protection-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.set-protection-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.set-protection-state {
+  font-size: 13px;
+  color: #0f7b0f;
+}
+
+.set-protection-detail {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-protection.is-attention .set-protection-state {
+  color: #a4262c;
+}
+
+.set-protection.is-attention .set-protection-art {
+  color: #a4262c;
+}
+
+/* --- narrow windows ------------------------------------------------------
+ *
+ * Settings is a two-pane app in a window that may be 360px wide. Rather than
+ * let the two panes squeeze each other into nothing, the nav becomes a drawer
+ * over the page and the page takes the whole width - which is what Windows does
+ * on a small display, and what makes every hit target large enough for a finger.
+ */
+
+@media (max-width: 620px) {
+  .set-nav-toggle {
+    display: flex;
+  }
+
+  .set-nav {
+    position: absolute;
+    left: 0;
+    top: 34px;
+    bottom: 0;
+    width: 78%;
+    max-width: 300px;
+    z-index: 4;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.18);
+    transform: translateX(-100%);
+    transition: transform 140ms ease;
+  }
+
+  /* The nav is closed on a narrow window, and opens over the page. The shell
+     toggles .is-nav-open on the root; without the class it stays out of the way
+     so the page is readable. */
+  .set-root.is-nav-open .set-nav {
+    transform: translateX(0);
+  }
+
+  .set-content {
+    width: 100%;
+  }
+
+  .set-page,
+  .set-home {
+    padding: 20px 18px 40px;
+  }
+
+  .set-home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 10px;
+  }
+
+  .set-row--labelled {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .set-select,
+  .set-slider {
+    max-width: none;
+  }
+
+  .set-spec {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .set-spec-label {
+    flex: none;
+  }
+
+  .set-home-search--inline .set-find-box {
+    width: 100%;
+  }
+}
+
+/* The caption is still needed on a narrow window, but its buttons take the room
+   the nav would. */
+@media (max-width: 420px) {
+  .set-cap,
+  .set-back {
+    width: 40px;
+  }
+
+  .set-home-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .set-switch-track,
+  .set-switch-knob {
+    transition: none;
+  }
+
+  .set-nav {
+    transition: none;
+  }
+}

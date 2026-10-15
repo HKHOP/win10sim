@@ -3,6 +3,7 @@ import { openPopup } from './popup.js';
 import { mountNtfs } from '../apis/ntfs.js';
 import { attachQuickAccess } from '../apis/quickaccess.js';
 import { attachAssociations, registerAssociations } from '../apis/associations.js';
+import { attachSettings } from '../apis/settings-store.js';
 import { APP_PERMISSIONS } from '../global/constants.js';
 import { initStartState, setRegistryHook, noteAppRegistered } from './startstate.js';
 import { setCursorBusy } from './cursor.js';
@@ -39,6 +40,9 @@ initStartState(getVolume);
 // the same volume.
 attachQuickAccess(getVolume);
 attachAssociations(getVolume);
+// Settings keeps the profile's settings in the same place, for the same reason:
+// it is a fact about this account rather than about the session.
+attachSettings(getVolume);
 setRegistryHook(function () {
   var out = {};
   Object.keys(registry).forEach(function (id) {

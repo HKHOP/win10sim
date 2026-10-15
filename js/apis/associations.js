@@ -145,6 +145,29 @@ export function defaultAppFor(ext) {
   });
 }
 
+// Every extension anything has claimed, with the type's own name.
+//
+// This is the list behind Settings > Apps > Default apps: Windows shows one row
+// per file type the machine can associate, and that list can only be the
+// registered types - a hand-written list would go stale the moment an app
+// claimed something, and would name types no app handles. Which app each type
+// opens with is a separate question and an asynchronous one; see defaultAppFor.
+export function registeredTypes() {
+  var seen = {};
+  var out = [];
+  handlers.forEach(function (entry) {
+    if (seen[entry.ext]) {
+      return;
+    }
+    seen[entry.ext] = true;
+    out.push({
+      ext: entry.ext,
+      type: entry.type || ''
+    });
+  });
+  return out;
+}
+
 // "Always use this app": the choice outlives the session, per profile.
 export function setDefaultApp(ext, appId) {
   var clean = String(ext || '').replace(/^\./, '').toLowerCase();

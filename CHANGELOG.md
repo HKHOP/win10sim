@@ -3,6 +3,97 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.0] - Settings: the app, all of its pages, and settings that survive a close
+
+2026-10-15
+
+### Added
+
+- **The Settings app**, a copy of Windows 10 build 1903's: the home grid of its
+  fourteen categories, the nav pane, "Find a setting", and **88 pages carrying
+  206 settings**.
+
+- **Every setting is remembered.** `js/apis/settings-store.js` is a per-profile
+  table on the volume, the same way Quick access and the file-type defaults are,
+  because a setting follows the account rather than the machine. Closing
+  Settings and opening it again shows what you left, and so does the next visit.
+  - The whole point of the declaration is that it is also the schema: a
+    setting's default, the values it will accept and the text "Find a setting"
+    matches it against all come from the one place it is written down.
+  - **A stored value is only used if the setting still offers it.** A profile
+    written by an older build, or a file edited by hand, cannot put a control
+    into a state it has no way out of — a dropdown showing a choice that is not
+    in its list, a slider clamped outside its own range, a toggle set to a
+    string. Anything unrecognised falls back to the declared default, which is
+    also what "never set" means. (`js/apps/settings/schema.js`)
+  - Coalesced writes, flushed when the page goes away, like every other store
+    here.
+
+- **The declaration is data, not markup**: `js/apps/settings/pages/*.js`, five
+  modules by category. A page is a title and a run of groups; a group is a
+  heading and a run of items; an item says what kind of control it is. Nothing
+  in the UI decides what a group looks like.
+
+- **43 control kinds**, from the switch and the dropdown to the battery-usage
+  chart, the display rearrange boxes and the protection tiles.
+
+- **"Find a setting"** searches every declared setting *and* every page, ranked
+  so that a setting beats the group it sits in, the group beats the page, and a
+  page beats a setting of the same name — which is Windows' own answer, because
+  going to the page is the more useful thing. Every word typed has to land
+  somewhere, so "night light zzz" finds nothing rather than a near-miss.
+
+- **`tools/check_settings.js`** — 2830 checks. It is what makes 88 pages
+  reviewable: every page names a control kind that exists, every link goes
+  somewhere, every key holds one setting, every default is offered by the
+  dropdown that claims it, and every search hit is a page you can open. A
+  mistake in the fourteenth category is otherwise only findable by pressing
+  every switch by hand.
+
+- **`tools/check_imports.js`** — 1021 checks that every named import resolves to
+  a real export and no module exports a name twice. `node --check` only parses,
+  so it happily accepts both, and both are a load-time error that takes the
+  whole shell's module graph with it. This caught two real ones on the way in.
+
+- **`tools/mdl2_sheet.js`** — renders MDL2 glyphs to a labelled PNG contact
+  sheet, so a codepoint can be checked against what it actually draws instead of
+  against what its name suggests. See the Changed note on `build_mdl2_icons.py`.
+
+- **`js/apps/settings/glyphs.js`** — 79 outlines for the nav, the home grid and
+  the pages, all real Segoe MDL2 outlines, none hand-drawn.
+
+### Removed
+
+- None
+
+### Changed
+
+- **`tools/build_mdl2_icons.py`**: 50 glyphs added for Settings, each taken from
+  the name Microsoft documents for it and then checked by rendering it with
+  `mdl2_sheet.js`. Four of the names in that table are **not in this font** —
+  `CheckList` U+E9D5, `Shield` U+EA18, `Touchpad` U+EFA5, `Website` U+EB41 —
+  which is what the generator's fail-loudly check is for, and what a
+  "reasonable-looking" codepoint would have turned into four wrong pictures.
+  Real substitutes were found by name instead: `CheckboxComposite`, `Admin`
+  (which is a shield), `Touch`, and the globe Settings already used.
+
+- **`js/apis/associations.js`**: `registeredTypes()` — the extensions anything
+  has claimed. Settings > Default apps needs the list of file types the machine
+  can associate, and only the registry knows it: a hand-written list would go
+  stale the moment an app claimed something, and would name types no app
+  handles.
+
+- **`js/core/apps.js`**: attaches the settings store to the same lazy volume
+  mount it already owns.
+
+- **`js/boot/boot.js`**, **`index.html`**, **`js/global/constants.js`**: Settings
+  registers, boots and has its icon — the gear with a tick that Win10 shows for
+  it, taken from the shell's own icon library.
+
+### Fixed
+
+- None
+
 ## [1.22.2] - Typing on a phone no longer puts one letter in and throws the rest away
 
 2026-10-15
