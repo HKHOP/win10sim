@@ -3,6 +3,35 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.1] - Settings wears the Settings icon
+
+2026-10-15
+
+### Added
+
+- **`tools/build_settings_icon.py`** — puts `assets/windows-settings.png`
+  through the same treatment the other app icons got: RGBA, cropped to the
+  alpha box, squared with transparency, resized to 128px. The source is the
+  artwork and is left alone; `assets/shell/settings-gear.png` is the icon.
+
+### Removed
+
+- None
+
+### Changed
+
+- **`assets/shell/settings-gear.png`**: now the Settings gear — grey cog, white
+  ring, blue centre — rather than the Imageres gear-and-tick that was picked out
+  of the icon library. Same path, so nothing that references it changed.
+
+### Fixed
+
+- **The Settings icon was the wrong picture, and the wrong shape to boot.** The
+  source arrives as a 1080×1012 palette-colour PNG: not square, and the only
+  icon in `assets/shell/` that was neither 96 nor 128px. Every surface that
+  draws an app icon draws it into a fixed square, so it would have been squashed
+  — and it was 51 KB of indexed colour sitting beside 5 KB RGBA thumbnails.
+
 ## [1.23.0] - Settings: the app, all of its pages, and settings that survive a close
 
 2026-10-15
