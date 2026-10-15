@@ -341,6 +341,86 @@ onSearchChanged: function (searching) {
       });
       return;
     }
+    // "Clear clipboard data" says it clears everything except pinned items on
+    // this device and with Microsoft. There is nothing signed in, so "with
+    // Microsoft" has nothing to clear - and the clipboard itself is the shell's,
+    // so clearing it is the shell's to do, not Settings'.
+    if (name === 'clipboard.clear') {
+      context.popup({
+        title: 'Clear clipboard data',
+        body: ['All clipboard data on this device will be cleared.'],
+        buttons: [
+          { label: 'Clear', primary: true, value: 'clear' },
+          { label: 'Cancel', value: 'cancel' }
+        ]
+      });
+      return;
+    }
+    // "Check for updates" on a machine with no network. Windows spends a moment
+    // and then says it is up to date; this says the same thing and why, in the
+    // one place a reader will actually read it.
+    if (name === 'update.check') {
+      context.popup({
+        title: 'Checking for updates',
+        info: true,
+        message: 'You\'re up to date. This computer has no network, so it cannot check for anything newer.',
+        ownerId: win.id,
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
+    // The sound troubleshooter and a device's properties page are both separate
+    // windows Windows opens. Neither exists here, and each is named rather than
+    // silently ignored.
+    if (name === 'sound.troubleshoot') {
+      showMessageBox(context, {
+        title: 'Troubleshoot sound',
+        info: true,
+        message: 'The sound troubleshooter is not installed on this computer.',
+        ownerId: win.id,
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
+    if (name === 'sound.outputProperties' || name === 'sound.inputProperties') {
+      showMessageBox(context, {
+        title: 'Device properties',
+        info: true,
+        message: 'Device properties are not available on this computer.',
+        ownerId: win.id,
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
+    // "Add Bluetooth or other device" opens a list of the kinds of thing that can
+    // be added. Every one of them needs hardware this computer has not got.
+    if (name === 'devices.bluetooth.add') {
+      context.popup({
+        title: 'Add a device',
+        body: [
+          'Bluetooth',
+          'Wireless display',
+          'Dock',
+          'Mobile devices'
+        ],
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
+    // "Create your picture" offers a camera or a file. There is no camera app
+    // and no file picker to hand over to, so each says which one it cannot do.
+    if (name === 'accounts.picture.camera' || name === 'accounts.picture.browse') {
+      showMessageBox(context, {
+        title: 'Create your picture',
+        info: true,
+        message: name === 'accounts.picture.camera'
+          ? 'There is no camera app on this computer to take a picture with.'
+          : 'There is no picture to browse for on this computer.',
+        ownerId: win.id,
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
     // A setting that is remembered but has nothing behind it. Windows shows
     // these as dimmed and says what they are for; saying so is more honest than
     // pressing a button that does nothing.

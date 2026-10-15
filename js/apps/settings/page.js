@@ -17,6 +17,18 @@ export function buildPage(page, ops) {
   title.textContent = page.title;
   root.appendChild(title);
 
+  // A page with a help rail beside it puts its settings in a column of their own
+  // and the rail in the other, rather than the rail being one more group at the
+  // bottom of a list that is otherwise a single column. Display, Bluetooth and
+  // Game bar are all made this way.
+  var main = root;
+  if ((page.rail || []).length) {
+    root.classList.add('set-page--with-rail');
+    main = document.createElement('div');
+    main.className = 'set-page-main';
+    root.appendChild(main);
+  }
+
   // Every control on the page, so a write from anywhere can be reflected here
   // without rebuilding the page out from under the user.
   var syncs = [];
@@ -26,6 +38,9 @@ export function buildPage(page, ops) {
   (page.groups || []).forEach(function (group) {
     var section = document.createElement('section');
     section.className = 'set-group';
+    // A group with no heading is a real thing in Windows - the four switches at
+    // the top of Snap, the rule list under Focus assist's own heading - so the
+    // heading is drawn only when the declaration has one.
     if (group.title) {
       var heading = document.createElement('h2');
       heading.className = 'set-group-title';
@@ -60,8 +75,12 @@ export function buildPage(page, ops) {
       }
     });
     section.appendChild(items);
-    root.appendChild(section);
+    main.appendChild(section);
   });
+
+  if ((page.rail || []).length) {
+    root.appendChild(buildRail(page.rail, ops));
+  }
 
   return {
     el: root,
@@ -107,4 +126,46 @@ function errorBox(item, err) {
   box.textContent = '“' + (item.label || item.kind) + '” could not be drawn: ' +
     (err && err.message ? err.message : 'unknown error');
   return box;
+}
+
+// The help rail down the right-hand side of a page: "Related settings", "Have a
+// question?", "Make Windows better", and whatever else a page puts there.
+//
+// Its links are a different colour from the ones in the settings column, which is
+// how Windows marks them as a rail rather than as part of the page - the words
+// say the same kind of thing either way, so the colour is the only thing
+// telling them apart.
+function buildRail(sections, ops) {
+  var rail = document.createElement('aside');
+  rail.className = 'set-rail';
+  sections.forEach(function (entry) {
+    var group = document.createElement('section');
+    group.className = 'set-rail-group';
+    var heading = document.createElement('h3');
+    heading.className = 'set-rail-title';
+    heading.textContent = entry.title || '';
+    group.appendChild(heading);
+    if (entry.text) {
+      var note = document.createElement('p');
+      note.className = 'set-rail-text';
+      note.textContent = entry.text;
+      group.appendChild(note);
+    }
+    (entry.links || []).forEach(function (link) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'set-rail-link';
+      button.textContent = link.label || '';
+      button.addEventListener('click', function () {
+        if (link.to) {
+          ops.navigate(link.to);
+        } else if (link.action) {
+          ops.run(link.action);
+        }
+      });
+      group.appendChild(button);
+    });
+    rail.appendChild(group);
+  });
+  return rail;
 }

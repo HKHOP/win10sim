@@ -73,6 +73,8 @@ import {
   LANGUAGE_CHT as MDL2_LANGUAGE_CHT,
   HEADPHONE as MDL2_HEADPHONE,
   KEYBOARD as MDL2_KEYBOARD,
+  KEYBOARD_STANDARD as MDL2_KEYBOARD_STANDARD,
+  CAPTION as MDL2_CAPTION,
 
   GAME as MDL2_GAME,
   FULL_SCREEN as MDL2_FULL_SCREEN,
@@ -97,7 +99,21 @@ import {
   BACK as MDL2_BACK,
   ADD as MDL2_ADD,
   DELETE as MDL2_DELETE,
-  ACCEPT as MDL2_ACCEPT
+  ACCEPT as MDL2_ACCEPT,
+  BRIGHTNESS as MDL2_BRIGHTNESS,
+  LEAF as MDL2_LEAF,
+  WEBCAM as MDL2_WEBCAM,
+  FEEDBACK_APP as MDL2_FEEDBACK_APP,
+  STOPWATCH as MDL2_STOPWATCH,
+  PASTE as MDL2_PASTE,
+  BATTERY as MDL2_BATTERY,
+  REMOTE as MDL2_REMOTE,
+  SWITCH_APPS as MDL2_SWITCH_APPS,
+  CHAT_BUBBLES as MDL2_CHAT_BUBBLES,
+  RECORD as MDL2_RECORD,
+  LIGHTBULB as MDL2_LIGHTBULB,
+  DOCUMENT as MDL2_DOCUMENT,
+  HELP as MDL2_HELP
 } from '../../global/mdl2.js';
 
 // --- The Home row and the back button --------------------------------------
@@ -134,6 +150,10 @@ export const TABLET_SVG = MDL2_TABLET_MODE;
 export const MULTITASKING_SVG = MDL2_DOCK;
 export const PROJECTING_SVG = MDL2_PROJECTOR;
 export const ABOUT_SVG = MDL2_INFO;
+export const BATTERY_SVG = MDL2_BATTERY;
+export const SHARED_SVG = MDL2_PEOPLE;
+export const CLIPBOARD_SVG = MDL2_PASTE;
+export const REMOTE_DESKTOP_SVG = MDL2_REMOTE;
 
 // --- Devices ---------------------------------------------------------------
 
@@ -181,6 +201,7 @@ export const YOUR_INFO_SVG = MDL2_CONTACT_PRESENCE;
 export const SIGNIN_SVG = MDL2_PERMISSIONS;
 export const FAMILY_SVG = MDL2_PEOPLE;
 export const EMAIL_SVG = MDL2_MAIL;
+export const MAIL_SVG = MDL2_MAIL;
 export const SYNC_ACCOUNT_SVG = MDL2_SYNC;
 
 // --- Time & Language -------------------------------------------------------
@@ -198,6 +219,8 @@ export const GAME_MODE_SVG = MDL2_GAME;
 export const FULLSCREEN_OPT_SVG = MDL2_FULL_SCREEN;
 export const GAMEBAR_SVG = MDL2_XBOX;
 export const CAPTURES_SVG = MDL2_CAMERA;
+export const BROADCAST_SVG = MDL2_RECORD;
+export const XBOX_SVG = MDL2_XBOX;
 
 // --- Ease of Access --------------------------------------------------------
 
@@ -206,6 +229,19 @@ export const CAPTURES_SVG = MDL2_CAMERA;
 // Zoom is the closest outline the font actually has.
 export const MAGNIFIER_SVG = MDL2_ZOOM;
 export const INTERACTION_SVG = MDL2_KEYBOARD;
+// Closed captions is the caption glyph rather than a hand-drawn one: MDL2 has
+// "Caption", which is the box-and-lines shape Windows draws beside the row.
+export const CAPTIONS_SVG = MDL2_CAPTION;
+// The Keyboard row under Interaction uses the on-screen-keyboard glyph, which is
+// what MDL2 calls "KeyboardStandard" - the bare keyboard outline.
+export const KEYBOARD_SVG = MDL2_KEYBOARD_STANDARD;
+
+// The set was checked by rendering it (tools/mdl2_sheet.js): the sun, the clock
+// face, the leaf, the webcam, the speech mark, the clipboard-with-sheet, the
+// battery, the remote chevrons, the overlapping apps, the two speech bubbles,
+// the record dot, the bulb, the sheet of paper and the question mark are all
+// what their names say. See README-mdl2.md for why "the codepoint is in the
+// font" is not on its own enough.
 
 // --- Privacy & security ----------------------------------------------------
 
@@ -215,6 +251,20 @@ export const CAMERA_PRIVACY_SVG = MDL2_CAMERA;
 export const MICROPHONE_PRIVACY_SVG = MDL2_MICROPHONE;
 export const DIAGNOSTICS_SVG = MDL2_DIAGNOSTIC;
 export const PROTECTION_SVG = MDL2_ADMIN;
+export const BACKGROUND_APPS_SVG = MDL2_SWITCH_APPS;
+export const APP_DIAGNOSTICS_SVG = MDL2_DIAGNOSTIC;
+export const AUTO_DOWNLOADS_SVG = MDL2_DOWNLOAD;
+export const DOCUMENTS_PRIVACY_SVG = MDL2_DOCUMENT;
+export const PICTURES_PRIVACY_SVG = MDL2_PICTURE;
+// The App permissions sub-group of the Privacy nav pane. MDL2 documents
+// CheckList for Tasks, which this build of the font does not contain, so Tasks
+// is drawn with the bulleted-list glyph instead - same shape, and a glyph that
+// is really in the file.
+export const CALENDAR_PRIVACY_SVG = MDL2_CALENDAR;
+export const TASKS_PRIVACY_SVG = MDL2_BULLETED_LIST;
+export const MESSAGING_PRIVACY_SVG = MDL2_CHAT_BUBBLES;
+export const RADIOS_PRIVACY_SVG = MDL2_NETWORK;
+export const OTHER_DEVICES_PRIVACY_SVG = MDL2_DEVICES;
 
 // --- Update & security -----------------------------------------------------
 
@@ -228,9 +278,30 @@ export const BACKUP_SVG = MDL2_CLOUD;
 export const ACTIVATION_SVG = MDL2_CERTIFICATE;
 export const FIND_DEVICE_SVG = MDL2_LOCATION;
 export const DEVELOPERS_SVG = MDL2_CODE;
+// MDL2 has no flask, which is what Windows draws for the Insider programme, so
+// the light bulb stands in: a bulb for a preview build reads, and it is a real
+// outline rather than something drawn by hand.
+export const INSIDER_SVG = MDL2_LIGHTBULB;
 
 // --- Row furniture ---------------------------------------------------------
 
 export const ADD_SVG = MDL2_ADD;
 export const DELETE_SVG = MDL2_DELETE;
 export const ACCEPT_SVG = MDL2_ACCEPT;
+
+// --- The little pictures a page draws beside a row --------------------------
+//
+// These are not nav artwork: they are the marks Windows puts at the left of an
+// individual row - the sun at either end of the brightness slider, the leaf and
+// bolt at the ends of the power-mode slider, the clock on a focus-assist rule,
+// the webcam on "Camera" under Create your picture, the feedback mark beside
+// "Give feedback".
+
+export const BRIGHTNESS_SVG = MDL2_BRIGHTNESS;
+export const LEAF_SVG = MDL2_LEAF;
+export const WEBCAM_SVG = MDL2_WEBCAM;
+export const FEEDBACK_SVG = MDL2_FEEDBACK_APP;
+export const HELP_SVG = MDL2_HELP;
+// Stopwatch, for want of a Clock: see the note on STOPWATCH in
+// tools/build_mdl2_icons.py.
+export const CLOCK_SVG = MDL2_STOPWATCH;

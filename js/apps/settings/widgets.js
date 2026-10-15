@@ -191,19 +191,48 @@ export function startupBackground(item, ops) {
 // you notifications". Where the page names the apps it means, that list is used;
 // otherwise it is every app there is, which is what Windows shows for a
 // permission nothing has ever asked for.
+// The master switch a list hangs off, when the list names one that is not just
+// its own prefix with ".app" taken off.
+//
+// Deriving it from the prefix is right for the permission pages, where the
+// master is "privacy.camera" and the entries are "privacy.camera.app.edge" -
+// the master is the prefix. It is wrong for Background apps, where the prefix is
+// "privacy.background.app" but the master is "privacy.backgroundApps" because
+// that is what Windows calls the switch at the top of the page. Taking the
+// prefix apart would look for "privacy.background", a key nothing has ever
+// written, so every row would read its switch off an unset value and show as off
+// whatever the master said.
+function masterKeyOf(item) {
+  if (item.masterKey) {
+    return item.masterKey;
+  }
+  return item.keyPrefix.replace(/\.app$/, '');
+}
+
+// One switch per app: "choose which apps can use your camera", "which apps send
+// you notifications", "which apps may run in the background". Where the page
+// names the apps it means, that list is used; otherwise it is every app there is,
+// which is what Windows shows for a permission nothing has ever asked for.
+//
+// The app's own switch is stored and read on its own. The master switch does not
+// write into every entry - it gates whether the entries can be on, which is why
+// it is ANDed in here rather than pushed down into the store. Two switches that
+// both stored the same value would disagree the moment either was pressed.
 export function perAppList(item, ops) {
   var elBox = el('div', 'set-list');
-  var masterKey = item.keyPrefix.replace(/\.app$/, '');
+  var masterKey = masterKeyOf(item);
   function paint() {
     elBox.textContent = '';
-    var master = ops.value(masterKey);
+    var master = ops.value(masterKey) !== false;
     var apps = (item.apps && item.apps.length)
-      ? item.apps.map(function (entry) { return { id: entry.appId, name: entry.title }; })
+      ? item.apps.map(function (entry) {
+        return { id: entry.appId, name: entry.title, icon: entry.icon };
+      })
       : ops.apps().filter(function (app) { return !app.hidden; });
     apps.forEach(function (app) {
       var key = item.keyPrefix + '.' + app.id;
       var right = el('div', 'set-app-right');
-      right.appendChild(switchNode(ops.value(key) === true && master === true, app.name + ' permission', function () {
+      right.appendChild(switchNode(ops.value(key) === true && master, app.name + ' permission', function () {
         ops.write(key, !ops.value(key));
       }));
       elBox.appendChild(appRow(app, { right: right }));
@@ -299,29 +328,6 @@ export function defaultApps(item, ops) {
     ops.onDefaultAppsPainted(paint);
   }
   return { el: box, refresh: paint };
-}
-
-// A chosen device, the way Sound shows the current output: an icon, the device
-// name, and a mark on the one that is in use.
-export function deviceRow(item, ops) {
-  var row = el('button', 'set-device-row');
-  row.type = 'button';
-  row.appendChild(el('span', 'set-device-art', '◧'));
-  var body = el('span', 'set-device-body');
-  body.appendChild(el('span', 'set-device-name', item.label || 'Device'));
-  row.appendChild(body);
-  var mark = el('span', 'set-device-mark', '✓');
-  row.appendChild(mark);
-  var sync = function () {
-    var on = ops.value(item.key) === 'speakers';
-    mark.hidden = !on;
-    row.classList.toggle('is-on', on);
-  };
-  row.addEventListener('click', function () {
-    ops.run('sound.chooseOutput');
-  });
-  sync();
-  return { el: row, sync: sync };
 }
 
 // The device lists Windows shows as "Your devices" and "Printers & scanners".

@@ -332,6 +332,21 @@
   color: var(--set-ink-soft);
 }
 
+/* A sub-heading inside a category: the Privacy pane puts six rows under "App
+   permissions". It is not clickable - it is the label of the run of rows under
+   it, not another place to go - so it is drawn as one and the rows beneath it
+   are indented to sit under its words. */
+.set-nav-subgroup {
+  margin: 14px 12px 4px 26px;
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-nav-row--nested .set-nav-art {
+  width: 14px;
+  height: 14px;
+}
+
 /* --- "Find a setting" ---------------------------------------------------- */
 
 /* The find box is a bordered well with the glass and the field side by side
@@ -696,6 +711,48 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The mark at either end of a slider. Windows puts a speaker beside the master
+   volume, a sun at both ends of the brightness, a leaf and a bolt at the ends of
+   the power mode - the mark is what tells you what the ends of the track mean,
+   which is otherwise only the caption under it. */
+.set-slider-art {
+  flex: 0 0 auto;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  color: var(--set-ink-soft);
+}
+
+.set-slider-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The right-hand mark is the loud one - the end of the brightness slider is
+   brighter than the rest of the page - so it is drawn in ink rather than grey. */
+.set-slider-art--end {
+  color: var(--set-ink);
+}
+
+/* The two words under the ends of the track: "Best energy savings" and "Best
+   performance". Only the power mode has them. */
+.set-slider-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 360px;
+  margin-top: 6px;
+}
+
+.set-slider-end-label {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-slider-end-label:last-child {
+  text-align: right;
+}
+
 .set-text {
   margin: 0;
   font-size: 14px;
@@ -789,6 +846,15 @@
   min-width: 22px;
   text-align: left;
   color: var(--set-ink-soft);
+}
+
+/* Game bar's "Record game clips, screenshots, and broadcast using Game bar" is
+   the one switch in Settings that is not blue: Windows draws it in the amber of
+   the game bar itself, because it is the switch that turns the recording on
+   rather than one that changes the machine. */
+.set-switch--amber.is-on .set-switch-track {
+  background: #e8a33d;
+  border-color: #d18f2c;
 }
 
 .set-switch:hover .set-switch-track,
@@ -983,9 +1049,15 @@
 
 /* --- buttons and links --------------------------------------------------- */
 
+/* Build 1903's button: a grey fill with a hairline border and dark text, not a
+   white one. Check for updates on Windows Update, Clear on Clipboard and
+   Troubleshoot on Sound are all this colour in 1903 - including the primary
+   action on the page, which is why there is no accent-coloured button here at
+   all and the one variant that is left is reserved for the pages whose button
+   colour could not be checked against a screenshot. */
 .set-button {
-  border: 1px solid #b1b1b1;
-  background: #fff;
+  border: 1px solid #c6c6c6;
+  background: #e1e1e1;
   padding: 5px 16px;
   font: inherit;
   font-size: 13px;
@@ -996,8 +1068,8 @@
 
 .set-button:hover,
 .set-button.sim-hover {
-  border-color: var(--set-accent);
-  background: #f3f9fd;
+  border-color: #8a8a8a;
+  background: #d6d6d6;
 }
 
 .set-button--primary {
@@ -1016,6 +1088,33 @@
   color: #a6a6a6;
   border-color: #d6d6d6;
   background: #f0f0f0;
+}
+
+/* A button that names an object rather than an action: "Add Bluetooth or other
+   device", "Troubleshoot", "Camera". The mark goes in front of the words, at the
+   button's own text size, so it reads as part of the label rather than as
+   artwork hung off the side. */
+.set-button-art {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  margin-right: 8px;
+  vertical-align: -2px;
+}
+
+.set-button-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The one button at the top of the Bluetooth page spans the settings column:
+   it is the page's only way in, and Windows draws it as a bar rather than as a
+   chip. */
+.set-button--wide {
+  width: 100%;
+  max-width: 340px;
+  padding: 7px 16px;
+  text-align: left;
 }
 
 .set-small-button {
@@ -1060,6 +1159,266 @@
 .set-link--small {
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* --- the shapes build 1903's pages are actually made of -------------------
+ *
+ * These are not variations on what is above; they are rows of their own, and
+ * each one exists because a screenshot of a Windows 10 Settings page contains it.
+ */
+
+/* A rule: the mark for what sets it off, what that thing is, what it will do,
+   and the switch. Focus assist's automatic rules are four of these, and the two
+   lines of words are the point - the second line says which of the three modes
+   the rule will put focus assist into, which is not something a switch row has
+   anywhere to say. */
+.set-rule {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.set-rule-art {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--set-ink);
+}
+
+.set-rule-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* A rule whose mark is missing keeps its space, so the switch beside it still
+   lines up with the switches on the rows above. */
+.set-rule-art.is-empty {
+  visibility: hidden;
+}
+
+.set-rule-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.set-rule-name {
+  font-size: 14px;
+  color: var(--set-ink);
+}
+
+.set-rule-sub {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+/* "Get help" and "Give feedback". The mark is beside the words rather than above
+   them, at the size of the words, because these are the last thing on the page
+   and they are meant to be read rather than noticed. */
+.set-help {
+  gap: 10px;
+}
+
+.set-help-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--set-accent);
+  cursor: default;
+  text-align: left;
+  justify-self: start;
+}
+
+.set-help-row:hover,
+.set-help-row.sim-hover {
+  color: #005a9e;
+  text-decoration: underline;
+}
+
+.set-help-art {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--set-ink);
+}
+
+.set-help-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* A keyboard shortcut. The name and the grey "Windows shortcut" caption stack in
+   one column and the keys sit in the other, which is how Windows leaves room for
+   a caption without making the row taller than it needs to be. */
+.set-shortcut {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.set-shortcut-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.set-shortcut-name {
+  font-size: 14px;
+  color: var(--set-ink);
+}
+
+.set-shortcut-cap {
+  font-size: 12px;
+  color: var(--set-ink-soft);
+}
+
+.set-shortcut-field {
+  width: 150px;
+}
+
+/* The text-size preview. The box is a plain frame rather than a field: it shows
+   the sample at the size being chosen, and Windows does not let you type into
+   it. The two A's either side of the track are what says the slider is about
+   size, which the number alone would not. */
+.set-row--sample {
+  max-width: 640px;
+}
+
+.set-sample-box {
+  border: 1px solid var(--set-rule);
+  border-radius: 2px;
+  padding: 10px 12px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.set-sample-text {
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--set-ink);
+  white-space: nowrap;
+}
+
+.set-sample-scale {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.set-sample-lane {
+  display: flex;
+  min-width: 0;
+}
+
+.set-sample-lane .set-slider {
+  flex: 1 1 0;
+  width: 0;
+}
+
+.set-sample-a {
+  color: var(--set-ink);
+  line-height: 1;
+}
+
+.set-sample-a--small {
+  font-size: 12px;
+}
+
+.set-sample-a--large {
+  font-size: 22px;
+}
+
+/* --- the help rail -------------------------------------------------------- */
+
+/* The column down the right of a page that holds "Related settings", "Have a
+   question?" and "Make Windows better". It is a sibling of the settings column
+   rather than a group at the bottom of it, which is what keeps it beside the
+   settings at every window width instead of below them once. */
+.set-page--with-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 48px;
+  max-width: none;
+  align-items: start;
+}
+
+.set-page-main {
+  min-width: 0;
+  max-width: 780px;
+}
+
+.set-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding-top: 4px;
+}
+
+.set-rail-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--set-ink);
+}
+
+.set-rail-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--set-ink-soft);
+}
+
+.set-rail-link {
+  display: block;
+  border: 0;
+  background: transparent;
+  padding: 0 0 6px;
+  font: inherit;
+  font-size: 12px;
+  color: #8a6d00;
+  cursor: default;
+  text-align: left;
+}
+
+.set-rail-link:hover,
+.set-rail-link.sim-hover {
+  color: #6b5500;
+  text-decoration: underline;
+}
+
+/* A control Windows cannot use on this machine: every projection setting on a PC
+   that does not receive Miracast. The words and the control are both greyed,
+   because a control that looked live and did nothing would be the worse of the
+   two. */
+.is-disabled,
+.is-disabled .set-row-label,
+.is-disabled .set-select-value,
+.is-disabled .set-switch-state,
+.is-disabled .set-slider-value {
+  color: #a6a6a6;
+}
+
+.is-disabled .set-select,
+.is-disabled .set-switch-track,
+.is-disabled .set-slider::-webkit-slider-runnable-track {
+  opacity: 0.5;
+}
+
+.is-disabled .set-switch.is-on .set-switch-track {
+  background: #a6a6a6;
+  border-color: #a6a6a6;
 }
 
 /* --- lists --------------------------------------------------------------- */
@@ -1138,7 +1497,6 @@
 }
 
 .set-device,
-.set-device-row,
 .set-language,
 .set-mixer-row,
 .set-usage-row,
@@ -1151,29 +1509,11 @@
   background: #fff;
 }
 
-.set-device-row {
-  width: 100%;
-  border: 1px solid var(--set-rule);
-  text-align: left;
-  font: inherit;
-  color: var(--set-ink);
-  cursor: default;
-}
-
-.set-device-row.is-on {
-  border-color: var(--set-accent);
-}
-
 .set-device-art {
   flex: 0 0 26px;
   font-size: 20px;
   color: var(--set-ink-soft);
   text-align: center;
-}
-
-.set-device-body {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 .set-device-name {
@@ -1992,6 +2332,22 @@
 .set-tile:active,
 .set-tile.is-down {
   background: var(--set-pressed);
+}
+
+/* A page with a help rail needs the window to be wide enough for the settings
+   column and the rail to both have somewhere to go. Below this the rail moves
+   under the settings rather than beside them, which is what Windows does when the
+   window is too narrow - it does not squash the settings to keep the rail
+   alongside. The rail's own links stay as wide as the column they are in. */
+@media (max-width: 860px) {
+  .set-page--with-rail {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+
+  .set-rail {
+    padding-top: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

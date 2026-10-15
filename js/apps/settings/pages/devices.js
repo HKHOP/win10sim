@@ -1,33 +1,75 @@
 // The Devices category: the hardware attached to the machine, and the switches
 // that decide how Windows treats it.
 
+// The Bluetooth page is the one page in Settings whose device is off in the
+// screenshot, and that is why it is shaped the way it is: the big Bluetooth
+// switch, then two checkboxes with an explanation under each, then the rail.
+//
+// The two checkboxes are the ones 1903 puts on this page and no other. Swift Pair
+// is about connecting quickly; metered connections is about not spending money on
+// a driver. Neither has a group heading of its own, because Windows gives them
+// none - they sit directly under the Bluetooth switch.
 export var BLUETOOTH_DEVICES = {
   id: 'bluetooth',
   title: 'Bluetooth & other devices',
   glyph: 'bluetooth',
   groups: [
     {
+      id: 'add',
+      items: [
+        { kind: 'button', label: 'Add Bluetooth or other device', action: 'devices.bluetooth.add', icon: 'add', wide: true }
+      ]
+    },
+    {
       id: 'bluetooth',
       title: 'Bluetooth',
       items: [
-        { kind: 'toggle', key: 'devices.bluetooth', label: 'Bluetooth', default: true },
-        { kind: 'toggle', key: 'devices.bluetoothDiscoverable', label: 'Make this PC discoverable as long as it’s switched on', default: false }
+        { kind: 'toggle', key: 'devices.bluetooth', label: 'Bluetooth', default: false },
+        {
+          kind: 'checkbox',
+          key: 'devices.swiftPair',
+          label: 'Show notifications to connect using Swift Pair',
+          default: true,
+          note: 'When selected, you can connect to supported Bluetooth devices quickly when they’re close by and in pairing mode.'
+        },
+        {
+          kind: 'checkbox',
+          key: 'devices.meteredUpdates',
+          label: 'Download over metered connections',
+          default: false,
+          note: 'To help prevent extra charges, keep this off so device software (drivers, info, and apps) for new devices won’t download while you’re on metered Internet connections.'
+        }
       ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Turn on Bluetooth even faster',
+      text: 'To turn Bluetooth on or off without opening Settings, open action center and select the Bluetooth icon.'
     },
     {
-      id: 'devices',
-      title: 'Devices',
-      items: [
-        { kind: 'deviceList', label: 'Your devices', source: 'bluetooth' },
-        { kind: 'button', label: 'Add a device', action: 'devices.bluetooth.add' }
-      ]
-    },
-    {
-      id: 'related',
       title: 'Related settings',
-      items: [
-        { kind: 'link', label: 'Devices & Printers', action: 'devices.open' },
-        { kind: 'link', label: 'Device manager', action: 'devices.manager' }
+      links: [
+        { label: 'Devices and printers', action: 'devices.open' },
+        { label: 'Sound settings', to: 'sound' },
+        { label: 'Display settings', to: 'display' },
+        { label: 'More Bluetooth options', action: 'devices.bluetooth.more' },
+        { label: 'Send or receive files via Bluetooth', action: 'devices.bluetooth.transfer' }
+      ]
+    },
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Fixing Bluetooth connection', action: 'devices.bluetooth.fix' },
+        { label: 'Reinstalling Bluetooth drivers', action: 'devices.bluetooth.reinstall' },
+        { label: 'Sharing files over Bluetooth', action: 'devices.bluetooth.share' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
       ]
     }
   ]

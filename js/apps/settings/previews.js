@@ -368,8 +368,15 @@ export function clock(item, ops) {
   return { el: box, dispose: function () { window.clearInterval(timer); } };
 }
 
-// The profile card on Accounts > Your info: the avatar Windows would show for
-// the signed-in account. Nobody is signed in, so it says so.
+// The profile card on Accounts > Your info: the avatar Windows shows for the
+// signed-in account, and the three lines under it.
+//
+// The three lines are the account's name, then the kind of account ("Local
+// Account"), then what it is ("Administrator") - and the last two are greyed
+// because they are facts about the account rather than things you chose. They
+// come from the declaration rather than from the store: an account's name and
+// group are not settings, and "Your info" is the one page whose value is the
+// person on it.
 export function profileCard(item, ops) {
   var box = el('div', 'set-profile');
   var art = el('div', 'set-profile-art');
@@ -379,8 +386,13 @@ export function profileCard(item, ops) {
   art.appendChild(img);
   box.appendChild(art);
   var body = el('div', 'set-profile-body');
-  body.appendChild(el('div', 'set-profile-name', 'Not signed in'));
-  body.appendChild(el('div', 'set-profile-sub', 'Add a Microsoft account to get started'));
+  body.appendChild(el('div', 'set-profile-name', item.name || 'Not signed in'));
+  if (item.accountType) {
+    body.appendChild(el('div', 'set-profile-sub', item.accountType));
+  }
+  if (item.role) {
+    body.appendChild(el('div', 'set-profile-sub', item.role));
+  }
   box.appendChild(body);
   return { el: box };
 }

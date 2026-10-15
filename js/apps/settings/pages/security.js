@@ -236,17 +236,175 @@ export var PRIVACY_APPS = {
   ]
 };
 
+// Background apps: one switch for all of them and then one per app.
+//
+// The order is Windows' own alphabetical order of what is installed, and the
+// per-app list is declared rather than asked of the shell. That is the one place
+// this catalogue names apps in a list, and it is the right exception: the apps
+// here are the ones Windows 1903 ships and shows regardless of what this machine
+// has run - 3D Viewer, Calculator, Camera, Clock, Cortana, Feedback Hub, Get
+// Help - rather than the handful this shell happens to have.
+export var PRIVACY_BACKGROUND_APPS = {
+  id: 'backgroundApps',
+  title: 'Background apps',
+  glyph: 'backgroundApps',
+  groups: [
+    {
+      id: 'background',
+      title: 'Background Apps',
+      items: [
+        { kind: 'toggle', key: 'privacy.backgroundApps', label: 'Let apps run in the background', default: true }
+      ]
+    },
+    {
+      id: 'choose',
+      title: 'Choose which apps can run in the background',
+      items: [
+        { kind: 'text', text: 'Choose which apps can receive info, send notifications, and stay up-to-date, even when you’re not using them. Turning background apps off can help conserve power.' },
+        { kind: 'perAppList', keyPrefix: 'privacy.background.app', masterKey: 'privacy.backgroundApps', label: 'Background apps', source: 'background', apps: [
+          { appId: 'viewer3d', title: '3D Viewer' },
+          { appId: 'calculator', title: 'Calculator' },
+          { appId: 'edge', title: 'Microsoft Edge' },
+          { appId: 'store', title: 'Microsoft Store' }
+        ] }
+      ]
+    }
+  ]
+};
+
+// The rest of the Privacy pages 1903 shows between Background apps and About
+// protection. Each is short and each says what it would control, because the
+// machine has none of them switched on.
+
+// App diagnostics: what an app is allowed to say about itself.
+export var PRIVACY_APP_DIAGNOSTICS = {
+  id: 'appDiagnostics',
+  title: 'App diagnostics',
+  glyph: 'appDiagnostics',
+  groups: [
+    {
+      id: 'diagnostics',
+      title: 'Let apps send diagnostic and usage data',
+      items: [
+        { kind: 'toggle', key: 'privacy.appDiagnostics', label: 'Send Microsoft diagnostic and usage data', default: false }
+      ]
+    }
+  ]
+};
+
+// Automatic file downloads: what may fetch a file without being asked.
+export var PRIVACY_AUTO_DOWNLOADS = {
+  id: 'automaticFileDownloads',
+  title: 'Automatic file downloads',
+  glyph: 'autoDownloads',
+  groups: [
+    {
+      id: 'downloads',
+      title: 'Automatic file downloads',
+      items: [
+        {
+          kind: 'toggle',
+          key: 'privacy.autoDownloads',
+          label: 'Download automatic file downloads',
+          default: false
+        }
+      ]
+    }
+  ]
+};
+
+// Documents and Pictures: whether the system can read them to answer questions
+// about what is on the machine.
+export var PRIVACY_DOCUMENTS = {
+  id: 'privacyDocuments',
+  title: 'Documents',
+  glyph: 'documentsPrivacy',
+  groups: [
+    {
+      id: 'documents',
+      title: 'Let apps access your documents',
+      items: [
+        { kind: 'toggle', key: 'privacy.documents', label: 'Documents', default: false },
+        { kind: 'perAppList', keyPrefix: 'privacy.documents.app', label: 'Document apps', source: 'documents' }
+      ]
+    }
+  ]
+};
+
+export var PRIVACY_PICTURES = {
+  id: 'privacyPictures',
+  title: 'Pictures',
+  glyph: 'picturesPrivacy',
+  groups: [
+    {
+      id: 'pictures',
+      title: 'Let apps access your pictures',
+      items: [
+        { kind: 'toggle', key: 'privacy.pictures', label: 'Pictures', default: false },
+        { kind: 'perAppList', keyPrefix: 'privacy.pictures.app', label: 'Picture apps', source: 'pictures' }
+      ]
+    }
+  ]
+};
+
+// The six pages Windows nests under "App permissions" in the Privacy nav. Each
+// one is a list of apps with a switch, and each is reached from that heading
+// rather than sitting in the nav as a row of its own.
+function appPermissionPage(id, title, glyph, prefix, master) {
+  return {
+    id: id,
+    title: title,
+    glyph: glyph,
+    // Every one of these six sits under the "App permissions" heading in the nav
+    // rather than as a row of its own, which is what Windows does with them.
+    navGroup: 'App permissions',
+    groups: [
+      {
+        id: 'apps',
+        title: 'Let apps ' + master,
+        items: [
+          { kind: 'toggle', key: 'privacy.' + prefix, label: 'Let apps ' + master, default: false },
+          { kind: 'perAppList', keyPrefix: 'privacy.' + prefix + '.app', label: title + ' apps', source: prefix }
+        ]
+      }
+    ]
+  };
+}
+
+// The docs get the same treatment: the master is "access your documents" and the
+// entries are one per app under it, which is the shape every app-permission page
+// has.
+
+export var PRIVACY_CALENDAR = appPermissionPage('privacyCalendar', 'Calendar', 'calendarPrivacy', 'calendar', 'access your calendar');
+export var PRIVACY_EMAIL = appPermissionPage('privacyEmail', 'Email', 'mail', 'email', 'access your email');
+export var PRIVACY_TASKS = appPermissionPage('privacyTasks', 'Tasks', 'tasksPrivacy', 'tasks', 'access your tasks');
+export var PRIVACY_MESSAGING = appPermissionPage('privacyMessaging', 'Messaging', 'messagingPrivacy', 'messaging', 'access your messaging');
+export var PRIVACY_RADIOS = appPermissionPage('privacyRadios', 'Radios', 'radiosPrivacy', 'radios', 'use the radio tuner');
+export var PRIVACY_OTHER_DEVICES = appPermissionPage('privacyOtherDevices', 'Other devices', 'otherDevicesPrivacy', 'otherDevices', 'communicate with nearby devices');
+
 export var PRIVACY = {
   id: 'privacy',
   title: 'Privacy',
   blurb: 'Location, camera, microphone',
   glyph: 'privacy',
+  // Windows' order, with the six app-permission pages under one heading in the
+  // nav: the four things everyone has, then the apps, then the rest.
   pages: [
     PRIVACY_GENERAL,
     PRIVACY_LOCATION,
     PRIVACY_CAMERA,
     PRIVACY_MICROPHONE,
-    PRIVACY_NOTIFICATIONS,
+    PRIVACY_CALENDAR,
+    PRIVACY_EMAIL,
+    PRIVACY_TASKS,
+    PRIVACY_MESSAGING,
+    PRIVACY_RADIOS,
+    PRIVACY_OTHER_DEVICES,
+    PRIVACY_BACKGROUND_APPS,
+    PRIVACY_APP_DIAGNOSTICS,
+    PRIVACY_AUTO_DOWNLOADS,
+    PRIVACY_DOCUMENTS,
+    PRIVACY_PICTURES,
     PRIVACY_DIAGNOSTICS,
     PRIVACY_PROTECTION
   ]
@@ -258,6 +416,15 @@ export var PRIVACY_EXTRA_PAGES = [
 
 // --- Update & security ------------------------------------------------------
 
+// Windows Update. The status line is one sentence rather than a heading plus a
+// timestamp: 1903 writes "Your device is up to date. Last checked: yesterday,
+// 13:36" as a single line, which is why the timestamp is inside the text rather
+// than its own row.
+//
+// The settings below it are links, not a drop-down for the active hours. A
+// screenshot of this page shows "Change active hours" as a link beside "Restart
+// options" and "Advanced options", so that is what is declared - a select here
+// would be a control Windows does not draw on this page.
 export var WINDOWS_UPDATE = {
   id: 'windowsUpdate',
   title: 'Windows Update',
@@ -265,32 +432,28 @@ export var WINDOWS_UPDATE = {
   groups: [
     {
       id: 'status',
-      title: 'You’re up to date',
+      title: 'Update status',
       items: [
-        { kind: 'text', text: 'Last checked: Today, 10:42 AM' },
-        { kind: 'button', label: 'Check for updates', action: 'update.check', variant: 'primary' },
+        { kind: 'text', text: 'Your device is up to date. Last checked: yesterday, 13:36' },
+        { kind: 'button', label: 'Check for updates', action: 'update.check' },
         { kind: 'note', text: 'This computer has no network, so it can never reach Windows Update. Everything it reports is what it already has.' }
       ]
     },
     {
-      id: 'more',
-      title: 'More settings',
+      id: 'settings',
+      title: 'Update settings',
       items: [
-        {
-          kind: 'select',
-          key: 'update.activeHours',
-          label: 'Get up and running as fast as possible after an update',
-          default: '8:00 AM to 10:00 PM',
-          options: [
-            { value: '8:00 AM to 10:00 PM', label: '8:00 AM to 10:00 PM' },
-            { value: '9:00 AM to 5:00 PM', label: '9:00 AM to 5:00 PM' },
-            { value: 'Off', label: 'Off' }
-          ]
-        },
-        { kind: 'link', label: 'Update history', action: 'update.history' },
+        { kind: 'text', text: 'Available updates will be downloaded and installed automatically, except over metered connections (where charges may apply).' },
+        { kind: 'link', label: 'Change active hours', action: 'update.activeHours' },
         { kind: 'link', label: 'Restart options', action: 'update.restart' },
-        { kind: 'link', label: 'Advanced options', to: 'updateAdvanced' },
-        { kind: 'link', label: 'Delivery Optimization', to: 'deliveryOptimization' }
+        { kind: 'link', label: 'Advanced options', to: 'updateAdvanced' }
+      ]
+    },
+    {
+      id: 'history',
+      title: 'Update history',
+      items: [
+        { kind: 'link', label: 'Update history', action: 'update.history' }
       ]
     }
   ]
@@ -707,25 +870,53 @@ export var DEVELOPERS = {
   ]
 };
 
+// The Insider Programme. Windows puts this in the nav as a page of its own, and
+// there is nothing on it here: no account has ever signed in to an Insider
+// programme, and a page offering to join one would be offering something this
+// computer cannot do.
+export var INSIDER = {
+  id: 'insider',
+  title: 'Windows Insider Programme',
+  glyph: 'insider',
+  groups: [
+    {
+      id: 'status',
+      title: 'Windows Insider Programme',
+      items: [
+        {
+          kind: 'text',
+          text: 'You are not enrolled in the Windows Insider Programme.'
+        },
+        { kind: 'note', text: 'This computer has no network to reach the programme with, and no Microsoft account has signed in.' }
+      ]
+    }
+  ]
+};
+
 export var UPDATE_SECURITY = {
   id: 'update',
   title: 'Update & Security',
   blurb: 'Windows Update, recovery, backup',
   glyph: 'update',
+  // Windows' own order: Update, Defender, then the three that are about getting
+  // the machine back, then the two that are about it not being this machine.
+  // Troubleshoot, Recovery and Find my device are reached by link rather than
+  // drawn here - which is where Windows puts them on a build that has them.
   pages: [
     WINDOWS_UPDATE,
     WINDOWS_SECURITY,
-    TROUBLESHOOT,
-    RECOVERY,
     BACKUP,
+    RECOVERY,
     ACTIVATION,
-    FIND_DEVICE,
-    DEVELOPERS
+    DEVELOPERS,
+    INSIDER
   ]
 };
 
 export var UPDATE_EXTRA_PAGES = [
   UPDATE_ADVANCED,
   DELIVERY_OPTIMIZATION,
-  PROTECTION_HISTORY
+  PROTECTION_HISTORY,
+  TROUBLESHOOT,
+  FIND_DEVICE
 ];

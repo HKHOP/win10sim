@@ -5,6 +5,14 @@
 // where Settings puts a label that does not match the storage key underneath it
 // ("Night light (off until 9:00 PM)" is one setting, not two) - the key is the
 // stable name for the value, the label is what the user reads.
+//
+// Display, Sound, Focus assist, Power & sleep, Tablet mode, Snap, Projecting to
+// this PC and Clipboard were set from screenshots of 1903 rather than from
+// memory, which is where several of the details below come from: Display opens
+// with the three things Windows puts first (text, size, brightness) before the
+// older groups, Power & sleep has a Performance and Energy group between Screen
+// and Sleep, and Snap is the page's own title even though the nav row above it
+// still says Multitasking.
 
 export var DISPLAY = {
   id: 'display',
@@ -12,10 +20,71 @@ export var DISPLAY = {
   glyph: 'display',
   groups: [
     {
-      id: 'brightness',
+      id: 'intro',
+      items: [
+        { kind: 'text', text: 'Make your display easier to see.' }
+      ]
+    },
+    {
+      id: 'textbigger',
+      title: 'Make text bigger',
+      items: [
+        {
+          kind: 'textSample',
+          key: 'display.textSize',
+          label: 'Make text bigger',
+          min: 100,
+          max: 500,
+          step: 25,
+          default: 100
+        }
+      ]
+    },
+    {
+      id: 'everythingbigger',
+      title: 'Make everything bigger',
+      items: [
+        {
+          kind: 'select',
+          key: 'display.scale',
+          label: 'Change the size of apps and text on the main display',
+          default: '100% (Recommended)',
+          options: [
+            { value: '100% (Recommended)', label: '100% (Recommended)' },
+            { value: '125%', label: '125%' },
+            { value: '150%', label: '150%' },
+            { value: '175%', label: '175%' },
+            { value: '200%', label: '200%' },
+            { value: '225%', label: '225%' },
+            { value: '250%', label: '250%' }
+          ]
+        },
+        { kind: 'link', label: 'Change the size of apps and text on other displays', action: 'display.otherDisplays' },
+        { kind: 'link', label: 'Change the size and color of your cursor and mouse pointer', action: 'display.pointerSize' }
+      ]
+    },
+    {
+      id: 'everythingbrighter',
+      title: 'Make everything brighter',
+      items: [
+        {
+          kind: 'slider',
+          key: 'display.brightness',
+          label: 'Change the brightness of your built-in display',
+          min: 0,
+          max: 100,
+          step: 1,
+          suffix: '%',
+          default: 51,
+          icon: 'brightness',
+          iconEnd: 'brightness'
+        }
+      ]
+    },
+    {
+      id: 'brightnesscolor',
       title: 'Brightness & color',
       items: [
-        { kind: 'slider', key: 'display.brightness', label: 'Brightness', min: 0, max: 100, step: 1, suffix: '%', default: 100 },
         {
           kind: 'toggle',
           key: 'display.nightLight',
@@ -23,35 +92,6 @@ export var DISPLAY = {
           default: false
         },
         { kind: 'link', label: 'Night light settings', to: 'nightlight' }
-      ]
-    },
-    {
-      id: 'textsize',
-      title: 'Text size',
-      items: [
-        {
-          kind: 'slider',
-          key: 'display.textSize',
-          label: 'Change the size of text, apps, and other items',
-          min: 100,
-          max: 500,
-          step: 25,
-          suffix: '%',
-          default: 100,
-          note: 'Windows scales the text it draws; this computer has no DPI to scale to.'
-        }
-      ]
-    },
-    {
-      id: 'rearrange',
-      title: 'Rearrange your displays',
-      items: [
-        {
-          kind: 'displayBoxes',
-          label: 'Select a display below to change the settings for it. Press and hold (or select) a display, then drag to rearrange it.'
-        },
-        { kind: 'button', label: 'Identify', action: 'display.identify' },
-        { kind: 'button', label: 'Detect', action: 'display.detect' }
       ]
     },
     {
@@ -82,26 +122,47 @@ export var DISPLAY = {
             { value: 'Portrait (flipped)', label: 'Portrait (flipped)' }
           ]
         },
-        {
-          kind: 'select',
-          key: 'display.scale',
-          label: 'Scale',
-          default: '100% (Recommended)',
-          options: [
-            { value: '100% (Recommended)', label: '100% (Recommended)' },
-            { value: '125%', label: '125%' },
-            { value: '150%', label: '150%' },
-            { value: '200%', label: '200%' }
-          ]
-        },
         { kind: 'link', label: 'Advanced display settings', to: 'displayAdvanced' }
       ]
     },
     {
-      id: 'related',
-      title: 'Related Settings',
+      id: 'rearrange',
+      title: 'Rearrange your displays',
       items: [
-        { kind: 'link', label: 'Multitasking', to: 'multitasking' }
+        {
+          kind: 'displayBoxes',
+          label: 'Select a display below to change the settings for it. Press and hold (or select) a display, then drag to rearrange it.'
+        },
+        { kind: 'button', label: 'Identify', action: 'display.identify' },
+        { kind: 'button', label: 'Detect', action: 'display.detect' }
+      ]
+    }
+  ],
+  // Related settings, the questions and the feedback link are the rail *beside*
+  // the settings rather than groups under them, which is where 1903 puts them -
+  // and why this page has no "Related settings" group of its own.
+  rail: [
+    {
+      title: 'Related settings',
+      links: [
+        { label: 'Additional display settings', to: 'displayAdvanced' },
+        { label: 'Background settings', to: 'background' },
+        { label: 'Color settings', to: 'colors' },
+        { label: 'Theme settings', to: 'themes' }
+      ]
+    },
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Using color filters', to: 'easeColors' },
+        { label: 'Turning on high contrast', to: 'easeContrast' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
       ]
     }
   ]
@@ -178,6 +239,11 @@ export var DISPLAY_ADVANCED = {
   ]
 };
 
+// Sound: the two groups Windows 1903 splits it into, each with the same sentence
+// under the device box, and the master volume as a row rather than a group of its
+// own. The volume sliders carry the mark for what they are a volume of - a
+// speaker for the output, a microphone for the input - which is the only thing
+// telling two identical bars apart.
 export var SOUND = {
   id: 'sound',
   title: 'Sound',
@@ -185,45 +251,62 @@ export var SOUND = {
   groups: [
     {
       id: 'output',
-      title: 'Choose your output device',
+      title: 'Output',
       items: [
-        { kind: 'deviceRow', key: 'sound.output', label: 'Speakers (High Definition Audio Device)', icon: 'speaker', default: 'speakers' },
         {
           kind: 'select',
           key: 'sound.outputDevice',
-          label: 'Output device',
-          default: 'Speakers (High Definition Audio Device)',
+          label: 'Choose your output device',
+          default: 'Speakers (Realtek High Definition Audio)',
           options: [
-            { value: 'Speakers (High Definition Audio Device)', label: 'Speakers (High Definition Audio Device)' },
-            { value: 'Headphones (Headphone Microphone)', label: 'Headphones (Headphone Microphone)' },
+            { value: 'Speakers (Realtek High Definition Audio)', label: 'Speakers (Realtek High Definition Audio)' },
+            { value: 'Headphones (Realtek Audio)', label: 'Headphones (Realtek Audio)' },
             { value: 'Digital Output (S/PDIF)', label: 'Digital Output (S/PDIF)' }
           ]
-        }
-      ]
-    },
-    {
-      id: 'volume',
-      title: 'Volume',
-      items: [
-        { kind: 'slider', key: 'sound.masterVolume', label: 'Speakers', min: 0, max: 100, step: 1, suffix: '%', default: 50 }
+        },
+        { kind: 'text', text: 'Certain apps may be set up to use different sound devices than the one selected here. Customize app volumes and devices in advanced sound options.' },
+        { kind: 'link', label: 'Device properties', action: 'sound.outputProperties' },
+        {
+          kind: 'slider',
+          key: 'sound.masterVolume',
+          label: 'Master volume',
+          min: 0,
+          max: 100,
+          step: 1,
+          default: 75,
+          icon: 'speaker'
+        },
+        { kind: 'button', label: 'Troubleshoot', action: 'sound.troubleshoot', icon: 'warning' },
+        { kind: 'link', label: 'Manage sound devices', action: 'sound.manageDevices' }
       ]
     },
     {
       id: 'input',
-      title: 'Choose your input device',
+      title: 'Input',
       items: [
         {
           kind: 'select',
           key: 'sound.inputDevice',
-          label: 'Input device',
-          default: 'Microphone (High Definition Audio Device)',
+          label: 'Choose your input device',
+          default: 'Microphone (Realtek High Definition Audio)',
           options: [
-            { value: 'Microphone (High Definition Audio Device)', label: 'Microphone (High Definition Audio Device)' },
-            { value: 'Microphone Array (High Definition Audio Device)', label: 'Microphone Array (High Definition Audio Device)' },
-            { value: 'Line In (High Definition Audio Device)', label: 'Line In (High Definition Audio Device)' }
+            { value: 'Microphone (Realtek High Definition Audio)', label: 'Microphone (Realtek High Definition Audio)' },
+            { value: 'Microphone Array (Realtek High Definition Audio)', label: 'Microphone Array (Realtek High Definition Audio)' },
+            { value: 'Line In (Realtek High Definition Audio)', label: 'Line In (Realtek High Definition Audio)' }
           ]
         },
-        { kind: 'slider', key: 'sound.inputVolume', label: 'Microphone', min: 0, max: 100, step: 1, suffix: '%', default: 75 }
+        { kind: 'text', text: 'Certain apps may be set up to use different sound devices than the one selected here. Customize app volumes and devices in advanced sound options.' },
+        { kind: 'link', label: 'Device properties', action: 'sound.inputProperties' },
+        {
+          kind: 'slider',
+          key: 'sound.inputVolume',
+          label: 'Test your microphone',
+          min: 0,
+          max: 100,
+          step: 1,
+          default: 75,
+          icon: 'microphone'
+        }
       ]
     },
     {
@@ -249,6 +332,28 @@ export var SOUND = {
           ]
         },
         { kind: 'toggle', key: 'sound.systemSounds', label: 'Play system sounds', default: true }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Related settings',
+      links: [
+        { label: 'Volume mixer', action: 'sound.mixer' },
+        { label: 'Default sound device settings', action: 'sound.defaults' }
+      ]
+    },
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Fixing sound problems', action: 'sound.help' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
       ]
     }
   ]
@@ -317,14 +422,26 @@ export var NOTIFICATIONS_APP_SETTINGS = {
   ]
 };
 
+// Focus assist. The three answers each carry the sentence Windows writes under
+// them, and "Priority only" carries a link as well - because "Customize your
+// priority list" is the way out of that answer rather than a setting of its own.
+//
+// The automatic rules are not switches on a page: each is a mark, the thing that
+// sets it off, what it will do when it fires, and the switch. The second line is
+// the part a switch row has nowhere to put.
 export var FOCUS_ASSIST = {
   id: 'focusassist',
   title: 'Focus assist',
   glyph: 'focusAssist',
   groups: [
     {
-      id: 'focus',
-      title: 'Choose when to show notifications',
+      id: 'intro',
+      items: [
+        { kind: 'text', text: 'Choose which notification you’d like to see and hear so you can stay focused. The rest will go straight to action center where you can see them any time.' }
+      ]
+    },
+    {
+      id: 'modes',
       items: [
         {
           kind: 'radio',
@@ -332,29 +449,38 @@ export var FOCUS_ASSIST = {
           label: '',
           default: 'off',
           options: [
-            { value: 'off', label: 'Off', help: 'Notifications are shown all the time.' },
-            { value: 'priority', label: 'Priority only', help: 'Only notifications from priority senders are shown.' },
-            { value: 'alarms', label: 'Alarms only', help: 'Only alarms and urgent notifications are shown.' }
+            { value: 'off', label: 'Off', help: 'Get all notifications from your apps and contacts.' },
+            {
+              value: 'priority',
+              label: 'Priority only',
+              help: 'See only selected notifications from the priority list. The rest will go straight to action center.',
+              link: { label: 'Customize your priority list', action: 'focusassist.priorityList' }
+            },
+            { value: 'alarms', label: 'Alarms only', help: 'Hide all notifications, except for alarms.' }
           ]
         }
       ]
     },
     {
       id: 'rules',
-      title: 'Rules',
+      title: 'Automatic rules',
       items: [
-        {
-          kind: 'toggle',
-          key: 'focusassist.autoRules',
-          label: 'Automatically turn on when I’m playing a game or recording',
-          default: false
-        },
-        { kind: 'text', text: 'Focus assist will be turned on automatically when this PC is in full-screen game mode.' }
+        { kind: 'text', text: 'Choose the times and activities when you don’t want to be disturbed, and focus assist will turn on automatically.' },
+        { kind: 'ruleRow', key: 'focusassist.ruleTimes', icon: 'clock', label: 'During these times', sublabel: '11:00 PM - 7:00 AM; Priority only', default: false },
+        { kind: 'ruleRow', key: 'focusassist.ruleDuplicatingDisplay', icon: 'tvMonitor', label: 'When I’m duplicating my display', sublabel: 'Alarms only', default: true },
+        { kind: 'ruleRow', key: 'focusassist.rulePlayingGame', icon: 'game', label: 'When I’m playing a game', sublabel: 'Priority only', default: true },
+        { kind: 'ruleRow', key: 'focusassist.ruleFullScreen', icon: 'fullScreen', label: 'When I’m using an app in full screen mode', sublabel: 'Alarms only', default: true },
+        { kind: 'checkbox', key: 'focusassist.summary', label: 'Show me a summary of what I missed while focus assist was on', default: false }
       ]
     }
   ]
 };
 
+// Power & sleep. The page 1903 shows is short and has a group the older layout did
+// not: Performance and Energy, with the power mode as a five-position slider
+// between a leaf and a bolt and the name of the current position in the caption.
+// The five positions are Windows' own five power modes, so the slider steps in
+// fives of twenty rather than in arbitrary numbers.
 export var POWER = {
   id: 'power',
   title: 'Power & sleep',
@@ -367,14 +493,18 @@ export var POWER = {
         {
           kind: 'select',
           key: 'power.screenPlugged',
-          label: 'When plugged in',
-          default: '10 minutes',
+          label: 'When plugged in, turn off after',
+          default: 'Never',
           options: [
             { value: 'Never', label: 'Never' },
+            { value: '1 minute', label: '1 minute' },
+            { value: '2 minutes', label: '2 minutes' },
+            { value: '3 minutes', label: '3 minutes' },
             { value: '5 minutes', label: '5 minutes' },
             { value: '10 minutes', label: '10 minutes' },
             { value: '15 minutes', label: '15 minutes' },
             { value: '20 minutes', label: '20 minutes' },
+            { value: '25 minutes', label: '25 minutes' },
             { value: '30 minutes', label: '30 minutes' },
             { value: '45 minutes', label: '45 minutes' },
             { value: '1 hour', label: '1 hour' },
@@ -388,7 +518,84 @@ export var POWER = {
         {
           kind: 'select',
           key: 'power.screenBattery',
-          label: 'When on battery',
+          label: 'When on battery, turn off after',
+          default: 'Never',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '1 minute', label: '1 minute' },
+            { value: '2 minutes', label: '2 minutes' },
+            { value: '3 minutes', label: '3 minutes' },
+            { value: '5 minutes', label: '5 minutes' },
+            { value: '10 minutes', label: '10 minutes' },
+            { value: '15 minutes', label: '15 minutes' },
+            { value: '20 minutes', label: '20 minutes' },
+            { value: '25 minutes', label: '25 minutes' },
+            { value: '30 minutes', label: '30 minutes' },
+            { value: '45 minutes', label: '45 minutes' },
+            { value: '1 hour', label: '1 hour' },
+            { value: '2 hours', label: '2 hours' },
+            { value: '3 hours', label: '3 hours' },
+            { value: '5 hours', label: '5 hours' },
+            { value: 'Never (turn off only)', label: 'Never (turn off only)' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'performance',
+      title: 'Performance and Energy',
+      items: [
+        {
+          kind: 'slider',
+          key: 'power.mode',
+          label: 'Power mode',
+          min: 0,
+          max: 100,
+          step: 25,
+          default: 75,
+          showValue: false,
+          icon: 'leaf',
+          iconEnd: 'lightningBolt',
+          endLabels: ['Best energy savings', 'Best performance'],
+          labelFrom: {
+            0: 'Best energy efficiency',
+            25: 'Better battery life',
+            50: 'Balanced',
+            75: 'Better performance',
+            100: 'Best performance'
+          }
+        }
+      ]
+    },
+    {
+      id: 'sleep',
+      title: 'Sleep',
+      items: [
+        {
+          kind: 'select',
+          key: 'power.sleepPlugged',
+          label: 'When plugged in, turn off after',
+          default: 'Never',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '1 minute', label: '1 minute' },
+            { value: '2 minutes', label: '2 minutes' },
+            { value: '3 minutes', label: '3 minutes' },
+            { value: '5 minutes', label: '5 minutes' },
+            { value: '10 minutes', label: '10 minutes' },
+            { value: '15 minutes', label: '15 minutes' },
+            { value: '30 minutes', label: '30 minutes' },
+            { value: '45 minutes', label: '45 minutes' },
+            { value: '1 hour', label: '1 hour' },
+            { value: '2 hours', label: '2 hours' },
+            { value: '3 hours', label: '3 hours' },
+            { value: 'Never (turn off only)', label: 'Never (turn off only)' }
+          ]
+        },
+        {
+          kind: 'select',
+          key: 'power.sleepBattery',
+          label: 'When on battery, turn off after',
           default: 'Never',
           options: [
             { value: 'Never', label: 'Never' },
@@ -401,73 +608,88 @@ export var POWER = {
             { value: '45 minutes', label: '45 minutes' },
             { value: '1 hour', label: '1 hour' },
             { value: '2 hours', label: '2 hours' },
+            { value: '3 hours', label: '3 hours' },
             { value: 'Never (turn off only)', label: 'Never (turn off only)' }
           ]
         }
       ]
     },
     {
-      id: 'sleep',
-      title: 'Sleep',
+      id: 'energy',
+      title: 'Save energy and battery life',
       items: [
-        {
-          kind: 'select',
-          key: 'power.sleepPlugged',
-          label: 'When plugged in',
-          default: '30 minutes',
-          options: [
-            { value: 'Never', label: 'Never' },
-            { value: '5 minutes', label: '5 minutes' },
-            { value: '10 minutes', label: '10 minutes' },
-            { value: '15 minutes', label: '15 minutes' },
-            { value: '30 minutes', label: '30 minutes' },
-            { value: '45 minutes', label: '45 minutes' },
-            { value: '1 hour', label: '1 hour' },
-            { value: '2 hours', label: '2 hours' },
-            { value: 'Never (turn off only)', label: 'Never (turn off only)' }
-          ]
-        },
-        {
-          kind: 'select',
-          key: 'power.sleepBattery',
-          label: 'When on battery',
-          default: '15 minutes',
-          options: [
-            { value: 'Never', label: 'Never' },
-            { value: '5 minutes', label: '5 minutes' },
-            { value: '10 minutes', label: '10 minutes' },
-            { value: '15 minutes', label: '15 minutes' },
-            { value: '30 minutes', label: '30 minutes' },
-            { value: '45 minutes', label: '45 minutes' },
-            { value: '1 hour', label: '1 hour' },
-            { value: 'Never (turn off only)', label: 'Never (turn off only)' }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'battery',
-      title: 'Battery',
-      items: [
-        {
-          kind: 'slider',
-          key: 'power.batteryLevel',
-          label: 'Set the battery level at which to turn on battery saver',
-          min: 5,
-          max: 100,
-          step: 5,
-          suffix: '%',
-          default: 20
-        },
-        { kind: 'toggle', key: 'power.energySaver', label: 'Battery saver', default: false }
+        { kind: 'text', text: 'Make your battery last longer by choosing shorter times for screen and sleep settings.' }
       ]
     },
     {
       id: 'related',
       title: 'Related settings',
       items: [
-        { kind: 'link', label: 'Usage history', to: 'powerUsage' },
-        { kind: 'link', label: 'Multitasking', to: 'multitasking' }
+        { kind: 'link', label: 'Additional power settings', to: 'powerUsage' }
+      ]
+    },
+    {
+      id: 'web',
+      title: 'Help from the web',
+      items: [
+        { kind: 'link', label: 'Lock your Windows PC automatically', action: 'power.lock' }
+      ]
+    }
+  ]
+};
+
+// The Battery row Windows puts in the nav between Power & sleep and Storage. The
+// two settings on it moved off the Power & sleep page, which in 1903 is where a
+// screenshot shows them not to be.
+export var BATTERY = {
+  id: 'battery',
+  title: 'Battery',
+  glyph: 'battery',
+  groups: [
+    {
+      id: 'level',
+      title: 'Set the battery level at which to turn on battery saver',
+      items: [
+        { kind: 'slider', key: 'power.batteryLevel', label: 'Battery level', min: 5, max: 100, step: 5, suffix: '%', default: 20 }
+      ]
+    },
+    {
+      id: 'saver',
+      title: 'Battery saver',
+      items: [
+        { kind: 'toggle', key: 'power.energySaver', label: 'Battery saver', default: false },
+        {
+          kind: 'select',
+          key: 'power.lowBatteryLevel',
+          label: 'Set battery saver level when',
+          default: '20%',
+          options: [
+            { value: 'Never', label: 'Never' },
+            { value: '20%', label: '20%' },
+            { value: '30%', label: '30%' },
+            { value: '40%', label: '40%' },
+            { value: '50%', label: '50%' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'usage',
+      title: 'Battery usage',
+      items: [
+        { kind: 'usageChart', label: 'Battery usage', data: [
+          { name: 'Microsoft Edge', minutes: 74 },
+          { name: 'Windows Explorer', minutes: 51 },
+          { name: 'Desktop Window Manager', minutes: 38 },
+          { name: 'Settings', minutes: 22 }
+        ] }
+      ]
+    },
+    {
+      id: 'related',
+      title: 'Related settings',
+      items: [
+        { kind: 'link', label: 'Power & sleep', to: 'power' }
       ]
     }
   ]
@@ -475,7 +697,7 @@ export var POWER = {
 
 export var POWER_USAGE = {
   id: 'powerUsage',
-  title: 'Power usage',
+  title: 'Additional power settings',
   glyph: 'powerSleep',
   groups: [
     {
@@ -577,6 +799,8 @@ export var DEFAULT_SAVE = {
   ]
 };
 
+// Tablet mode: four rows and nothing else in 1903 - two questions Windows asks
+// and two switches it draws - so there is no Related settings group here.
 export var TABLET = {
   id: 'tablet',
   title: 'Tablet mode',
@@ -584,92 +808,68 @@ export var TABLET = {
   groups: [
     {
       id: 'use',
-      title: 'Use your PC as a tablet',
       items: [
         {
           kind: 'select',
           key: 'tablet.when',
-          label: 'When to use tablet mode',
-          default: 'When no keyboard is attached',
+          label: 'When I sign in',
+          default: 'Use the appropriate mode for my hardware',
           options: [
-            { value: 'Never', label: 'Never' },
-            { value: 'When no keyboard is attached', label: 'When no keyboard is attached' }
+            { value: 'Use the appropriate mode for my hardware', label: 'Use the appropriate mode for my hardware' },
+            { value: 'Always use tablet mode', label: 'Always use tablet mode' },
+            { value: 'Never use tablet mode', label: 'Never use tablet mode' }
           ]
         },
-        { kind: 'toggle', key: 'tablet.signedIn', label: 'Don’t show me this again', default: false }
-      ]
-    },
-    {
-      id: 'related',
-      title: 'Related settings',
-      items: [
-        { kind: 'link', label: 'Pen & Windows Ink', to: 'pen' },
-        { kind: 'link', label: 'Touchpad', to: 'touchpad' }
+        {
+          kind: 'select',
+          key: 'tablet.autoSwitch',
+          label: 'When this device automatically switches tablet mode on or off',
+          default: 'Always ask me before switching',
+          options: [
+            { value: 'Always ask me before switching', label: 'Always ask me before switching' },
+            { value: 'Never ask me before switching', label: 'Never ask me before switching' }
+          ]
+        },
+        { kind: 'toggle', key: 'tablet.hideTaskbarIcons', label: 'Hide app icons on the taskbar in tablet mode', default: true },
+        { kind: 'toggle', key: 'tablet.autoHideTaskbar', label: 'Automatically hide the taskbar in tablet mode', default: false }
       ]
     }
   ]
 };
 
+// The nav row above this says Multitasking and the page's own title says Snap,
+// which is what Windows does: the row names the feature, the page names what it
+// configures. It is the one place in Settings where those two differ.
 export var MULTITASKING = {
   id: 'multitasking',
-  title: 'Multitasking',
+  title: 'Snap',
   glyph: 'multitasking',
   groups: [
     {
-      id: 'alttab',
-      title: 'Alt+Tab',
-      items: [
-        {
-          kind: 'select',
-          key: 'multitasking.altTabWindows',
-          label: 'When I press Alt+Tab, show the last __ window(s) used',
-          default: '3',
-          options: [
-            { value: '3', label: '3' },
-            { value: '4', label: '4' },
-            { value: '5', label: '5' }
-          ]
-        },
-        {
-          kind: 'toggle',
-          key: 'multitasking.altTabShowSnapWindows',
-          label: 'Show snap windows when I press Alt+Tab',
-          default: true
-        }
-      ]
-    },
-    {
-      id: 'altsnap',
-      title: 'Alt+Snap',
-      items: [
-        {
-          kind: 'toggle',
-          key: 'multitasking.altSnapEnabled',
-          label: 'Let me snap a window to the screen without dragging it to the edge',
-          default: false
-        }
-      ]
-    },
-    {
-      id: 'windows',
-      title: 'Windows',
+      id: 'snap',
       items: [
         {
           kind: 'toggle',
           key: 'multitasking.snapWindows',
-          label: 'Let me snap a window to two half-screen displays',
+          label: 'Arrange windows automatically by dragging them to the sides or corners of the screen',
+          default: true
+        },
+        {
+          kind: 'toggle',
+          key: 'multitasking.snapFill',
+          label: 'When I snap a window, automatically size it to fill available space',
           default: true
         },
         {
           kind: 'toggle',
           key: 'multitasking.snapAssist',
-          label: 'Show me the snap layouts when I snap a window',
+          label: 'When I snap a window, show what I can snap next to it',
           default: true
         },
         {
           kind: 'toggle',
-          key: 'multitasking.taskViewButton',
-          label: 'Show the Task View button on the taskbar',
+          key: 'multitasking.snapTogether',
+          label: 'When I resize a snapped window, simultaneously resize any adjacent snapped window',
           default: true
         }
       ]
@@ -678,20 +878,56 @@ export var MULTITASKING = {
       id: 'desktops',
       title: 'Virtual desktops',
       items: [
-        { kind: 'button', label: 'Rename a virtual desktop', action: 'multitasking.renameDesktop' }
+        {
+          kind: 'select',
+          key: 'multitasking.taskbarShowOn',
+          label: 'On the taskbar, show windows that are open on',
+          default: 'Only the desktop I’m using',
+          options: [
+            { value: 'All desktops', label: 'All desktops' },
+            { value: 'Only the desktop I’m using', label: 'Only the desktop I’m using' }
+          ]
+        },
+        {
+          kind: 'select',
+          key: 'multitasking.altTabShowOn',
+          label: 'Pressing Alt+Tab shows windows that are open on',
+          default: 'Only the desktop I’m using',
+          options: [
+            { value: 'All desktops', label: 'All desktops' },
+            { value: 'Only the desktop I’m using', label: 'Only the desktop I’m using' }
+          ]
+        }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Related settings',
+      links: [
+        { label: 'Taskbar', to: 'taskbar' },
+        { label: 'Tablet mode', to: 'tablet' }
       ]
     },
     {
-      id: 'related',
-      title: 'Related settings',
-      items: [
-        { kind: 'link', label: 'Taskbar', to: 'taskbar' },
-        { kind: 'link', label: 'Tablet mode', to: 'tablet' }
+      title: 'Have a question?',
+      links: [
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
       ]
     }
   ]
 };
 
+// Projecting to this PC on a machine with no Miracast receiver: Windows says so
+// in red at the top and then greys out every setting that depends on it. They are
+// declared disabled rather than left out, because a screenshot of this page
+// shows them all - drawn, greyed, and answering nothing.
 export var PROJECTING = {
   id: 'projecting',
   title: 'Projecting to this PC',
@@ -699,15 +935,13 @@ export var PROJECTING = {
   groups: [
     {
       id: 'status',
-      title: 'PC status',
       items: [
         { kind: 'note', text: 'This device doesn’t support receiving Miracast, so you can’t project to it wirelessly.' },
         { kind: 'text', text: 'Project your Windows phone or PC to this screen, and use its keyboard, mouse and other devices, too.' }
       ]
     },
     {
-      id: 'pcsettings',
-      title: 'PC settings',
+      id: 'settings',
       items: [
         {
           kind: 'select',
@@ -718,7 +952,8 @@ export var PROJECTING = {
             { value: 'Always Off', label: 'Always Off' },
             { value: 'Ask every time a connection is requested', label: 'Ask every time a connection is requested' },
             { value: 'Allow on secure networks', label: 'Allow on secure networks' }
-          ]
+          ],
+          disabled: true
         },
         {
           kind: 'select',
@@ -728,15 +963,147 @@ export var PROJECTING = {
           options: [
             { value: 'Every time a connection is requested', label: 'Every time a connection is requested' },
             { value: 'First time only', label: 'First time only' }
-          ]
+          ],
+          disabled: true
         },
-        { kind: 'toggle', key: 'projecting.requirePin', label: 'Require PIN for pairing', default: false },
+        { kind: 'toggle', key: 'projecting.requirePin', label: 'Require PIN for pairing', default: false, disabled: true },
         {
           kind: 'toggle',
           key: 'projecting.pluggedOnly',
-          label: 'This PC can only be discovered for projection when it is plugged in',
-          default: false
+          label: 'This PC can only be discovered for projection only when it is plugged in',
+          default: true,
+          disabled: true
         }
+      ]
+    },
+    {
+      id: 'pcname',
+      items: [
+        { kind: 'specList', label: 'PC name', rows: [
+          { label: 'PC name', value: 'WIN10SIM-PC' }
+        ] },
+        { kind: 'link', label: 'Rename your PC', action: 'about.rename' }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Fixing a connection problem', action: 'projecting.help' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
+      ]
+    }
+  ]
+};
+
+// Shared experiences: the two rows about what Windows suggests, which is all
+// this page has ever held.
+export var SHARED = {
+  id: 'shared',
+  title: 'Shared experiences',
+  glyph: 'shared',
+  groups: [
+    {
+      id: 'general',
+      title: 'General',
+      items: [
+        { kind: 'toggle', key: 'shared.tips', label: 'Show me tips as I use Windows', default: true },
+        { kind: 'toggle', key: 'shared.suggestedSettings', label: 'Show me suggested content in Settings', default: true },
+        { kind: 'toggle', key: 'shared.sendSuggestions', label: 'Send Microsoft suggestions', default: false }
+      ]
+    },
+    {
+      id: 'related',
+      title: 'Related settings',
+      items: [
+        { kind: 'link', label: 'Privacy', to: 'privacyGeneral' },
+        { kind: 'link', label: 'Diagnostics & feedback', to: 'privacyDiagnostics' }
+      ]
+    }
+  ]
+};
+
+// Clipboard: the three things the page does - keep a history, sync it, clear it -
+// and the pair of help links Windows closes every one of these pages with.
+export var CLIPBOARD = {
+  id: 'clipboard',
+  title: 'Clipboard',
+  glyph: 'clipboard',
+  groups: [
+    {
+      id: 'intro',
+      items: [
+        { kind: 'text', text: 'When you copy or cut something in Windows, it’s copied to the clipboard for you to paste.' }
+      ]
+    },
+    {
+      id: 'history',
+      title: 'Clipboard history',
+      items: [
+        { kind: 'text', text: 'Save multiple items to the clipboard to use later. Press the Windows logo key + V to view your clipboard history and paste from it.' },
+        // The heading above already says what the switch is for, so the words are
+        // not drawn beside it a second time.
+        { kind: 'toggle', key: 'clipboard.history', label: 'Clipboard history', labelHidden: true, default: false }
+      ]
+    },
+    {
+      id: 'sync',
+      title: 'Sync across devices',
+      items: [
+        { kind: 'text', text: 'Paste text on your other devices when you sign in with a Microsoft account or work account.' },
+        { kind: 'link', label: 'Sign in', to: 'yourInfo' }
+      ]
+    },
+    {
+      id: 'clear',
+      title: 'Clear clipboard data',
+      items: [
+        { kind: 'text', text: 'Clear everything (except pinned items) on this device and with Microsoft.' },
+        { kind: 'button', label: 'Clear', action: 'clipboard.clear' }
+      ]
+    },
+    {
+      id: 'help',
+      title: 'Talk to us',
+      items: [
+        {
+          kind: 'helpLinks',
+          label: 'Talk to us',
+          links: [
+            { label: 'Get help', action: 'help.get', icon: 'help' },
+            { label: 'Give feedback', action: 'help.feedback', icon: 'feedback' }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+export var REMOTE_DESKTOP = {
+  id: 'remoteDesktop',
+  title: 'Remote Desktop',
+  glyph: 'remoteDesktop',
+  groups: [
+    {
+      id: 'discover',
+      title: 'Remote Desktop',
+      items: [
+        { kind: 'toggle', key: 'remoteDesktop.discoverable', label: 'Allow remote PCs to connect to this PC', default: false },
+        { kind: 'toggle', key: 'remoteDesktop.authenticated', label: 'Require PCs to be authenticated', default: true }
+      ]
+    },
+    {
+      id: 'related',
+      title: 'Related settings',
+      items: [
+        { kind: 'link', label: 'Projecting to this PC', to: 'projecting' }
       ]
     }
   ]
@@ -834,16 +1201,23 @@ export var SYSTEM = {
   title: 'System',
   blurb: 'Display, sound, notifications, power',
   glyph: 'system',
+  // Windows 1903's own order: the five things everyone has, then the ones a
+  // given machine may not, then the three between Projecting and Apps for
+  // websites, then About at the foot.
   pages: [
     DISPLAY,
     SOUND,
     NOTIFICATIONS,
     FOCUS_ASSIST,
     POWER,
+    BATTERY,
     STORAGE,
     TABLET,
     MULTITASKING,
     PROJECTING,
+    SHARED,
+    CLIPBOARD,
+    REMOTE_DESKTOP,
     WEBSITES,
     ABOUT
   ]
@@ -858,12 +1232,16 @@ export var SYSTEM_PAGES = [
   NOTIFICATIONS_APP_SETTINGS,
   FOCUS_ASSIST,
   POWER,
+  BATTERY,
   POWER_USAGE,
   STORAGE,
   DEFAULT_SAVE,
   TABLET,
   MULTITASKING,
   PROJECTING,
+  SHARED,
+  CLIPBOARD,
+  REMOTE_DESKTOP,
   WEBSITES,
   ABOUT
 ];

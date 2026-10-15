@@ -1,7 +1,140 @@
-# Changelog — Windows 10 Simulator
+# Changelog â€” Windows 10 Simulator
 
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
+
+## [1.25.0] - Settings, set from screenshots
+
+2026-10-15
+
+Thirteen Settings pages were checked against screenshots of Windows 10 build
+1903 and rebuilt from what the screenshots actually show, rather than from what
+was remembered of them. Everything the screenshots contradicted was changed;
+nothing they agreed with was.
+
+### Added
+
+- **Twenty new pages** the catalogue was missing, all of them because a nav pane
+  in one of the screenshots names a row that went nowhere: **Battery**, **Shared
+  experiences**, **Clipboard** and **Remote Desktop** under System; **Windows
+  Insider Programme** under Update & Security; **Background apps**, **App
+  diagnostics**, **Automatic file downloads**, **Documents** and **Pictures**
+  under Privacy; **Cursor & pointer**, **Magnifier**, **Color filters**,
+  **Narrator**, **Audio** and **Closed captions** under Ease of Access; and
+  **Broadcasting** and **Xbox Networking** under Gaming.
+- **A help rail.** Display, Sound, Snap, Projecting to this PC, Bluetooth, Game
+  bar and Your info put "Related settings", "Have a question?" and "Make Windows
+  better" in a column *beside* the settings rather than in groups under them,
+  which is where 1903 puts them and why those pages no longer have a "Related
+  settings" group of their own. The rail's links are amber, so they can be told
+  from the blue links in the settings column, and it moves under the settings
+  when the window is too narrow rather than squeezing them to keep it alongside.
+- **Nav sub-headings.** The Privacy pane nests six rows under "App permissions",
+  and Ease of Access under "Hearing" and "Interaction". A page can declare a
+  `navGroup`; the pane draws the heading once, where the run of pages under it
+  begins, and indents the rows beneath it.
+- **Four new control kinds**, each because a screenshot contains it and nothing
+  simpler could draw it:
+  - **`ruleRow`** â€” a mark, what sets it off, what it will do, and a switch.
+    Focus assist's four automatic rules, where the second line of words is the
+    part a switch row has nowhere to put.
+  - **`shortcutBox`** â€” a name, the grey "Windows shortcut" caption, and a box
+    holding the keys. Game bar's four shortcuts. The box is the shell's own text
+    field, for the same reason "Find a setting" is one: it takes a caret and
+    never raises the phone's keyboard over the desktop. It is written on blur,
+    because Windows saves the combination when you leave the box, and a half-typed
+    "Win" has no business being the stored shortcut.
+  - **`textSample`** â€” the text-size preview: a box showing the sample, the small
+    A and the large A with the slider between them, the sentence Windows writes
+    under it, and **Apply**. Nothing reaches the store until Apply is pressed, so
+    the size on screen is a preview of a change rather than a change made â€” which
+    is also why the button is greyed until the slider has been moved, exactly as
+    a screenshot of the untouched page shows it.
+  - **`helpLinks`** â€” "Get help" and "Give feedback" with the marks Windows puts
+    beside them, as one item, because they are always the same two.
+- **Disabled controls.** Projecting to this PC greys out every setting that
+  depends on receiving Miracast, because this machine cannot. They are declared
+  `disabled` and drawn exactly as they are, answering nothing, rather than being
+  left out â€” a screenshot of the page shows them all.
+- **Variants on the existing kinds**, every one of them visible in the
+  screenshots: a mark at either end of a slider (speaker, sun, leaf and bolt),
+  the two words under the ends of the power-mode slider, a caption that reports
+  where a slider is ("Power mode: Balanced"), a mark in a button ("Add Bluetooth
+  or other device", "Troubleshoot", "Camera"), and Game bar's recording switch in
+  the amber of the Game bar rather than in the blue every other switch uses.
+- **Fourteen new MDL2 glyphs**, added to `tools/build_mdl2_icons.py` and
+  regenerated rather than hand-drawn: the sun, the clock face, the leaf, the
+  webcam, the feedback mark, the clipboard-with-sheet, the battery, the remote
+  chevrons, the overlapping apps, the speech bubbles, the record dot, the light
+  bulb, the question mark, the caption and the on-screen keyboard. Each codepoint
+  is the one Microsoft documents for that glyph, and the whole new set was
+  checked by rendering it to a labelled contact sheet â€” a codepoint being *in*
+  the font is not on its own enough, because a wrong one draws a plausible
+  picture of the wrong icon.
+  - Two substitutions, both recorded at the call site: MDL2 documents no plain
+    Clock, so Focus assist's "During these times" uses the Stopwatch's face, and
+    it documents no CheckList in this build of the font, so the Privacy Tasks row
+    uses the bulleted-list glyph. Both are real outlines rather than something
+    drawn by hand.
+
+### Removed
+
+- **`deviceRow`**, the Sound page's output-device row. The screenshot of Sound
+  shows a drop-down and nothing else above the master volume, so the row went
+  with its builder and its CSS rather than being left behind as a kind no page
+  uses.
+
+### Changed
+
+- **Display** opens with "Make your display easier to see." and then the three
+  things Windows puts first â€” text, size, brightness â€” before the older
+  Brightness & color and Scale and layout groups. The text size is the preview
+  rather than a plain slider, and the brightness carries a sun at each end.
+- **Snap** is the Multitasking page's own title, while the nav row above it still
+  says Multitasking. It is the only place in Settings where the row and the page
+  disagree, and that disagreement is what Windows has. Its four switches and two
+  virtual desktop drop-downs are the page in full.
+- **Sound** is two groups â€” Output and Input â€” each with the same sentence under
+  the device box, and the master volume as a row with a speaker beside it rather
+  than a group of its own.
+- **Focus assist** says what it does in a sentence above the three answers, and
+  "Priority only" carries "Customize your priority list" inside its own answer,
+  because that link is the way out of it rather than a setting beside it.
+- **Power & sleep** has the Performance and Energy group between Screen and
+  Sleep, with the power mode as a five-position slider stepping through Windows'
+  own five modes, and "Save energy and battery life" and "Help from the web" at
+  the foot. "When plugged in, turn off after" defaults to Never.
+- **Tablet mode** is four rows and nothing else â€” no Related settings group.
+- **Projecting to this PC** reports the machine's PC name and offers to rename it.
+- **Windows Update** puts the last-checked time inside the status sentence, which
+  is how 1903 writes it, and makes the three rows below links rather than a
+  drop-down for the active hours, because the screenshot shows links.
+- **Accounts** is ordered Your info, Email & accounts, Sign-in options, Work or
+  school, Sync settings. Your info is the account card and its picture and nothing
+  else: the name, then "Local Account", then "Administrator" â€” the last two
+  greyed, because they are facts about the account rather than things you chose.
+- **A per-app list can name the master switch** (`masterKey`). Background apps
+  hangs off `privacy.backgroundApps`; taking the master off the prefix would have
+  looked for `privacy.background`, a key nothing has ever written, so every row
+  would have read its switch off an unset value.
+- **The Settings button is grey**, as 1903 draws it â€” "Check for updates",
+  "Clear" and "Troubleshoot" are all grey-filled in the screenshots, including
+  the primary action on the page.
+
+### Fixed
+
+- **Most home tiles did nothing at all.** Six of the fourteen categories â€” Apps &
+  features, Accounts, Time & Language, Gaming, Ease of Access, Search, Privacy
+  and Update & Security among them â€” could not be opened, and neither could their
+  nav rows. `normalizePageId` lowercased the page id and then looked it up in an
+  index keyed by the real id, and page ids are camelCase, so every id with a
+  capital in it missed. A miss there is not "not found": `navigate` treats a null
+  as Home, so those tiles silently opened the home screen they were already on.
+  The index now carries a case-insensitive table of its own.
+  - `tools/check_settings.js` now checks that **every** page is reachable by its
+    own id, that **every** category tile resolves, and that every help-rail link
+    goes to a page that exists â€” one failure, and the three places it could have
+    happened.
 
 ## [1.24.0] - Settings moves
 
@@ -12,7 +145,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **Page transitions.** Windows moves between Settings pages rather than
   cutting, and so does this now: the arrival slides a short way in the direction
   you travelled and fades in, and the page in front fades out first.
-- **The nav pane's rows fade in on a change of category** — and only then.
+- **The nav pane's rows fade in on a change of category** â€” and only then.
   Navigating between two pages of the same category leaves the pane alone, which
   is what Windows does and what stops the whole pane flickering on every click.
 - **The drop-down opens with a short fade and slide**, the way a flyout does.
@@ -26,9 +159,9 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **`js/apps/settings/shell.js`**: the exit and the arrival are **sequential**,
   not a cross-fade. Windows cross-fades, and for a page that is entirely words
   that means two settings overlapping in the same place for the length of the
-  animation — the exact thing a fade exists to prevent, applied to the one thing
+  animation â€” the exact thing a fade exists to prevent, applied to the one thing
   on the page that is all text. So the page in front fades out (90ms, and it
-  does not move — text sliding sideways while still readable is the worst of
+  does not move â€” text sliding sideways while still readable is the worst of
   both effects) and only then does the next one arrive (150ms).
   - A navigation during a transition replaces the one waiting rather than
     queueing behind it, so two quick clicks land on the second and do not
@@ -40,7 +173,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **A drop-down opened at the bottom of the window instead of under its box.**
   The list was absolutely positioned with no positioned ancestor, so it resolved
-  against the window — and because `.set-content` scrolls, a list positioned
+  against the window â€” and because `.set-content` scrolls, a list positioned
   inside the page would have been clipped at the content edges anyway, losing
   half its entries near the bottom of a long page. It now opens in
   **`.set-overlay`**, a layer over the whole window, positioned from the box's
@@ -55,19 +188,19 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Added
 
-- **`js/core/pointergesture.js`** — the shell's answer to "what does a drag look
+- **`js/core/pointergesture.js`** â€” the shell's answer to "what does a drag look
   like in here", once, in one place. A control registers an element and gets
   `onDown(pointer)`, `onMove(pointer)` and `onUp(pointer, cancelled)`.
 
   It exists because the answer is not obvious from the outside and getting it
-  wrong is silent — a control that takes the press and then refuses to move, or
+  wrong is silent â€” a control that takes the press and then refuses to move, or
   moves on a phone and not on a desktop, with nothing to say why. Three things
   have to hold at once, and each was a separate bug:
   - **a drag has to begin on the real press.** A routed click compresses
     down + up + click into one instant, so a gesture begun on a routed press is
     over before the pointer has moved. The real press reaches the window, but
-    says nothing about what it pressed — the capture layer keeps the browser's
-    pointer off the emulated UI — so the target is found by hit-testing under
+    says nothing about what it pressed â€” the capture layer keeps the browser's
+    pointer off the emulated UI â€” so the target is found by hit-testing under
     the emulated cursor.
   - **the position never comes off the event.** Under pointer lock the browser's
     pointer is frozen and only `movementX` moves, so `clientX` says nothing
@@ -80,8 +213,8 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   One set of window listeners for the whole shell, installed on first
   registration. The deepest registered surface containing the target owns the
   gesture, so a slider inside a list is handed it rather than the list. The
-  touchpad never needed any of this — no `mousemove`, no `movementX`, down and
-  up genuinely separate — which is exactly why a control could work with a
+  touchpad never needed any of this â€” no `mousemove`, no `movementX`, down and
+  up genuinely separate â€” which is exactly why a control could work with a
   finger and do nothing with a mouse.
 
   `starttiles.js` and `desktop.js` already each had a version of this for their
@@ -89,7 +222,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   getting it wrong.
 
 - **`js/core/cursor.js`**: `pointerHitTest()`, the element under the emulated
-  pointer, through the cursor's own hit test — `elementFromPoint` would only ever
+  pointer, through the cursor's own hit test â€” `elementFromPoint` would only ever
   find the capture layer.
 
 ### Removed
@@ -108,8 +241,8 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **`js/apps/settings/sliderdrag.js`** is now only arithmetic: where along the
   track the pointer is, and what the value there is.
 
-- **`js/core/textfield-pointer.js`** keeps only what is about *fields* — caret
-  placement, double and triple click, extending a selection — and asks the
+- **`js/core/textfield-pointer.js`** keeps only what is about *fields* â€” caret
+  placement, double and triple click, extending a selection â€” and asks the
   service for the press.
 
 ### Fixed
@@ -125,7 +258,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Added
 
-- **`js/core/cursor.js`: `pointerClient()`** — where the emulated pointer is, in
+- **`js/core/cursor.js`: `pointerClient()`** â€” where the emulated pointer is, in
   the page's own coordinates, or `null` before there is a cursor to ask.
   Published at the module level rather than handed down the boot chain, because
   a control that follows the pointer should not have to be wired to the cursor
@@ -157,15 +290,15 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **Nothing the mouse dragged on a desktop, and the mark that told it to ignore
   every press.** `simEcho` means "this routed press accompanies a real one". On
   a mouse, `cursor.js` routes the press by handing `synthClick` the *real*
-  trusted event, so the routed press it delivers — the only press a control
+  trusted event, so the routed press it delivers â€” the only press a control
   inside the emulated UI ever sees, because the real one lands on the capture
-  layer — is marked as the echo. Skipping it, as `desktop.js` correctly does for
+  layer â€” is marked as the echo. Skipping it, as `desktop.js` correctly does for
   *its* window-level press bookkeeping, meant the slider ignored every press on
   a desktop and worked perfectly on a phone. The mark is about a shell surface
   seeing two presses; a control sees one, and must not skip it.
 
 - **Dragging a text selection with a mouse still did nothing**, in every text
-  field in the app — Notepad, the Explorer address bar, find boxes, search. Two
+  field in the app â€” Notepad, the Explorer address bar, find boxes, search. Two
   causes, both fixed above: the position came from `event.clientX`, which is
   frozen under pointer lock, and the move was listened for on the document
   only, which carries a finger but not a mouse.
@@ -187,14 +320,14 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **`js/core/cursor.js`**: `synthMove` is now dispatched from both branches of
   the window `mousemove` handler as well as from the touchpad. The comment above
   `synthMove` already claimed it was there "so a press-and-drag across a text box
-  selects nothing at all" — it was wired to the touchpad only, so the claim was
+  selects nothing at all" â€” it was wired to the touchpad only, so the claim was
   true of a finger and false of a mouse.
 
 ### Fixed
 
-- **Dragging with a mouse told nothing to follow it.** `synthMove` — the
+- **Dragging with a mouse told nothing to follow it.** `synthMove` â€” the
   document-level `mousemove` the shell publishes so a control can track the
-  pointer — was called from exactly one place: a finger travelling across the
+  pointer â€” was called from exactly one place: a finger travelling across the
   touchpad. The browser's own `mousemove` steered the cursor and stopped there.
   So with a real mouse:
   - a slider took the press (hence the thumb lighting up) and then never heard
@@ -204,7 +337,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
     and this fixes it too.
 
   Both routes the cursor can move now publish it. The blast radius is two
-  listeners — `sliderdrag.js` and `textfield-pointer.js`, both document-level —
+  listeners â€” `sliderdrag.js` and `textfield-pointer.js`, both document-level â€”
   because the event is dispatched on the document with `bubbles: false`: for an
   event dispatched on the document the bubble phase goes nowhere, so the six
   window-level handlers that are the shell's own plumbing (window gestures,
@@ -217,7 +350,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Added
 
-- **`js/apps/settings/sliderdrag.js`** — the drag for a range input, done here
+- **`js/apps/settings/sliderdrag.js`** â€” the drag for a range input, done here
   rather than left to the browser. One helper rather than a copy per control,
   because two sliders that drag differently is a thing you only notice on the
   second one.
@@ -237,11 +370,11 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **The emulated pointer cannot drag a slider at all.** Three things in
   `cursor.js` add up to it:
   - **There is no `pointerdown`.** The cursor dispatches MouseEvents only, so the
-    `pointerdown` handler that was there never ran — not once, for any slider,
+    `pointerdown` handler that was there never ran â€” not once, for any slider,
     on any platform. A keyboard works, because arrow keys raise `input`
     themselves.
   - **`mousemove` is dispatched on the document, with `bubbles: false`.** That is
-    deliberate, so the shell's own window and tile drags are not fed twice — but
+    deliberate, so the shell's own window and tile drags are not fed twice â€” but
     it means a control that wants to follow the pointer must listen on the
     document, which is what a text selection does (`textfield-pointer.js`) and
     what this now does.
@@ -249,8 +382,8 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
     focus taken by hand; declining the default is also what stops the browser
     focusing the input, which is why the focus is not just left to it.
 
-  The value is mapped so the thumb's *centre* follows the pointer — travel is
-  the track less the thumb — and snapped to the step here too, so the store is
+  The value is mapped so the thumb's *centre* follows the pointer â€” travel is
+  the track less the thumb â€” and snapped to the step here too, so the store is
   never handed a value the control would immediately round differently. An echo
   press is skipped, following the device press, as `desktop.js` does.
 
@@ -277,12 +410,12 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **Every toggle's knob sat one pixel above the middle of its track.** The track
   has a 1px border and the page never set `box-sizing`, so `height: 20px` was
-  the *content* height and the track was drawn 22px tall — while the knob's
+  the *content* height and the track was drawn 22px tall â€” while the knob's
   `top: 3px` centred a 12px knob against the 20px content box. The knob was
   measured against one box and drawn inside another. `box-sizing: border-box`
-  makes the 40×20 track the size it says it is, and every measurement is now
-  against the 38×18 content box that leaves: the knob is centred by
-  `(18 − 10) / 2` and travels to `38 − 10 − 4`.
+  makes the 40Ã—20 track the size it says it is, and every measurement is now
+  against the 38Ã—18 content box that leaves: the knob is centred by
+  `(18 âˆ’ 10) / 2` and travels to `38 âˆ’ 10 âˆ’ 4`.
 
 ## [1.23.3] - Sliders have a track again
 
@@ -298,8 +431,8 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Changed
 
-- **`css/settings.css`**: the thumb is 10×20 with the ends rounded all the way
-  round, which is the shape Windows draws — an upright bar on a two-pixel line,
+- **`css/settings.css`**: the thumb is 10Ã—20 with the ends rounded all the way
+  round, which is the shape Windows draws â€” an upright bar on a two-pixel line,
   not the capsule-and-knob a browser gives you.
 
 - **`js/apps/settings/controls.js`**: `slider` and `select` now draw their own
@@ -311,7 +444,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **Every slider was a knob with no track, and would not move.** `buildItem`
   wraps a control that does not draw its own label in `.set-row--labelled`, a
   two-column grid of `minmax(0, 1fr) auto`. The slider's track row landed in the
-  `auto` column, which is sized by its content — and the track's own width comes
+  `auto` column, which is sized by its content â€” and the track's own width comes
   from `flex: 1 1 0`, contributing nothing. So the column collapsed to the width
   of the number beside it, the track was zero pixels wide, and the press handler
   (which refuses a zero-width box) did nothing at all. The switch was never
@@ -332,8 +465,8 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Changed
 
 - **`css/settings.css`**: `.set-home` gets `margin: 0 auto`. It had a
-  `max-width` and no auto margins, so the whole block — heading, search box and
-  the grid of categories — was ranged along the left edge of the window with
+  `max-width` and no auto margins, so the whole block â€” heading, search box and
+  the grid of categories â€” was ranged along the left edge of the window with
   several hundred pixels of white beside it. Windows lays it out in the middle.
 
 ### Fixed
@@ -346,7 +479,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Added
 
-- **`tools/build_settings_icon.py`** — puts `assets/windows-settings.png`
+- **`tools/build_settings_icon.py`** â€” puts `assets/windows-settings.png`
   through the same treatment the other app icons got: RGBA, cropped to the
   alpha box, squared with transparency, resized to 128px. The source is the
   artwork and is left alone; `assets/shell/settings-gear.png` is the icon.
@@ -357,17 +490,17 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Changed
 
-- **`assets/shell/settings-gear.png`**: now the Settings gear — grey cog, white
-  ring, blue centre — rather than the Imageres gear-and-tick that was picked out
+- **`assets/shell/settings-gear.png`**: now the Settings gear â€” grey cog, white
+  ring, blue centre â€” rather than the Imageres gear-and-tick that was picked out
   of the icon library. Same path, so nothing that references it changed.
 
 ### Fixed
 
 - **The Settings icon was the wrong picture, and the wrong shape to boot.** The
-  source arrives as a 1080×1012 palette-colour PNG: not square, and the only
+  source arrives as a 1080Ã—1012 palette-colour PNG: not square, and the only
   icon in `assets/shell/` that was neither 96 nor 128px. Every surface that
   draws an app icon draws it into a fixed square, so it would have been squashed
-  — and it was 51 KB of indexed colour sitting beside 5 KB RGBA thumbnails.
+  â€” and it was 51 KB of indexed colour sitting beside 5 KB RGBA thumbnails.
 
 ## [1.23.0] - Settings: the app, all of its pages, and settings that survive a close
 
@@ -388,7 +521,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
     matches it against all come from the one place it is written down.
   - **A stored value is only used if the setting still offers it.** A profile
     written by an older build, or a file edited by hand, cannot put a control
-    into a state it has no way out of — a dropdown showing a choice that is not
+    into a state it has no way out of â€” a dropdown showing a choice that is not
     in its list, a slider clamped outside its own range, a toggle set to a
     string. Anything unrecognised falls back to the declared default, which is
     also what "never set" means. (`js/apps/settings/schema.js`)
@@ -405,27 +538,27 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **"Find a setting"** searches every declared setting *and* every page, ranked
   so that a setting beats the group it sits in, the group beats the page, and a
-  page beats a setting of the same name — which is Windows' own answer, because
+  page beats a setting of the same name â€” which is Windows' own answer, because
   going to the page is the more useful thing. Every word typed has to land
   somewhere, so "night light zzz" finds nothing rather than a near-miss.
 
-- **`tools/check_settings.js`** — 2830 checks. It is what makes 88 pages
+- **`tools/check_settings.js`** â€” 2830 checks. It is what makes 88 pages
   reviewable: every page names a control kind that exists, every link goes
   somewhere, every key holds one setting, every default is offered by the
   dropdown that claims it, and every search hit is a page you can open. A
   mistake in the fourteenth category is otherwise only findable by pressing
   every switch by hand.
 
-- **`tools/check_imports.js`** — 1021 checks that every named import resolves to
+- **`tools/check_imports.js`** â€” 1021 checks that every named import resolves to
   a real export and no module exports a name twice. `node --check` only parses,
   so it happily accepts both, and both are a load-time error that takes the
   whole shell's module graph with it. This caught two real ones on the way in.
 
-- **`tools/mdl2_sheet.js`** — renders MDL2 glyphs to a labelled PNG contact
+- **`tools/mdl2_sheet.js`** â€” renders MDL2 glyphs to a labelled PNG contact
   sheet, so a codepoint can be checked against what it actually draws instead of
   against what its name suggests. See the Changed note on `build_mdl2_icons.py`.
 
-- **`js/apps/settings/glyphs.js`** — 79 outlines for the nav, the home grid and
+- **`js/apps/settings/glyphs.js`** â€” 79 outlines for the nav, the home grid and
   the pages, all real Segoe MDL2 outlines, none hand-drawn.
 
 ### Removed
@@ -436,14 +569,14 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **`tools/build_mdl2_icons.py`**: 50 glyphs added for Settings, each taken from
   the name Microsoft documents for it and then checked by rendering it with
-  `mdl2_sheet.js`. Four of the names in that table are **not in this font** —
-  `CheckList` U+E9D5, `Shield` U+EA18, `Touchpad` U+EFA5, `Website` U+EB41 —
+  `mdl2_sheet.js`. Four of the names in that table are **not in this font** â€”
+  `CheckList` U+E9D5, `Shield` U+EA18, `Touchpad` U+EFA5, `Website` U+EB41 â€”
   which is what the generator's fail-loudly check is for, and what a
   "reasonable-looking" codepoint would have turned into four wrong pictures.
   Real substitutes were found by name instead: `CheckboxComposite`, `Admin`
   (which is a shield), `Touch`, and the globe Settings already used.
 
-- **`js/apis/associations.js`**: `registeredTypes()` — the extensions anything
+- **`js/apis/associations.js`**: `registeredTypes()` â€” the extensions anything
   has claimed. Settings > Default apps needs the list of file types the machine
   can associate, and only the registry knows it: a hand-written list would go
   stale the moment an app claimed something, and would name types no app
@@ -453,7 +586,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   mount it already owns.
 
 - **`js/boot/boot.js`**, **`index.html`**, **`js/global/constants.js`**: Settings
-  registers, boots and has its icon — the gear with a tick that Win10 shows for
+  registers, boots and has its icon â€” the gear with a tick that Win10 shows for
   it, taken from the shell's own icon library.
 
 ### Fixed
@@ -474,7 +607,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 ### Changed
 
-- `js/core/cursor.js`: `isSiteChromePress(event)` — whether a press landed on
+- `js/core/cursor.js`: `isSiteChromePress(event)` â€” whether a press landed on
   the page's own furniture (the virtual keyboard, the handset button) rather
   than on the emulated screen. It is deliberately **not** `isRawDevicePress`:
   that one asks *who* made the press, this one asks *where* it landed, and it is
@@ -485,14 +618,14 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **Typing in the taskbar's search box on a phone held exactly one character.**
   Every key on the virtual keyboard is a button, and a finger on it lands a press
-  on that button — which every "dismiss myself on a press outside me" handler read
+  on that button â€” which every "dismiss myself on a press outside me" handler read
   as a press on the page. So each keypress shut the panel on the way down, and
   the character that arrived next reopened it with one letter in the box: "paint"
   became "t", then "a", then "i". Three handlers had the defect, and they are
   fixed by the same question asked in each:
   - `js/core/search.js`: the panel closed and reopened on every keystroke.
   - `js/core/textfield.js`: a field lost its caret to every character, so the
-    next key had no field to type into at all — `activeField()` answers null once
+    next key had no field to type into at all â€” `activeField()` answers null once
     `hasCaret` is false, and `pressKey` then sends the key to the body.
   - `js/core/startmenu.js`: Start shut before the character arrived, so typing a
     letter to open search did nothing at all on a phone.
@@ -535,9 +668,9 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Added
 
 - **The address of a local file (`js/apps/edge/fileurl.js`)**: `file://` in both
-  directions — the path Windows puts in the address bar, and the path the
+  directions â€” the path Windows puts in the address bar, and the path the
   filesystem has to be asked for. Every spelling a browser accepts
-  (`file:///C:/…`, `file://C:/…`, `file:/C:/…`, `file:C:/…`, `\\localhost`), drive
+  (`file:///C:/â€¦`, `file://C:/â€¦`, `file:/C:/â€¦`, `file:C:/â€¦`, `\\localhost`), drive
   letters raised, spaces percent-encoded, every separator spelling, root
   handling, and the resolution of a reference *inside* a document (siblings,
   subfolders, `..`, `./`, root-absolute, fragments, queries). It is pure
@@ -550,7 +683,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   is the honest answer. The stylesheets, scripts and images a document asks for
   are read from the volume and put in place by hand, because an `<iframe>` handed
   a document *string* resolves relative URLs against the page holding the frame
-  rather than against the folder the document is in — which is what makes "a
+  rather than against the folder the document is in â€” which is what makes "a
   folder with `page.html` and `style.css` in it" work.
 
 - **The restrictions, which are the substance of the feature**:
@@ -562,27 +695,27 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   - **A local document cannot move the tab.** No `allow-top-navigation`; a link
     is caught and handed to the tab, which decides.
   - **A page on the web may not hand the browser a `file://` address**
-    (`mayNavigate`). Typing one into the address bar is not the same thing — that
-    is the person asking — so only a page's *own* links are gated. The two pages
+    (`mayNavigate`). Typing one into the address bar is not the same thing â€” that
+    is the person asking â€” so only a page's *own* links are gated. The two pages
     deliberately excluded from the trusted list are the stand-in website and the
     search results: a browser that let either open a local file would have given
     the web a way onto the disk.
   - **`javascript:` and `vbscript:` never run.** The scheme is stripped and the
     rest searched for, which is what a paste of one gets you.
   - **A scheme with no handler behind it is refused by name**, not reported as a
-    network failure — nothing went wrong with the network, there is nothing here
+    network failure â€” nothing went wrong with the network, there is nothing here
     that could open an `ftp:` address at all. An ordinary `https://` address has a
     handler and is simply unreachable, which is a different message.
   - **No origin, no network**: a `fetch` or `XHR` from a document with no origin
     is cross-origin to everything and is refused the way it is in a real browser.
 
 - **Edge claims `.html`, `.htm`, `.xhtml` and `.svg`**, so a double-click on one
-  in Explorer or on the desktop opens it in Edge — a file association handing an
+  in Explorer or on the desktop opens it in Edge â€” a file association handing an
   app a path, and a browser's own answer to a path being the `file:` address for
   it. Documents only: an image is not a thing a browser opens, and Edge downloads
   nothing here, so a file it did not have is a file it cannot have.
 
-- **A `file://` folder is a listing**, the way a browser shows one — a folder you
+- **A `file://` folder is a listing**, the way a browser shows one â€” a folder you
   can walk.
 
 ### Removed
@@ -597,7 +730,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   the same lazy mount the dialogs use (`edgeVolume`), and puts the document's
   listener away when the window closes. A `path` launch argument becomes the
   `file:` address for it.
-- `js/apps/edge/tabs.js`: `retitle(title, url)` — a document names itself once
+- `js/apps/edge/tabs.js`: `retitle(title, url)` â€” a document names itself once
   loaded, and `url` is what stops a document still loading when the tab moved on
   from renaming what is there now.
 - `js/apps/edge/pages.js`: the blocked-scheme page.
@@ -694,7 +827,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **File dialog API (`js/apis/saveas/`)**: a shared Save As / Open dialog that
   apps describe and the shell builds. What the app provides:
   - `title`, `icon`, `directory`, `suggestedName`
-  - `types`: `[{ label, extension }]` — the Save as type / Files of type row
+  - `types`: `[{ label, extension }]` â€” the Save as type / Files of type row
   - `encoding`: optional dropdown with label
   - `owner`: the window the dialog is modal to
   - `onSave` / `onOpen`: the app does the write / read with the volume it was
@@ -703,26 +836,26 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   - What the app receives: `{ path, directory, name, type, extension, encoding }`
 
 - **Folder browser widget (`browser.js`)**: the address bar (back/forward/up,
-  breadcrumb trail, refresh, search), toolbar (Organize ▾, New folder, view
+  breadcrumb trail, refresh, search), toolbar (Organize â–¾, New folder, view
   switcher: Tiles / List / Details), navigation pane (Quick access shortcuts +
   the drive's folder tree with expandable nodes), and the file list (double-tap
   opens a folder, single press puts the name in the box). Everything reads the
   emulated volume and never writes.
 
 - **Path arithmetic (`places.js`)**: `trailOf`, `leafOf`, `dirOf`,
-  `shortcutPlaces` — pure functions, no volume, so they run under node and
+  `shortcutPlaces` â€” pure functions, no volume, so they run under node and
   are checked by `tools/check_saveas_paths.js`.
 
 - **Slim path checks**: `tools/check_saveas_paths.js` (25 cases), plus the
   general graph validator `tools/check_graph.js` (runs without Python).
 
-- **Notepad rewired**: File ▸ Open / Save As now use the shell dialog API
+- **Notepad rewired**: File â–¸ Open / Save As now use the shell dialog API
   (`owner: win.id` so it is a real modal dialog); `currentDir()` /
   `volumeReady()` are Notepad's own helpers, not the old filedialog's.
 
 - **Desktop folders open**: double-click on a desktop folder now launches
   Explorer on that folder, and double-click on a file opens it with the
-  registered app — the entry's `place` was `undefined` before, so nothing
+  registered app â€” the entry's `place` was `undefined` before, so nothing
   opened.
 
 ### Removed
@@ -747,13 +880,13 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - **Save As could not enter directories**: two ways to walk into a folder now
-  work — double-tap the row in the list, or type its path in the File name box
+  work â€” double-tap the row in the list, or type its path in the File name box
   and press Save (Windows does both). The arithmetic is `pathOfTyped` /
   `folderOfTyped`, which resolve relative paths against the open folder, and a
   bare drive letter is the drive root.
 
 - **Desktop folders were dead**: `desktopEntryFor` read `entry.place`, but the
-  volume's `listDir` returns only `{ name, type, size, modified }` — no place.
+  volume's `listDir` returns only `{ name, type, size, modified }` â€” no place.
   Now the place is threaded in from the loop that lists the desktop folder.
 
 2026-10-14
@@ -997,9 +1130,9 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 - **The service worker path is verified rather than assumed.** Confirmed over
   HTTP that `/sw.js` answers 200 and the old `/js/sw.js` answers 404, so
   1.19.5's fix is the path that is actually served. `CACHE_VERSION` stays at
-  `v1`: §3.10 bumps it only when the caching *strategy* changes, and this
+  `v1`: Â§3.10 bumps it only when the caching *strategy* changes, and this
   release does not change it. Worth one manual check in a browser - Application
-  ▸ Service Workers showing `sw.js` activated, and the emulator booting with the
+  â–¸ Service Workers showing `sw.js` activated, and the emulator booting with the
   network off - since the worker has never actually run before.
 
 ## [1.19.5] - The service worker was never registering
@@ -1021,7 +1154,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - **The service worker had never once registered: its path was off by one
-  directory.** `js/boot/boot.js` resolved it as `new URL('../sw.js', …)`, which
+  directory.** `js/boot/boot.js` resolved it as `new URL('../sw.js', â€¦)`, which
   from `js/boot/` is `js/sw.js` - a file that does not exist. The worker lives at
   the repository root, so the path needed two levels up, and the site had been
   answering Chrome with a 404 every load: *"A bad HTTP response code (404) was
@@ -1034,7 +1167,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   registration has been best-effort since it was written - a refused worker must
   never keep the simulator from booting - and that is what let the failure be
   invisible: it is a console line, not a broken screen. Every module import,
-  `new URL(…, import.meta.url)` target, stylesheet link and manifest icon in the
+  `new URL(â€¦, import.meta.url)` target, stylesheet link and manifest icon in the
   repo was checked for the same mistake and is present.
 
 - The *"Banner not shown: beforeinstallprompt preventDefault() called"* console
@@ -1103,7 +1236,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
   pressed, so a button that brought no behaviour of its own - the plain **OK**,
   **Cancel**, **Continue** - was pressed and then did nothing at all: the box just
   sat there. Every shell message box was affected (the desktop's "There is no app
-  installed that can open…", Explorer's path and permission errors, the rename
+  installed that can openâ€¦", Explorer's path and permission errors, the rename
   prompt's **Cancel**), and only the caption buttons got a person out of them,
   which is what made it look like the buttons themselves were dead rather than
   the whole row. `onSubmit` now declines only the buttons that carry an `action`
@@ -1253,7 +1386,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 
 - **A first boot came up with an empty Start menu.** The tiles Windows ships
   pinned are laid out from the app registry, and the store walked the registry's
-  answer as if it were a list — an object has no `forEach` — so on a profile with
+  answer as if it were a list â€” an object has no `forEach` â€” so on a profile with
   no stored layout yet the seeding threw before it laid out anything. It only
   ever showed on a genuinely new profile, which is why it went unnoticed: anyone
   already using the simulator had a stored layout and never took that path. Every
@@ -1861,7 +1994,7 @@ Format: MAJOR.MINOR.PATCH. Latest version on top.
 ### Fixed
 
 - The window close button's hover colour was set with `stroke: #fff`, which stopped working once the glyph became a filled path; it is now a `color` on the button
-- `PC1` (the monitor glyph used on sign-in and lock screens) was missing from `js/global/mdl2.js` because a duplicate `SWITCH_USER` key in the generator's table silently dropped it — now the generator has a duplicate-key guard that fails the build instead of silently dropping glyphs
+- `PC1` (the monitor glyph used on sign-in and lock screens) was missing from `js/global/mdl2.js` because a duplicate `SWITCH_USER` key in the generator's table silently dropped it â€” now the generator has a duplicate-key guard that fails the build instead of silently dropping glyphs
 
 ### Notes
 
@@ -2005,7 +2138,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Fixed
 
 - The Start icon column opened by itself with the pointer nowhere near it. Moving off the strip during the 2s dwell cleared the manual-dismissal flag but left the timer armed, so it fired and opened the column after the pointer had already gone somewhere else
-- Opening Start and leaving the pointer still could arm the dwell at all, from the Start button's own position under the column — the same phantom open, two seconds after every open
+- Opening Start and leaving the pointer still could arm the dwell at all, from the Start button's own position under the column â€” the same phantom open, two seconds after every open
 
 ## [1.7.6] - Start tiles move down as well as across
 
@@ -2025,7 +2158,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Fixed
 
-- A pinned tile could not be dragged down at all. The grid declared `grid-template-columns` but never `grid-template-rows`, so the computed `grid-template-rows` resolved to `none` and the drag's row walk had an empty track list to walk — every drop landed in row 0 and only horizontal movement appeared to work
+- A pinned tile could not be dragged down at all. The grid declared `grid-template-columns` but never `grid-template-rows`, so the computed `grid-template-rows` resolved to `none` and the drag's row walk had an empty track list to walk â€” every drop landed in row 0 and only horizontal movement appeared to work
 - A scrolled tile grid targeted rows too low: the grid's own rect does not move when its content scrolls, so the scroll is now added back in before the row is measured
 
 ## [1.7.5] - The account and power stop crowding each other
@@ -2270,12 +2403,12 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Changed
 
 - The grab strips are 20 emulated pixels rather than 8: the whole monitor is scaled down on a small screen, where a hairline strip is a couple of real pixels and cannot be caught
-- The tile grid, the app list and the icon column's header are inset by the strips (the strips run over the top and right edges), and the width/height maths subtracts the same amount, so a snapped size still gives the grid exactly the room its columns and rows need — verified for every column count
+- The tile grid, the app list and the icon column's header are inset by the strips (the strips run over the top and right edges), and the width/height maths subtracts the same amount, so a snapped size still gives the grid exactly the room its columns and rows need â€” verified for every column count
 - Opening or closing Start cancels a resize in progress
 
 ### Fixed
 
-- A resize gesture that never saw its release — the press let go outside the window, or Start closed underneath it — stayed armed and swallowed the next press on an edge, which left the menu looking impossible to resize
+- A resize gesture that never saw its release â€” the press let go outside the window, or Start closed underneath it â€” stayed armed and swallowed the next press on an edge, which left the menu looking impossible to resize
 - The handles were thin enough to miss, and the right-hand strip covered the right edge of the rightmost tiles and rows
 
 ## [1.4.0] - The Start menu resizes, snapped to whole tiles
@@ -2296,7 +2429,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `startstate.js`: the grid's column count is the menu's stored width, so a wider menu really is more columns — tiles are placed in it, and the tile grid draws `--tile-cols` from it
+- `startstate.js`: the grid's column count is the menu's stored width, so a wider menu really is more columns â€” tiles are placed in it, and the tile grid draws `--tile-cols` from it
 - Widening leaves the layout alone (tiles stay where they were put, new columns open beside them); narrowing pulls the tiles in and repacks them in reading order so none end up on top of another
 - A menu cannot be squeezed narrower than a wide or large tile is wide: the column count stops at the widest tile on the grid
 
@@ -2320,7 +2453,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Changed
 
 - `starttiles.js`: a tile gesture is always a move now, so the gesture no longer carries a mode
-- Tiles still resize — from the tile menu's Small / Medium / Wide / Large, which is where Win10 puts Resize too
+- Tiles still resize â€” from the tile menu's Small / Medium / Wide / Large, which is where Win10 puts Resize too
 
 ### Fixed
 
@@ -2340,7 +2473,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `starttiles.js`: the cell under the pointer is worked out from the grid geometry captured when the drag **begins**, not from the layout as it stands. Moving a tile changes that layout — rows appear and their heights change — so measuring the live one made the cell under a still pointer drift with every step, and the tile chased it and could never be taken any further
+- `starttiles.js`: the cell under the pointer is worked out from the grid geometry captured when the drag **begins**, not from the layout as it stands. Moving a tile changes that layout â€” rows appear and their heights change â€” so measuring the live one made the cell under a still pointer drift with every step, and the tile chased it and could never be taken any further
 - The drop ghost is now a grid item of the target cell rather than a measured box, so the grid places it exactly where it places the tile that just moved there and the two cannot disagree
 
 ### Fixed
@@ -2366,7 +2499,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Fixed
 
-- A drag target could be left behind as a stray dashed box on the Start grid. A press let go outside the browser window, or the page losing focus, never delivered a release, so the gesture stayed live and every rebuild drew its ghost again — including on the next time Start was opened
+- A drag target could be left behind as a stray dashed box on the Start grid. A press let go outside the browser window, or the page losing focus, never delivered a release, so the gesture stayed live and every rebuild drew its ghost again â€” including on the next time Start was opened
 
 ## [1.3.0] - The Start tile grid is a grid you fill in
 
@@ -2377,7 +2510,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 - Tiles remember the **cell** they sit in, not just an order: a pin is now `{ appId, size, col, row }`, and a dropped tile takes the cell under the pointer with the free cells around it left free
 - Cell placement in `startstate.js`: `cellTaken`, `firstFreeCell`, `tileOverlapping` and `placePin`. Whatever a drop lands on refills into the first free cell forward, so the grid settles instead of overlapping or drifting
 - A drop ghost (`.start-tile-ghost`) marking the cell a dragged tile would land in, positioned out of the flow so marking a cell never moves the layout
-- `gridMetrics` / `cellAtPoint` in `starttiles.js`: the grid's own column widths, row heights and gaps are read back from the resolved layout, so the cell maths stays true whatever the tile sizes are drawn as — including rows of differing height under a 2x2 tile
+- `gridMetrics` / `cellAtPoint` in `starttiles.js`: the grid's own column widths, row heights and gaps are read back from the resolved layout, so the cell maths stays true whatever the tile sizes are drawn as â€” including rows of differing height under a 2x2 tile
 - `START_TILE_COLS`, exported by the state store and handed to the grid as `--tile-cols`, so the placement rules and the drawing agree on how wide the grid is
 
 ### Removed
@@ -2402,7 +2535,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Added
 
-- F2 anywhere in the boot sequence drops straight onto the signed-in desktop: the splash, the lock screen and the account are all called off at once. Offered nowhere in the UI — the key is the whole secret
+- F2 anywhere in the boot sequence drops straight onto the signed-in desktop: the splash, the lock screen and the account are all called off at once. Offered nowhere in the UI â€” the key is the whole secret
 - `later(fn, ms)` in `boot.js`, so the boot timers are cancelable as a set instead of one by one
 
 ### Removed
@@ -2412,7 +2545,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Changed
 
 - `boot.js`: the lock root and the lock handle are tracked at module scope so the shortcut can tear the pair down (disposing the lock's clock and listeners) rather than leaving them running behind the desktop
-- `boot.js`: the desktop is built at most once, whichever path gets there first — the secret shortcut or a real sign-in
+- `boot.js`: the desktop is built at most once, whichever path gets there first â€” the secret shortcut or a real sign-in
 
 ### Fixed
 
@@ -2432,14 +2565,14 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `starttiles.js`: a tile launches when its gesture ends up having been a tap, decided in `endDrag` — not on the click, which arrives in the same tick as the press that routed it and therefore always won the race. A press that moved reorders, a press on a resize handle resizes, and a cancelled touch does neither
+- `starttiles.js`: a tile launches when its gesture ends up having been a tap, decided in `endDrag` â€” not on the click, which arrives in the same tick as the press that routed it and therefore always won the race. A press that moved reorders, a press on a resize handle resizes, and a cancelled touch does neither
 - `starttiles.js`: a tile lifts (`is-dragging`) only once the press has actually become a drag, instead of on every press
 - `desktop.js`: echoes are skipped by the mark rather than by the pointer-lock test, so they are skipped whether or not the pointer happens to be captured
 
 ### Fixed
 
 - Start tiles could not be dragged at all: clicking one opened the app instantly with no hold, because the launch happened on the routed click before any drag could begin
-- Desktop icons opened on a single click for the same reason — the echo and the real press counted as two taps, so one click read as a double-click
+- Desktop icons opened on a single click for the same reason â€” the echo and the real press counted as two taps, so one click read as a double-click
 
 ## [1.1.1] - The cursor scales with the emulated screen
 
@@ -2478,7 +2611,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `cursor.js`: presses that land on `.site-chrome` are left to the browser — not swallowed by the capture layer, not prevented, not routed into the emulated OS — for both mouse and touch
+- `cursor.js`: presses that land on `.site-chrome` are left to the browser â€” not swallowed by the capture layer, not prevented, not routed into the emulated OS â€” for both mouse and touch
 
 ### Fixed
 
@@ -2490,7 +2623,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Added
 
-- `sw.js`: a service worker that answers every request network-first with `cache: 'reload'`, falling back to the last good copy when the network is gone. It skips the browser's HTTP cache, so a device can never run a stale `js/core/*.js` or `css/*.css` — unchanged files still come back as cheap 304s
+- `sw.js`: a service worker that answers every request network-first with `cache: 'reload'`, falling back to the last good copy when the network is gone. It skips the browser's HTTP cache, so a device can never run a stale `js/core/*.js` or `css/*.css` â€” unchanged files still come back as cheap 304s
 - Worker registration in `js/boot/boot.js`: resolves `sw.js` against the module URL (so it works from a domain root or the `/win10sim/` subpath) and registers with `updateViaCache: 'none'`, so a change to the caching strategy itself lands without waiting for the browser's background update check
 - Offline as a side effect: with the worker installed, a load with no network boots the OS from the last copy instead of failing
 
@@ -2500,7 +2633,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `AGENTS.md`: the repository structure lists `sw.js`, and §3 records that the worker — not hand-written `?v=` query strings, which would only cover the files `index.html` names and not the module graph they import — is the cache busting
+- `AGENTS.md`: the repository structure lists `sw.js`, and Â§3 records that the worker â€” not hand-written `?v=` query strings, which would only cover the files `index.html` names and not the module graph they import â€” is the cache busting
 
 ### Fixed
 
@@ -2512,12 +2645,12 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Added
 
-- `.sim-input-layer` (`css/cursor.css`): a capture layer over the whole viewport that takes every real press, move, wheel and touch, so the browser's pointer can no longer hover, press or scroll the emulated UI — and the UI's own `:hover` can no longer fire
+- `.sim-input-layer` (`css/cursor.css`): a capture layer over the whole viewport that takes every real press, move, wheel and touch, so the browser's pointer can no longer hover, press or scroll the emulated UI â€” and the UI's own `:hover` can no longer fire
 - `hitTestThroughInputLayer(clientX, clientY)` and `isRawDevicePress(event)` in `cursor.js`, shared with the surfaces that need them
 - `cursor.hitTest()` and `tracker.hitTest()` for the code that follows a device press through its lifecycle (window moves, icon drags, tile drags) and so must find the target under the emulated cursor themselves
 - Wheel routing: the real wheel now scrolls whatever sits under the emulated cursor, captured or not
 - Hover tracking on touch: dragging a finger over a control hovers it, like a mouse
-- `TOUCH_HOLD_MS` imported into `cursor.js` — it was used but never imported, so every touch hold threw a ReferenceError and touch drag never worked
+- `TOUCH_HOLD_MS` imported into `cursor.js` â€” it was used but never imported, so every touch hold threw a ReferenceError and touch drag never worked
 
 ### Removed
 
@@ -2577,7 +2710,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Fixed
 
-- The taskbar jumped up and snapped back as Start opened: opening Start parked focus in the app list, and the browser scrolled that box into view — and `overflow: hidden` containers are still scroll containers, so on a viewport smaller than 1366x768 (a phone) it scrolled the stage itself, moving the whole emulated screen and the taskbar pinned to its bottom edge
+- The taskbar jumped up and snapped back as Start opened: opening Start parked focus in the app list, and the browser scrolled that box into view â€” and `overflow: hidden` containers are still scroll containers, so on a viewport smaller than 1366x768 (a phone) it scrolled the stage itself, moving the whole emulated screen and the taskbar pinned to its bottom edge
 
 ## [0.21.1] - Tiles: honest hover, and a tile you can actually pick up
 
@@ -2598,7 +2731,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Fixed
 
-- An invisible resize handle still took presses: `.start-tile-grip` had no `pointer-events` rule, so a transparent grip swallowed hit-tests, and the right-hand grip covered the tile's rightmost 7px — grabbing a tile near its edge began a resize instead of a move, which read as the tile being stuck
+- An invisible resize handle still took presses: `.start-tile-grip` had no `pointer-events` rule, so a transparent grip swallowed hit-tests, and the right-hand grip covered the tile's rightmost 7px â€” grabbing a tile near its edge began a resize instead of a move, which read as the tile being stuck
 - A dragged tile stayed in its slot and did not follow the pointer, so a reorder looked like nothing happened at all
 
 ## [0.21.0] - Icon column opens on hover, app list becomes its own segment
@@ -2608,19 +2741,19 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Added
 
 - The column opens its labels on hover: `:has(.start-rail:hover)` for the real pointer and `:has(.start-rail .sim-hover)` for the emulated one, since the frozen OS pointer never fires a real `:hover`
-- A touch fallback — a tap on any column button latches it open with `.rail-latched` (coarse pointers only), and a tap inside the menu off the column, or closing Start, drops the latch
+- A touch fallback â€” a tap on any column button latches it open with `.rail-latched` (coarse pointers only), and a tap inside the menu off the column, or closing Start, drops the latch
 - `START_RAIL_OPEN_W` (190px) in `js/global/constants.js`: the column's open width, wide enough for its labels and for the account and power fly-outs
 - `--menu-w` / `--rail-w` / `--rail-w-open` / `--list-w` custom properties, so the geometry stays in `constants.js` while the CSS owns the hover behaviour
 
 ### Removed
 
-- The hamburger's label-folding job and the `.rail-collapsed` class — the column is glyphs only by default now, and hover (or a tap) is what spells it out
+- The hamburger's label-folding job and the `.rail-collapsed` class â€” the column is glyphs only by default now, and hover (or a tap) is what spells it out
 
 ### Changed
 
 - `startmenu.js`: the app list is a segment of the menu in its own right, appended between the column and the tile grid instead of living inside the column
 - `startmenu.js`: the hamburger is now Win10's shortcut between the two column views, with its aria-label naming the view it switches to
-- `startmenu.css`: the panel widens by the column's growth while the column is open, instead of squeezing the segments — the app list stays whole beside it and the tile grid is never clipped; the account and power glyphs stack only while the column is closed, and the fly-outs open beside the closed strip
+- `startmenu.css`: the panel widens by the column's growth while the column is open, instead of squeezing the segments â€” the app list stays whole beside it and the tile grid is never clipped; the account and power glyphs stack only while the column is closed, and the fly-outs open beside the closed strip
 
 ### Fixed
 
@@ -2683,7 +2816,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `startmenu.js`: the rail is no longer the app list itself — the list is one view inside a rail that also owns its title, the view picker and the account/power row; picking `Pinned apps` hides the list and folds the rail into its 48px icon strip, handing the freed width to the tile grid, exactly as Win10 behaves when the app list is hidden
+- `startmenu.js`: the rail is no longer the app list itself â€” the list is one view inside a rail that also owns its title, the view picker and the account/power row; picking `Pinned apps` hides the list and folds the rail into its 48px icon strip, handing the freed width to the tile grid, exactly as Win10 behaves when the app list is hidden
 - `startmenu.js`: the hamburger now only spells the rail out or folds it while the app list is showing, and stands down in the Pinned apps view where the `App list` button is the way back; it keeps its own aria-label describing the direction of the toggle
 - Arrow/Enter navigation of the app list is skipped while the list is hidden, and opening Start only parks focus in the list when it is on show
 - `startmenu.css`: new `.start-rail-head`, `.start-rail-title`, `.start-rail-views`, `.start-rail-view` styles, icon-strip rules for the folded rail (including the view labels), and the hamburger's old full-width row replaced by a 24px button inside the header
@@ -2706,7 +2839,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- `AGENTS.md` §5.5: a completed task now explicitly requires both a commit and a push — the work is committed to `main` together with its CHANGELOG entry, and the task is not reported as done until `git push origin main` succeeds, since Pages only serves the pushed state
+- `AGENTS.md` Â§5.5: a completed task now explicitly requires both a commit and a push â€” the work is committed to `main` together with its CHANGELOG entry, and the task is not reported as done until `git push origin main` succeeds, since Pages only serves the pushed state
 
 ### Fixed
 
@@ -2728,7 +2861,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Changed
 
 - `NOTEPAD_SRC` now points at the real Windows 10 Notepad icon (`assets/notepad.png`), so the title bar, taskbar button and Start tile use the authentic blue spiral notepad
-- `DRIVE_SRC` now points at the real Win10 system-drive icon (`assets/shell/system-drive.png`, `Imageres_dll_031` — the Windows logo over the drive), so both the Explorer's "System (C:)" quick-access item and the This PC drive row show the Windows-logo drive instead of the plain drive glyph
+- `DRIVE_SRC` now points at the real Win10 system-drive icon (`assets/shell/system-drive.png`, `Imageres_dll_031` â€” the Windows logo over the drive), so both the Explorer's "System (C:)" quick-access item and the This PC drive row show the Windows-logo drive instead of the plain drive glyph
 
 ### Fixed
 
@@ -2769,13 +2902,13 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Added
 
-- `js/core/startmenu.js`: the Win10 Start menu — panel flush to the left edge and seated on the taskbar (which paints over its lower edge, so the menu really slides out from behind the taskbar while it fades, no zoom), left rail with "Most used", "Recently added" and the A-Z app list (jump letters), the account row and power button at the bottom, and the pinned tile pane on the right. It collapses to icons from the hamburger, closes on an outside press / Escape / launch, and arrow keys walk the list with Enter launching
-- Tiles are movable and resizable, like Win10: press and drag a tile anywhere in the grid to reorder it (the layout reflows live and the slot is persisted), and grab a tile's right or bottom edge — the handles Win10 shows on hover — to resize it between medium / wide (right edge) and medium / large (bottom edge), also persisted
-- `js/core/starttiles.js`: the tile grid — Win10 small / medium / wide / large sizes, per-app tile colour and artwork, labels under the tile, hover states, a running-app marker, drag-to-reorder, edge-drag resize, and a right-press tile menu (Unpin from Start, resize, More)
-- `js/core/pointer.js`: shared pointer bridge — sim cursor under pointer lock or on touch, real pointer outside it — with stage↔client mapping, now shared by the window manager and the tile grid
+- `js/core/startmenu.js`: the Win10 Start menu â€” panel flush to the left edge and seated on the taskbar (which paints over its lower edge, so the menu really slides out from behind the taskbar while it fades, no zoom), left rail with "Most used", "Recently added" and the A-Z app list (jump letters), the account row and power button at the bottom, and the pinned tile pane on the right. It collapses to icons from the hamburger, closes on an outside press / Escape / launch, and arrow keys walk the list with Enter launching
+- Tiles are movable and resizable, like Win10: press and drag a tile anywhere in the grid to reorder it (the layout reflows live and the slot is persisted), and grab a tile's right or bottom edge â€” the handles Win10 shows on hover â€” to resize it between medium / wide (right edge) and medium / large (bottom edge), also persisted
+- `js/core/starttiles.js`: the tile grid â€” Win10 small / medium / wide / large sizes, per-app tile colour and artwork, labels under the tile, hover states, a running-app marker, drag-to-reorder, edge-drag resize, and a right-press tile menu (Unpin from Start, resize, More)
+- `js/core/pointer.js`: shared pointer bridge â€” sim cursor under pointer lock or on touch, real pointer outside it â€” with stageâ†”client mapping, now shared by the window manager and the tile grid
 - `js/core/startstate.js`: the profile's Start layout (pinned tiles, their order and sizes) plus launch history, persisted as JSON at `C:\Users\User\AppData\Local\Start\startmenu.json` on the emulated C: volume, sharing the registry's single lazy mount; storage failures degrade to in-memory
 - `js/core/power.js`: shared Sleep / Shut down / Restart actions, now driving both the sign-in status bar and the Start menu's power button (Sleep / Shut down / Restart)
-- Start-menu APIs for later: `registerApp({ start: { … } })` manifest (list name, subtitle, tile size/colour/artwork, pinned, hidden), `listStartApps()` / `hasApp()` / `getApp()` discovery, `getMostUsed()` / `getRecentlyAdded()` / `getLaunchCount()` history, `pinApp` / `unpinApp` / `setPinSize` / `movePin` / `indexOfPin` tile layout, `subscribeStartState()` / `subscribeStartOpen()` change feeds, `registerLiveTile()` (animated tile content while the menu is open), `setTileBadge()`, running-app detection from the window manager, and a power menu
+- Start-menu APIs for later: `registerApp({ start: { â€¦ } })` manifest (list name, subtitle, tile size/colour/artwork, pinned, hidden), `listStartApps()` / `hasApp()` / `getApp()` discovery, `getMostUsed()` / `getRecentlyAdded()` / `getLaunchCount()` history, `pinApp` / `unpinApp` / `setPinSize` / `movePin` / `indexOfPin` tile layout, `subscribeStartState()` / `subscribeStartOpen()` change feeds, `registerLiveTile()` (animated tile content while the menu is open), `setTileBadge()`, running-app detection from the window manager, and a power menu
 - `css/startmenu.css`: Win10 panel, rail, list rows (with running underlines), section headers, account/power row, tile grid (all four sizes + badges + resize handles + drag state), popovers, slim scrollbars, and the slide-with-fade taskbar-anchored motion (reduced-motion respected)
 - Start menu glyphs (`HAMBURGER_SVG`, `START_POWER_SVG`, `SLEEP_SVG`, `SHUTDOWN_SVG`, `RESTART_SVG`, `USER_SVG`, `APP_TILE_SVG`) and Start metrics constants
 
@@ -2804,10 +2937,10 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Added
 
-- `js/core/snap.js`: Aero Snap geometry — Win10 reads the cursor against the work-area edges while a titlebar is held (top edge maximizes, left/right edges fill half, corners fill a quarter), plus the translucent landing preview that slides between zones during the drag
-- `js/core/snapassist.js`: Win10's Snap Assist — after a window is snapped to a half, the vacant half offers the other open windows (icon + title, most recently focused first, minimised ones included); picking one snaps it into the empty half, and the chooser closes on pick, on an outside press or on Escape, or after its ~4.5s dwell
+- `js/core/snap.js`: Aero Snap geometry â€” Win10 reads the cursor against the work-area edges while a titlebar is held (top edge maximizes, left/right edges fill half, corners fill a quarter), plus the translucent landing preview that slides between zones during the drag
+- `js/core/snapassist.js`: Win10's Snap Assist â€” after a window is snapped to a half, the vacant half offers the other open windows (icon + title, most recently focused first, minimised ones included); picking one snaps it into the empty half, and the chooser closes on pick, on an outside press or on Escape, or after its ~4.5s dwell
 - `js/core/windowchrome.js`: window frame building (titlebar, icon, caption buttons, the eight resize grips) split out of the manager, including the routed-versus-native press wiring
-- `js/core/windowmenu.js`: Win10's window system menu — Restore / Move / Size / Minimize / Maximize / Close — opened by a right-press on a titlebar or a taskbar button, or Alt+Space; Move and Size run the classic modal keyboard loop (arrows nudge 8px, 1px with Shift, Enter commits, Escape cancels, any click commits)
+- `js/core/windowmenu.js`: Win10's window system menu â€” Restore / Move / Size / Minimize / Maximize / Close â€” opened by a right-press on a titlebar or a taskbar button, or Alt+Space; Move and Size run the classic modal keyboard loop (arrows nudge 8px, 1px with Shift, Enter commits, Escape cancels, any click commits)
 - Aero Shake: shaking a titlebar back and forth (three reversals of a 24px swing inside 700ms) minimises every other window, like Win7+
 - Minimize/restore fly toward the window's taskbar button: the manager measures the button and stores the offset in `--win-snap-dx` / `--win-snap-dy`, so the window shrinks into the exact slot it will reappear from
 - Snap-aware state bookkeeping: a snapped window maximises on top of its snap and restores back into it, dragging a maximised or snapped titlebar tears it back to its restore size under the pointer, and re-dragging to another edge re-snaps cleanly
@@ -2821,7 +2954,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 ### Changed
 
 - The window manager outgrew its file budget, so chrome building (`windowchrome.js`), the system menu with its guided Move/Size loop (`windowmenu.js`), the snap geometry with its preview (`snap.js`) and the Snap Assist chooser (`snapassist.js`) are separate modules again; `windowmanager.js` keeps the window records, z-order, minimize/maximize/snap state and the drag/resize gestures
-- Gesture presses run through one shared path: native targeting while the pointer is free, hit-testing under the sim cursor while pointer-locked, routed presses from touch holds — maximised windows now accept a titlebar drag (to restore) and snapped windows accept an edge drag (to re-snap)
+- Gesture presses run through one shared path: native targeting while the pointer is free, hit-testing under the sim cursor while pointer-locked, routed presses from touch holds â€” maximised windows now accept a titlebar drag (to restore) and snapped windows accept an edge drag (to re-snap)
 - Taskbar running buttons rebuild from the window snapshot but keep `data-win-id`, so a minimising window can aim at the exact button
 
 ### Fixed
@@ -2837,9 +2970,9 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 - `js/core/contextmenu.js` + `css/contextmenu.css`: Win10 context menu (light popup, 1px grey border, system shadow, Segoe UI rows with icon slot, shortcut hints, separators, disabled greys, checkmarks and cascading submenus that open on hover or press, close on outside press / Escape / focus loss, and flip against the viewport edge)
 - Desktop right-press menus: icon menu (Open, Create shortcut, Delete, Rename, Properties) and the wallpaper menu with working View (Large / Medium / Small icon sizes re-flow the grid, Auto arrange icons) and Sort by (Name / Size / Item type / Date modified, ascending / descending) cascades, Refresh, Paste, New, Display settings and Personalize
-- Explorer right-press menus: item menu (Open, Open with, Cut, Copy, Delete, Rename, Properties), folder menu (View, Sort by, Refresh, Paste, New ▸ Folder / Text Document, Properties, Open in Terminal, Select all) and the Recycle Bin menu (Restore this item, Restore all items, Empty Recycle Bin)
+- Explorer right-press menus: item menu (Open, Open with, Cut, Copy, Delete, Rename, Properties), folder menu (View, Sort by, Refresh, Paste, New â–¸ Folder / Text Document, Properties, Open in Terminal, Select all) and the Recycle Bin menu (Restore this item, Restore all items, Empty Recycle Bin)
 - Working context actions: New Folder / New Text Document (with Win10's `New folder (2)` naming), inline rename (F2, base name selected, extension left alone, duplicate-name replace prompt), Properties sheets for items, folders, drives and This PC, Select all, sort by Name / Date / Type / Size with folders first, and a reusable Win10 message box (error + info glyphs, button row) replacing the hard-coded path error
-- Delete really recycles: `volume.move()` (recursive copy + delete, since OPFS has no portable rename) puts the payload under `C:\$Recycle.Bin\<SID>\$R…` with a `$I` record of the original path, the Recycle Bin window lists those items under their original names, Restore puts them back, Empty Recycle Bin wipes the SID folder, and `$` system entries stay hidden from listings and search the way Win10 hides them
+- Delete really recycles: `volume.move()` (recursive copy + delete, since OPFS has no portable rename) puts the payload under `C:\$Recycle.Bin\<SID>\$Râ€¦` with a `$I` record of the original path, the Recycle Bin window lists those items under their original names, Restore puts them back, Empty Recycle Bin wipes the SID folder, and `$` system entries stay hidden from listings and search the way Win10 hides them
 
 ### Removed
 
@@ -2892,7 +3025,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 - Real File Explorer search: typing filters the current folder (subfolders included, This PC searches all of C:) with a 300ms pause, Enter or the magnifier runs it immediately, Esc clears it, `No items match your search.` when nothing hits, and directories in the results navigate while files land in their own folder selected
 - Search box follows Win10: placeholder `Search <location>`, magnifier on the right end as a real button, blue border while focused, Ctrl+E / F3 jump into it
 - Editable address bar: clicking the empty stretch of the breadcrumb (or Alt+D / Ctrl+L) swaps the crumbs for a full-path text box with the text pre-selected so Ctrl+C copies it, Enter navigates, Esc reverts, and a recent-places drop-down opens underneath with the visit history
-- Typed paths resolve like Win10: absolute (`C:\Users\User\Documents`, `C:/…`, `C:`), relative (`Documents`), shell names (`This PC`, `Recycle Bin`) and known user folders from any location; an unresolvable path opens a Win10-style message box (`Windows cannot find '…'. Check the spelling and try again.` + OK)
+- Typed paths resolve like Win10: absolute (`C:\Users\User\Documents`, `C:/â€¦`, `C:`), relative (`Documents`), shell names (`This PC`, `Recycle Bin`) and known user folders from any location; an unresolvable path opens a Win10-style message box (`Windows cannot find 'â€¦'. Check the spelling and try again.` + OK)
 - Typing a file path or opening a file from search reveals it in its folder with itself selected (no file associations exist yet)
 
 ### Removed
@@ -2903,7 +3036,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 - Explorer's address bar is built once and updated in place instead of being recreated on every render, so the text boxes survive re-renders; Back/Forward/Up disabled states refresh per render and Up is greyed at This PC
 - Search results, folder listings and drive rows guard against stale async renders, so fast typing can never paint old results over new ones
-- A pointer-locked real mousedown is now default-prevented so it cannot steal focus from whatever the routed press just focused — without this the browser blurs the box mid-click and nothing types
+- A pointer-locked real mousedown is now default-prevented so it cannot steal focus from whatever the routed press just focused â€” without this the browser blurs the box mid-click and nothing types
 
 ### Fixed
 
@@ -3176,7 +3309,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Removed
 
-- Drawn `THISPC_SVG`, `RECYCLE_SVG`, `EXPLORER_SVG` approximations (superseded; Edge and Store stay drawn — not covered by those DLLs)
+- Drawn `THISPC_SVG`, `RECYCLE_SVG`, `EXPLORER_SVG` approximations (superseded; Edge and Store stay drawn â€” not covered by those DLLs)
 
 ### Changed
 
@@ -3449,7 +3582,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 - `js/core/cursor.js` emulated hardware cursor: OS pointer hidden over the monitor, `assets/cursor-idle.svg` / `assets/cursor-linkselect.svg` rendered at the mapped position with correct hotspots
 - Desktop: captured mouse movement drives the cursor; pointer switches to link-select over clickable elements
-- Touch: stage behaves like a laptop touchpad — one-finger drag moves the cursor relatively, quick tap left-clicks, two-finger drag scrolls under the cursor
+- Touch: stage behaves like a laptop touchpad â€” one-finger drag moves the cursor relatively, quick tap left-clicks, two-finger drag scrolls under the cursor
 - `css/cursor.css` cursor styling, OS-pointer hiding, and `touch-action: none` for the stage
 
 ### Removed
@@ -3529,8 +3662,8 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- Boot spinner position 496px → 560px from stage top
-- Boot spinner size 40px (natural) → 64px
+- Boot spinner position 496px â†’ 560px from stage top
+- Boot spinner size 40px (natural) â†’ 64px
 
 ### Fixed
 
@@ -3550,7 +3683,7 @@ Three glyphs are still hand-drawn because MDL2 genuinely has no equivalent, and 
 
 ### Changed
 
-- Boot logo width 200px → 140px to match the real Windows 10 boot proportions
+- Boot logo width 200px â†’ 140px to match the real Windows 10 boot proportions
 
 ### Fixed
 

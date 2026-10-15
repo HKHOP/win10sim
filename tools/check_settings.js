@@ -102,7 +102,10 @@ var keys = {};
 var kindsUsed = {};
 INDEX.order.forEach(function (page) {
   page.groups.forEach(function (group) {
-    ok('group in "' + page.id + '" has a title', !!group.title, group.id);
+    // A group with no heading is a real thing in Windows: the four switches at the
+  // top of Snap, the sentence above Focus assist's answers, the PC name on
+  // Projecting to this PC. Only the id has to be there to name it in a failure.
+  ok('group "' + (group.id || '') + '" in "' + page.id + '" has an id', !!group.id, JSON.stringify(group));
     ok('group "' + (group.id || group.title) + '" has items', (group.items || []).length > 0);
     group.items.forEach(function (item, at) {
       var where = page.id + ' > ' + (group.title || group.id) + ' > item ' + at;
@@ -159,6 +162,42 @@ INDEX.order.forEach(function (page) {
           !!pageById(item.to), 'to: ' + item.to);
       }
     });
+  });
+});
+
+// A page's help rail is not a group, so the loop above never sees it - and a
+// rail link to a page nobody has is a link that lands on Home, which is the same
+// failure the category tiles had.
+INDEX.order.forEach(function (page) {
+  (page.rail || []).forEach(function (section, at) {
+    var where = page.id + ' > rail ' + (section.title || at);
+    ok('a rail section has a heading (' + where + ')', !!section.title);
+    ok('a rail section has something in it (' + where + ')',
+      !!section.text || (section.links || []).length > 0);
+    (section.links || []).forEach(function (link) {
+      ok('rail link "' + link.label + '" says where it goes (' + where + ')',
+        !!(link.to || link.action));
+      ok('rail link "' + link.label + '" goes to a page that exists (' + where + ')',
+        !link.to || !!pageById(link.to), 'to: ' + link.to);
+    });
+  });
+});
+
+// The nav pane draws a sub-heading once and indents the rows under it, so a
+// page declaring one has to sit with the others that share it. A run broken by
+// an unrelated page in the middle would draw the heading twice and strand one
+// row outside it.
+CATEGORIES.forEach(function (category) {
+  var seen = {};
+  var open = '';
+  (category.pages || []).forEach(function (page) {
+    var group = page.navGroup || '';
+    if (group !== open) {
+      ok('"' + category.title + '" opens "' + group + '" only once',
+        !group || !seen[group], 'page: ' + page.id);
+      seen[group] = true;
+      open = group;
+    }
   });
 });
 
@@ -262,6 +301,21 @@ eq('nothing is Home', normalizePageId(''), HOME_PAGE_ID);
 eq('nothing is Home, spelled as null', normalizePageId(null), HOME_PAGE_ID);
 eq('a page id reaches its page', normalizePageId('display'), 'display');
 eq('a page id is case-insensitive', normalizePageId('DISPLAY'), 'display');
+// Every page must be reachable by the id the rest of the app knows it by. A page
+// whose id does not survive its own lookup is not "hard to link to" - it is a
+// door onto Home, because navigate() treats a null as Home and a home tile that
+// lands on Home looks exactly like a tile that does nothing. Most ids are
+// camelCase, so most ids used to fail this.
+INDEX.order.forEach(function (page) {
+  eq('page "' + page.id + '" is reachable by its own id', normalizePageId(page.id), page.id);
+});
+// And the category tiles are exactly this: each one navigates to a page id.
+CATEGORIES.forEach(function (category) {
+  var target = category.goto || (category.pages && category.pages[0] && category.pages[0].id);
+  ok('the "' + category.title + '" tile goes somewhere that exists', !!pageById(target),
+    'to: ' + target);
+  eq('the "' + category.title + '" tile resolves', normalizePageId(target), target);
+});
 eq('a page id tolerates being trimmed', normalizePageId('  display '), 'display');
 eq('a route reaches its page', normalizePageId('system/display'), 'display');
 eq('a route with backslashes reaches its page', normalizePageId('system\\display'), 'display');

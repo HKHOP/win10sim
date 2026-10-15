@@ -112,6 +112,9 @@ export function buildNav(ops) {
   // its pages leaves the pane alone - the way it does in Windows - and only a
   // change of category brings the rows in again.
   var scopedTo = null;
+  // The sub-heading the run of rows is currently under, so the heading is drawn
+  // once rather than repeated on every nested row.
+  var shownGroup = '';
 
   return {
     el: root,
@@ -128,6 +131,7 @@ export function buildNav(ops) {
       root.classList.remove('is-searching');
       scopedTo = category ? category.id : null;
       rows = [];
+      shownGroup = '';
       list.textContent = '';
       list.classList.remove('is-entering');
       if (!category) {
@@ -138,9 +142,21 @@ export function buildNav(ops) {
       title.textContent = category.title;
       list.appendChild(title);
       (category.pages || []).forEach(function (page) {
+        // A page may sit under a sub-heading: the Privacy pane puts six rows
+        // under "App permissions". The heading is drawn once, where the run of
+        // pages under it begins, and the rows under it are indented to say so.
+        if (page.navGroup && page.navGroup !== shownGroup) {
+          shownGroup = page.navGroup;
+          var sub = document.createElement('div');
+          sub.className = 'set-nav-subgroup';
+          sub.textContent = page.navGroup;
+          list.appendChild(sub);
+        } else if (!page.navGroup) {
+          shownGroup = '';
+        }
         var row = document.createElement('button');
         row.type = 'button';
-        row.className = 'set-nav-row';
+        row.className = 'set-nav-row' + (page.navGroup ? ' set-nav-row--nested' : '');
         var art = document.createElement('span');
         art.className = 'set-nav-art';
         art.innerHTML = glyphFor(page.glyph || category.glyph);

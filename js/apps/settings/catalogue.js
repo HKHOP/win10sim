@@ -121,6 +121,20 @@ function subPages(category, all) {
 
 export var INDEX = indexPages(CATEGORIES, EXTRA_PAGES);
 
+// Page ids are camelCase - "windowsUpdate", "yourInfo", "privacyLocation" - and
+// almost every one of them has a capital in it. The index is keyed by the real
+// id, so a lookup that ignores case needs a table of its own: asking
+// INDEX.byId with a lowercased id misses every one of those pages.
+//
+// That miss is not a "not found", it is worse than one. Everything that navigates
+// goes through normalizePageId and treats a null as Home, so a page whose id could
+// not be resolved was not merely unreachable by name - it was a door that opened
+// onto the home screen instead, which reads as a tile that does nothing.
+var ID_BY_LOWER = {};
+Object.keys(INDEX.byId).forEach(function (id) {
+  ID_BY_LOWER[id.toLowerCase()] = id;
+});
+
 export function pageById(id) {
   return INDEX.byId[id] || null;
 }
@@ -157,13 +171,16 @@ export function normalizePageId(raw) {
   if (INDEX.byId[text]) {
     return text;
   }
+  if (ID_BY_LOWER[text]) {
+    return ID_BY_LOWER[text];
+  }
   // A route is "<category>/<page>"; the page id is what is left after the
   // category, and the category is only there to say where in the nav it sits.
   var segments = text.split(/[\\/]+/).filter(function (part) { return !!part; });
   if (segments.length > 1) {
     var last = segments[segments.length - 1];
-    if (INDEX.byId[last]) {
-      return last;
+    if (INDEX.byId[last] || ID_BY_LOWER[last]) {
+      return ID_BY_LOWER[last] || last;
     }
   }
   var byTitle = INDEX.order.filter(function (page) {

@@ -96,6 +96,157 @@ export var GAMEBAR = {
   ]
 };
 
+// The Game bar's own page, as 1903 draws it. Two things on it are on no other
+// page and are the reason it is not Game Mode's page a second time.
+//
+// The recording switch is in the amber of the Game bar rather than the blue every
+// other switch in Settings is: it turns the recording on, it does not change the
+// machine. It is declared with a variant rather than being a switch that happens
+// to be styled differently, so the colour is a property of the setting.
+//
+// The keyboard shortcuts are four rows of "what it does, the keys". Declaring
+// them one at a time is what lets the page say which four it has rather than
+// implying there is a fixed number of them.
+export var GAME_BAR = {
+  id: 'gameBarPage',
+  title: 'Game bar',
+  glyph: 'gamebar',
+  groups: [
+    {
+      id: 'gamebar',
+      title: 'Control how Game bar opens and recognizes your game',
+      items: [
+        {
+          kind: 'toggle',
+          key: 'gaming.recordWithBar',
+          label: 'Record game clips, screenshots, and broadcast using Game bar',
+          default: false,
+          variant: 'amber'
+        },
+        {
+          kind: 'toggle',
+          key: 'gaming.controllerButton',
+          label: 'On Game bar using this button on a controller:',
+          default: false
+        }
+      ]
+    },
+    {
+      id: 'shortcuts',
+      title: 'Keyboard shortcuts',
+      items: [
+        { kind: 'shortcutBox', key: 'gaming.shortcutOpenBar', label: 'Open Game bar', default: 'Win+G' },
+        { kind: 'shortcutBox', key: 'gaming.shortcutScreenshot', label: 'Take screenshot', default: 'Win+Alt+PrtScn' },
+        { kind: 'shortcutBox', key: 'gaming.shortcutRecordThat', label: 'Record that', default: 'Win+Alt+G' },
+        { kind: 'shortcutBox', key: 'gaming.shortcutStartRecording', label: 'Start/stop recording', default: 'Win+Alt+R' }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Related settings',
+      links: [
+        { label: 'Graphics settings', action: 'gaming.graphics' },
+        { label: 'Video playback', to: 'videoPlayback' },
+        { label: 'Game Mode', to: 'gameMode' }
+      ]
+    },
+    {
+      title: 'Have a question?',
+      links: [
+        { label: 'Troubleshooting Xbox Game Bar', action: 'gaming.troubleshootBar' },
+        { label: 'Learning about game bar keyboard shortcuts', action: 'gaming.shortcutHelp' },
+        { label: 'Get help', action: 'help.get' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
+      ]
+    }
+  ]
+};
+
+// Broadcasting: what the Game bar sends out, and what it does with the microphone
+// and the camera while it does.
+export var BROADCASTING = {
+  id: 'broadcasting',
+  title: 'Broadcasting',
+  glyph: 'broadcast',
+  groups: [
+    {
+      id: 'broadcast',
+      title: 'Broadcasting',
+      items: [
+        {
+          kind: 'toggle',
+          key: 'gaming.broadcast',
+          label: 'Enable broadcasting',
+          default: false
+        },
+        { kind: 'text', text: 'Broadcasting goes out to a service, and this computer has no network to reach one.' }
+      ]
+    },
+    {
+      id: 'people',
+      title: 'Choose who can watch your broadcast',
+      items: [
+        {
+          kind: 'select',
+          key: 'gaming.broadcastAudience',
+          label: 'Who can watch your broadcast',
+          default: 'Everyone',
+          options: [
+            { value: 'Everyone', label: 'Everyone' },
+            { value: 'Friends only', label: 'Friends only' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'permissions',
+      title: 'Choose what your broadcast can use',
+      items: [
+        { kind: 'toggle', key: 'gaming.broadcastCamera', label: 'Camera', default: true },
+        { kind: 'toggle', key: 'gaming.broadcastMicrophone', label: 'Microphone', default: true }
+      ]
+    },
+    {
+      id: 'related',
+      title: 'Related settings',
+      items: [
+        { kind: 'link', label: 'Game bar', to: 'gameBarPage' },
+        { kind: 'link', label: 'Privacy', to: 'privacyCamera' }
+      ]
+    }
+  ]
+};
+
+// Xbox Networking: nothing here is signed in, so the page says so rather than
+// offering a switch for a service with no account behind it.
+export var XBOX_NETWORKING = {
+  id: 'xboxNetworking',
+  title: 'Xbox Networking',
+  glyph: 'xbox',
+  groups: [
+    {
+      id: 'status',
+      title: 'Xbox Networking',
+      items: [
+        { kind: 'text', text: 'You are not signed in to an Xbox account, so there is nothing to connect with.' }
+      ]
+    },
+    {
+      id: 'talk',
+      title: 'Talk to other people',
+      items: [
+        { kind: 'note', text: 'Game chat needs an Xbox account and a network. This computer has neither.' }
+      ]
+    }
+  ]
+};
+
 export var CAPTURES = {
   id: 'captures',
   title: 'Captures',
@@ -155,29 +306,52 @@ export var GAMING = {
   title: 'Gaming',
   blurb: 'Game bar, captures, broadcasting, Game Mode',
   glyph: 'gaming',
-  pages: [GAME_MODE, GAMEBAR, CAPTURES]
+  // Windows' order: the bar first, then what it records, then what it sends out,
+  // then the two that are not the bar at all.
+  pages: [GAME_BAR, CAPTURES, BROADCASTING, GAME_MODE, XBOX_NETWORKING]
 };
 
 // --- Ease of Access ---------------------------------------------------------
 
+// Ease of Access nests in the nav: Vision holds six rows, Hearing two, and
+// Interaction three. That grouping is why a page here can carry a navGroup -
+// Windows really does put a heading over part of this list, and a flat list
+// would flatten a hierarchy that is there on purpose.
+//
+// The first Vision row is called Display, and it holds the same text size the
+// System > Display page does. One setting, two rows that show it.
+
 export var VISION = {
   id: 'easeVision',
-  title: 'Vision',
-  glyph: 'magnifier',
+  title: 'Display',
+  glyph: 'display',
   groups: [
     {
       id: 'textsize',
       title: 'Make text bigger',
       items: [
         {
-          kind: 'link',
-          label: 'Change text size',
-          action: 'ease.textSize'
+          kind: 'textSample',
+          key: 'display.textSize',
+          label: 'Make text bigger',
+          min: 100,
+          max: 500,
+          step: 25,
+          default: 100
         },
-        { kind: 'text', text: 'Text size is set in Settings > System > Display. This page shows the same value rather than a second one.' },
         { kind: 'link', label: 'Display settings', to: 'display' }
       ]
-    },
+    }
+  ]
+};
+
+// The Magnifier row. Its own page rather than a group on the Display one,
+// because Windows gives it a row in the nav and a heading of its own.
+export var MAGNIFIER = {
+  id: 'easeMagnifier',
+  title: 'Magnifier',
+  glyph: 'magnifier',
+  groups: [
     {
       id: 'magnify',
       title: 'Magnify',
@@ -218,6 +392,23 @@ export var VISION = {
       ]
     },
     {
+      id: 'visual',
+      title: 'Visual animations',
+      items: [
+        { kind: 'toggle', key: 'ease.animations', label: 'Animation effects', default: true }
+      ]
+    }
+  ]
+};
+
+// The Narrator row: nothing here is installed, so the page says so rather than
+// offering switches for a program that is not on the machine.
+export var NARRATOR = {
+  id: 'easeNarrator',
+  title: 'Narrator',
+  glyph: 'speech',
+  groups: [
+    {
       id: 'narrator',
       title: 'Narrator',
       items: [
@@ -225,12 +416,83 @@ export var VISION = {
         { kind: 'text', text: 'No narrator is installed on this computer.' },
         { kind: 'link', label: 'Narrator settings', action: 'ease.narratorSettings' }
       ]
+    }
+  ]
+};
+
+// Cursor & pointer: the row between Display and Magnifier, which exists because
+// the pointer's own size is a vision setting and its size is a mouse setting.
+export var CURSOR_POINTER = {
+  id: 'easePointer',
+  title: 'Cursor & pointer',
+  glyph: 'mouse',
+  groups: [
+    {
+      id: 'pointer',
+      title: 'Make the pointer easier to see',
+      items: [
+        {
+          kind: 'select',
+          key: 'ease.pointerSize',
+          label: 'Choose a pointer size',
+          default: '1 (default size)',
+          options: [
+            { value: '1 (default size)', label: '1 (default size)' },
+            { value: '2', label: '2' },
+            { value: '3', label: '3' },
+            { value: '4', label: '4' },
+            { value: '5', label: '5' }
+          ]
+        },
+        { kind: 'toggle', key: 'ease.pointerThicken', label: 'Make the pointer thicker', default: false },
+        { kind: 'toggle', key: 'ease.pointerShadow', label: 'Drop shadow on text', default: false }
+      ]
     },
     {
-      id: 'visual',
-      title: 'Visual animations',
+      id: 'related',
+      title: 'Related settings',
       items: [
-        { kind: 'toggle', key: 'ease.animations', label: 'Animation effects', default: true }
+        { kind: 'link', label: 'Mouse', to: 'mouse' },
+        { kind: 'link', label: 'Touchpad', to: 'touchpad' }
+      ]
+    }
+  ]
+};
+
+// The row above High contrast. Windows calls these filters for colour-vision
+// deficiency; this machine has none of the profiles installed, so the page offers
+// the names and says what applying one would need.
+export var COLOR_FILTERS = {
+  id: 'easeColors',
+  title: 'Color filters',
+  glyph: 'colors',
+  groups: [
+    {
+      id: 'filters',
+      title: 'Choose a color filter to apply',
+      items: [
+        {
+          kind: 'select',
+          key: 'ease.colorFilter',
+          label: 'Color filter',
+          default: 'Off',
+          options: [
+            { value: 'Off', label: 'Off' },
+            { value: 'Grayscale', label: 'Grayscale' },
+            { value: 'Inverted', label: 'Inverted' },
+            { value: 'Red-Green filter', label: 'Red-Green filter' },
+            { value: 'Red-Blue filter', label: 'Red-Blue filter' },
+            { value: 'Green-Blue filter', label: 'Green-Blue filter' }
+          ]
+        },
+        { kind: 'link', label: 'Color filters settings', action: 'ease.colorFilterSettings' }
+      ]
+    },
+    {
+      id: 'shortcuts',
+      title: 'Keyboard shortcuts for color filters',
+      items: [
+        { kind: 'toggle', key: 'ease.colorFilterHotkey', label: 'Allow the shortcut key to turn on color filters', default: false }
       ]
     }
   ]
@@ -271,10 +533,90 @@ export var CONTRAST = {
   ]
 };
 
-export var INTERACTION = {
-  id: 'easeInteraction',
-  title: 'Interaction',
-  glyph: 'interaction',
+// The two rows under Hearing. There is no sound on this machine either, so each
+// says what it would do rather than offering a switch with nothing behind it.
+export var AUDIO_CUES = {
+  id: 'easeAudio',
+  title: 'Audio',
+  glyph: 'sound',
+  groups: [
+    {
+      id: 'audio',
+      title: 'Choose an audio cue to play when Windows notifies you of something',
+      items: [
+        { kind: 'toggle', key: 'ease.audioCue', label: 'Play Windows sounds', default: false }
+      ]
+    },
+    {
+      id: 'related',
+      title: 'Related settings',
+      items: [
+        { kind: 'link', label: 'Sound', to: 'sound' }
+      ]
+    }
+  ]
+};
+
+export var CLOSED_CAPTIONS = {
+  id: 'easeCaptions',
+  title: 'Closed captions',
+  glyph: 'captions',
+  groups: [
+    {
+      id: 'captions',
+      title: 'Closed captions',
+      items: [
+        { kind: 'toggle', key: 'ease.closedCaptions', label: 'On', default: false },
+        { kind: 'text', text: 'There is no video to caption on this computer.' },
+        { kind: 'link', label: 'Background colour', action: 'ease.captionsBackground' }
+      ]
+    }
+  ]
+};
+
+// The three rows under Interaction. Keyboard and Mouse are the ones that change
+// this shell rather than a program it has not got, so their switches do
+// something; Speech still has no recogniser, and says so.
+export var INTERACTION_KEYBOARD = {
+  id: 'easeKeyboard',
+  title: 'Keyboard',
+  glyph: 'keyboard',
+  navGroup: 'Interaction',
+  groups: [
+    {
+      id: 'keys',
+      title: 'Change the way Windows responds to keys you press',
+      items: [
+        { kind: 'toggle', key: 'ease.stickyKeys', label: 'Sticky keys', default: false },
+        { kind: 'toggle', key: 'ease.filterKeys', label: 'Filter keys', default: false }
+      ]
+    },
+    {
+      id: 'repeat',
+      title: 'Adjust the repeat delay',
+      items: [
+        {
+          kind: 'select',
+          key: 'ease.repeatDelay',
+          label: 'Repeat delay',
+          default: '1 second',
+          options: [
+            { value: '250 ms', label: '250 ms' },
+            { value: '500 ms', label: '500 ms' },
+            { value: '1 second', label: '1 second' },
+            { value: '2 seconds', label: '2 seconds' }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+export var INTERACTION_MOUSE = {
+  id: 'easeMouse',
+  title: 'Mouse',
+  glyph: 'mouse',
+  navGroup: 'Interaction',
   groups: [
     {
       id: 'mousekeys',
@@ -285,45 +627,23 @@ export var INTERACTION = {
       ]
     },
     {
-      id: 'stickykeys',
-      title: 'Sticky keys',
+      id: 'related',
+      title: 'Related settings',
       items: [
-        { kind: 'toggle', key: 'ease.stickyKeys', label: 'On', default: false },
-        { kind: 'link', label: 'Settings', action: 'ease.stickyKeysSettings' }
-      ]
-    },
-    {
-      id: 'filterkeys',
-      title: 'Filter keys',
-      items: [
-        { kind: 'toggle', key: 'ease.filterKeys', label: 'On', default: false },
-        { kind: 'link', label: 'Settings', action: 'ease.filterKeysSettings' }
-      ]
-    },
-    {
-      id: 'keyboard',
-      title: 'Keyboard shortcuts for Windows',
-      items: [
-        {
-          kind: 'radio',
-          key: 'ease.filterKeysBehaviour',
-          label: 'Filter keys',
-          default: 'beep',
-          options: [
-            { value: 'beep', label: 'Beep', help: 'Windows beeps when a key is pressed more than twice in a row.' },
-            { value: 'toggle', label: 'Toggle', help: 'Holding the right SHIFT key for eight seconds turns Filter Keys on or off.' },
-            { value: 'windowFlag', label: 'Window Flag', help: 'Holding the right SHIFT key for eight seconds displays a window message.' }
-          ]
-        }
+        { kind: 'link', label: 'Mouse', to: 'mouse' }
       ]
     }
   ]
 };
 
+// The third Interaction row. Windows has no page called "Interaction" - it is
+// the heading over these three - so this id carries the Speech page and nothing
+// else calls it that.
 export var NARRATION = {
   id: 'easeNarration',
   title: 'Speech',
   glyph: 'speech',
+  navGroup: 'Interaction',
   groups: [
     {
       id: 'narrator',
@@ -366,7 +686,7 @@ export var NARRATION = {
       title: 'Related settings',
       items: [
         { kind: 'link', label: 'Speech', to: 'speech' },
-        { kind: 'link', label: 'Narration settings', action: 'ease.narrationSettings' }
+        { kind: 'link', label: 'Narrator settings', action: 'ease.narrationSettings' }
       ]
     }
   ]
@@ -377,7 +697,22 @@ export var EASE_OF_ACCESS = {
   title: 'Ease of Access',
   blurb: 'Narrator, magnifier, high contrast',
   glyph: 'ease',
-  pages: [VISION, CONTRAST, INTERACTION, NARRATION]
+  // Windows' own grouping: six under Vision, two under Hearing, three under
+  // Interaction. The nav pane draws the two lower headings from navGroup; Vision
+  // is the category's own title, which is what the first group is called.
+  pages: [
+    VISION,
+    CURSOR_POINTER,
+    MAGNIFIER,
+    COLOR_FILTERS,
+    CONTRAST,
+    NARRATOR,
+    AUDIO_CUES,
+    CLOSED_CAPTIONS,
+    INTERACTION_KEYBOARD,
+    INTERACTION_MOUSE,
+    NARRATION
+  ]
 };
 
 // --- Search -----------------------------------------------------------------

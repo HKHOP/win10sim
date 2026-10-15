@@ -32,11 +32,21 @@ export var KINDS = {
   select: { value: true },
   radio: { value: true },
   swatches: { value: true },
-  deviceRow: { value: true },
   backgroundPicker: { value: true },
   colourPicker: { value: true },
   themePicker: { value: true },
   protectionRow: { value: true },
+  // The shapes the 1903 pages are actually made of, which the simpler kinds
+  // above cannot describe:
+  //   - a rule row: an icon, what triggers it, what it will do, and a switch
+  //     (Focus assist's automatic rules);
+  //   - a keyboard shortcut: its name, the grey "Windows shortcut" caption, and
+  //     a box holding the keys (Game bar);
+  //   - the text-size preview: a box showing sample text, the two A's, the
+  //     slider, and Apply (Display).
+  ruleRow: { value: true },
+  shortcutBox: { value: true },
+  textSample: { value: true },
 
   // --- hold a value per entry, under a key prefix ---
   // These are the pages that list many switches: one per app to allow camera
@@ -56,6 +66,10 @@ export var KINDS = {
   // --- draw something that is not a control ---
   text: { value: false },
   note: { value: false },
+  // "Get help" and "Give feedback", each with the mark Windows puts beside it.
+  // The pair travels together on every page that has them, so it is one item
+  // rather than two buttons a page has to remember to put in the same group.
+  helpLinks: { value: false },
   specList: { value: false },
   usageChart: { value: false },
   storageUsage: { value: false },
@@ -102,8 +116,14 @@ export function keyOf(item) {
 // the table being unsure what an unset setting is.
 var KIND_DEFAULTS = {
   toggle: false,
+  ruleRow: false,
   checkbox: false,
   slider: 0,
+  // The text-size preview is a slider wearing a box, so it starts where Windows
+  // starts: at the size it already is.
+  textSample: 100,
+  // A keyboard shortcut starts as the combination Windows has already assigned.
+  shortcutBox: '',
   select: '',
   radio: '',
   text: '',
@@ -111,7 +131,6 @@ var KIND_DEFAULTS = {
   // A row that draws something in this accent - a chosen picture, an accent
   // colour, a protection tile - is unset until it is pointed at something.
   swatches: 'default',
-  deviceRow: '',
   backgroundPicker: '',
   colourPicker: '',
   themePicker: '',
@@ -136,7 +155,7 @@ export function defaultOf(item) {
 // own type. An empty option list on a select means the options live elsewhere
 // (a build function), so nothing can be checked and only the type is.
 function allowedValues(item) {
-  if (item.kind === 'toggle' || item.kind === 'checkbox') {
+  if (item.kind === 'toggle' || item.kind === 'checkbox' || item.kind === 'ruleRow') {
     return [true, false];
   }
   if (item.kind === 'select' || item.kind === 'radio') {
@@ -160,14 +179,23 @@ export function coerce(item, raw) {
   if (raw === undefined || raw === null) {
     return defaultOf(item);
   }
-  if (item.kind === 'toggle' || item.kind === 'checkbox') {
+  if (item.kind === 'toggle' || item.kind === 'checkbox' || item.kind === 'ruleRow') {
     return typeof raw === 'boolean' ? raw : defaultOf(item);
   }
   if (item.kind === 'number') {
     var num = Number(raw);
     return isFinite(num) ? num : defaultOf(item);
   }
-  if (item.kind === 'slider') {
+  if (item.kind === 'shortcutBox') {
+    // A key combination is whatever the reader typed. It is not checked against
+    // a list, because the list is the thing being edited: there is no answer
+    // that can be called wrong here.
+    return String(raw);
+  }
+  // The text-size preview holds a number in a fixed range, exactly as the plain
+  // slider it wraps does, so it is clamped and stepped by the same code rather
+  // than having a second rule of its own to keep in step.
+  if (item.kind === 'slider' || item.kind === 'textSample') {
     var val = Number(raw);
     if (!isFinite(val)) {
       return defaultOf(item);
@@ -241,10 +269,15 @@ export function indexPages(categories, extras) {
       id: page.id,
       title: page.title,
       glyph: page.glyph,
+      // The sub-heading a page sits under in the nav pane. Windows nests part of
+      // the Privacy pane - "App permissions" holds six rows of its own - and a
+      // flat list would flatten a hierarchy that is there on purpose.
+      navGroup: page.navGroup || '',
       groups: page.groups || [],
       categoryId: category.id,
       categoryTitle: category.title,
       blurb: page.blurb || '',
+      rail: page.rail || [],
       // True when the page only has a route, no row in the nav pane.
       hidden: !drawInNav
     };

@@ -5,6 +5,14 @@
 // both categories report an empty list rather than showing a profile that is not
 // there.
 
+// Your info. The page is the account card and nothing else: Windows shows the
+// avatar, the name, and the two lines under it, then offers a way to put a
+// picture on it. There is no sign-in button here and no sync group - the sign-in
+// is the "Sign in" at the top of the nav pane, and sync is its own page.
+//
+// The account name is the local account the shell actually runs as, and the two
+// lines under it are its type and its group, which is what Windows writes under
+// a name for an account that is not a Microsoft account.
 export var YOUR_INFO = {
   id: 'yourInfo',
   title: 'Your info',
@@ -12,21 +20,63 @@ export var YOUR_INFO = {
   groups: [
     {
       id: 'profile',
-      title: 'Your info',
       items: [
         {
-          kind: 'text',
-          text: 'You are not signed in. Add a Microsoft account to get started.'
-        },
-        { kind: 'profileCard', label: 'Your info' },
-        { kind: 'button', label: 'Sign in with an account', action: 'accounts.signin' }
+          kind: 'profileCard',
+          label: 'Your info',
+          name: 'ADMINISTRATOR',
+          accountType: 'Local Account',
+          role: 'Administrator'
+        }
       ]
     },
     {
-      id: 'sync',
-      title: 'Sync settings',
+      id: 'picture',
+      title: 'Create your picture',
       items: [
-        { kind: 'text', text: 'Windows is not signed in, so there are no settings to sync.' }
+        { kind: 'link', label: 'Camera', action: 'accounts.picture.camera', icon: 'webcam' },
+        { kind: 'link', label: 'Browse for one', action: 'accounts.picture.browse', icon: 'document' }
+      ]
+    },
+    {
+      id: 'question',
+      title: 'Do you have a question?',
+      items: [
+        { kind: 'link', label: 'Creating a Microsoft account', action: 'accounts.help.create' },
+        { kind: 'link', label: 'Changing your account picture', action: 'accounts.help.picture' }
+      ]
+    }
+  ],
+  rail: [
+    {
+      title: 'Related settings',
+      links: [
+        { label: 'Sign-in options', to: 'signin' },
+        { label: 'Sync settings', to: 'syncSettings' }
+      ]
+    },
+    {
+      title: 'Make Windows better',
+      links: [
+        { label: 'Give us feedback', action: 'help.feedback' }
+      ]
+    }
+  ]
+};
+
+// Your family: nothing is set up, and Windows says so rather than offering a
+// switch for a group that does not exist.
+export var FAMILY = {
+  id: 'family',
+  title: 'Your family',
+  glyph: 'family',
+  groups: [
+    {
+      id: 'family',
+      title: 'Your family',
+      items: [
+        { kind: 'text', text: 'Your family group is not set up.' },
+        { kind: 'button', label: 'Set up a family', action: 'accounts.setUpFamily' }
       ]
     }
   ]
@@ -199,11 +249,13 @@ export var ACCOUNTS = {
   title: 'Accounts',
   blurb: 'Your accounts, email, sync, work, other people',
   glyph: 'accounts',
+  // Windows' order: Your info, then Email & accounts, then the two pages about
+  // signing in to *this* machine, then the one about signing in to it anywhere.
   pages: [
     YOUR_INFO,
+    EMAIL_ACCOUNTS,
     SIGNIN,
     WORKPLACE,
-    EMAIL_ACCOUNTS,
     SYNC_SETTINGS
   ]
 };
@@ -211,7 +263,8 @@ export var ACCOUNTS = {
 export var ACCOUNTS_EXTRA_PAGES = [
   OTHER_ACCOUNTS,
   USER_ACCOUNTS,
-  OTHER_PEOPLE
+  OTHER_PEOPLE,
+  FAMILY
 ];
 
 // --- Time & Language --------------------------------------------------------

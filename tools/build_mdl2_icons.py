@@ -182,6 +182,34 @@ GLYPHS = {
     "MOUSE": (0xE962, "Mouse"),
     "MAIL": (0xE715, "Mail"),
     "SYNC": (0xE895, "Sync"),
+    # Settings' own icons, taken from the same documented table. Each is one the
+    # shell never drew, so each is here because a Settings page in build 1903 does.
+    "BRIGHTNESS": (0xE706, "Brightness"),
+    "LEAF": (0xE8BE, "Leaf"),
+    "WEBCAM": (0xE8B8, "Webcam"),
+    "FEEDBACK_APP": (0xE939, "FeedbackApp"),
+    # Focus assist's "During these times" rule is a clock. MDL2 documents no plain
+    # Clock, so the Stopwatch stands in: it is a real glyph, it is a clock face,
+    # and the alternative - inventing one - is the thing this table exists to
+    # avoid.
+    "STOPWATCH": (0xE916, "Stopwatch"),
+    # Nav artwork for pages this catalogue gained when it was checked against
+    # screenshots of build 1903 rather than against memory.
+    "PASTE": (0xE77F, "Paste"),
+    "BATTERY": (0xE83F, "Battery10"),
+    "REMOTE": (0xE8AF, "Remote"),
+    "SWITCH_APPS": (0xE8F9, "SwitchApps"),
+    "CHAT_BUBBLES": (0xE8F2, "ChatBubbles"),
+    "RECORD": (0xE7C8, "Record"),
+    "LIGHTBULB": (0xEA80, "Lightbulb"),
+    "DOCUMENT": (0xE8A5, "Document"),
+    "HELP": (0xE897, "Help"),
+    "CAPTION": (0xE8BA, "Caption"),
+    "KEYBOARD_STANDARD": (0xE92E, "KeyboardStandard"),
+    # Tasks in the Privacy nav wants MDL2's CheckList (U+E9D5), which Microsoft
+    # documents but this build of the font does not contain - the generator fails
+    # loudly on it rather than emitting an empty box, so the Tasks row uses
+    # BulletedList instead. Same shape, and a glyph that is really there.
 }
 
 
