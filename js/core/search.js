@@ -6,7 +6,7 @@
 import { DISPLAY_HEIGHT, START_ANIM_CLOSE_MS } from '../global/constants.js';
 import { SEARCH_SVG } from '../global/icons.js';
 import { listStartApps, launchApp } from './apps.js';
-import { isRawDevicePress } from './cursor.js';
+import { isRawDevicePress, isSiteChromePress } from './cursor.js';
 import { prefersReducedMotion } from './motion.js';
 import { on, emit } from '../system/events.js';
 
@@ -157,8 +157,25 @@ export function launchTopResult() {
   closeSearch();
 }
 
+// A press outside the panel closes it, Win10 style.
+//
+// Two kinds of press are not outside it, and both of them are the same mistake
+// in different clothes:
+//
+//   - a press the device made rather than one the emulated cursor delivered
+//     (isRawDevicePress): a finger on the touchpad says nothing about what was
+//     pressed and must never dismiss anything;
+//   - a press on the page's own furniture (isSiteChromePress): the virtual
+//     keyboard is drawn over the bottom of the screen and every one of its keys
+//     is a button that takes a press. Treating those as "outside" closed the
+//     panel on every keystroke - the key's press shut it, and the character that
+//     arrived next reopened it with one character in the box, so the search box
+//     could only ever hold one letter.
 function onOutsidePress(event) {
   if (isRawDevicePress(event)) {
+    return;
+  }
+  if (isSiteChromePress(event)) {
     return;
   }
   var target = event.target;

@@ -12,6 +12,7 @@ import {
   SETTING_SVG,
   HELP_SVG,
   SEARCH_SVG,
+  ERROR_SVG,
   DELETE_SVG,
   COLLECTIONS_SVG
 } from './edgeglyphs.js';
@@ -253,6 +254,38 @@ function search(entry, ops) {
   return page;
 }
 
+// An address in a scheme this browser has no program for. Edge refuses these by
+// name rather than reporting a network failure: nothing went wrong with the
+// network, there is simply nothing here that could open such an address, and
+// saying so is the difference between a person learning that and a person
+// learning that the internet is down.
+function blocked(entry) {
+  var page = shell('edge-site', 'Blocked', []);
+  var none = document.createElement('div');
+  none.className = 'edge-empty';
+  var glyph = document.createElement('div');
+  glyph.className = 'edge-empty-art';
+  glyph.innerHTML = ERROR_SVG;
+  var words = document.createElement('div');
+  var title = document.createElement('p');
+  title.className = 'edge-empty-title';
+  title.textContent = 'Edge blocked this page';
+  var note = document.createElement('p');
+  note.className = 'edge-empty-note';
+  note.textContent = entry.why ||
+    ('There is nothing on this computer that can open ' + entry.scheme + ': addresses.');
+  var address = document.createElement('p');
+  address.className = 'edge-empty-address';
+  address.textContent = entry.url;
+  words.appendChild(title);
+  words.appendChild(note);
+  words.appendChild(address);
+  none.appendChild(glyph);
+  none.appendChild(words);
+  page.appendChild(none);
+  return page;
+}
+
 // What every page is given: a way to navigate, the browser's own record of where
 // it has been, and the rooms that hold what it has kept. Built here rather than
 // in the window because it is the pages' side of the browser, not the window's.
@@ -294,6 +327,8 @@ export function buildPage(page, entry, ops) {
       return microsoft(ops);
     case 'search':
       return search(entry, ops);
+    case 'blocked':
+      return blocked(entry, ops);
     default:
       return null;
   }

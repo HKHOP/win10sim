@@ -15,6 +15,7 @@ import { buildChrome } from './chrome.js';
 import { buildCaptions } from './captions.js';
 import { buildNewTab } from './newtab.js';
 import { buildErrorPage } from './errorpage.js';
+import { buildFilePage, buildRefusedPage } from './localfile.js';
 import { buildPage, createPageOps } from './pages.js';
 import { createFindBar } from './find.js';
 import { buildProfileFlyout } from './profile.js';
@@ -23,6 +24,7 @@ import { installEdgeShortcuts } from './shortcuts.js';
 import { FAVORITE_SVG } from './edgeglyphs.js';
 import * as dialogs from './dialogs.js';
 import { NEW_TAB_URL, hostOf } from './net.js';
+import { fileUrlFor } from './fileurl.js';
 
 var SUFFIX = 'Microsoft Edge';
 var PRIVATE_SUFFIX = 'InPrivate - Microsoft Edge';
@@ -53,13 +55,18 @@ export function openEdge(context, args) {
   root.className = 'edge' + (options.inPrivate ? ' is-private' : '');
   win.body.appendChild(root);
 
-  // The dialogs that write files ask for the volume when they need it, not now.
-  dialogs.attachVolume(function () {
+  // The one lazy mount the whole window shares: the dialogs that write files and
+  // the pages that read local files both ask through here, so a browser with no
+  // storage costs one promise rather than one per feature.
+  function edgeVolume() {
     if (!volume) {
       volume = context.getVolume();
     }
     return volume;
-  });
+  }
+
+  // The dialogs that write files ask for the volume when they need it, not now.
+  dialogs.attachVolume(edgeVolume);
 
   // --- the tabs, the toolbar, and the page area ---------------------------
   var viewport;
@@ -148,7 +155,16 @@ export function openEdge(context, args) {
   root.appendChild(flyout.element);
 
   // --- drawing the page ---------------------------------------------------
+  // The local document on screen, if that is what is on screen. It holds a
+  // listener on the window, and a listener on a document that has been thrown
+  // away is a listener that will hear the next one.
+  var localPage = null;
+
   function swap(node) {
+    if (localPage) {
+      localPage.dispose();
+      localPage = null;
+    }
     while (viewport.firstChild) {
       viewport.removeChild(viewport.firstChild);
     }
@@ -156,6 +172,18 @@ export function openEdge(context, args) {
       viewport.appendChild(node);
     }
   }
+
+  // Closing the window is a swap that never happens, so the last document's
+  // listener is put away here. Without it a closed browser would go on hearing
+  // every other browser window's documents.
+  var closeWindow = win.close;
+  win.close = function () {
+    if (localPage) {
+      localPage.dispose();
+      localPage = null;
+    }
+    closeWindow.call(win);
+  };
 
   function isFavorite(url) {
     return favorites.some(function (row) {
@@ -216,6 +244,33 @@ export function openEdge(context, args) {
         onReload: function () { tabs.reload(); },
         onNewTab: function () { tabs.open(NEW_TAB_URL); }
       }));
+    } else if (entry.page === 'file') {
+      // A file on this machine. It is handed what kind of page it is, because
+      // that is what decides whether a link inside it may open another local
+      // file, and the volume through the same lazy mount the dialogs use.
+      var local = buildFilePage(entry, {
+        getVolume: edgeVolume,
+        fromPage: entry.page,
+        onNavigate: go,
+        // A document names itself in its <title>, and the tab follows it - which
+        // is why a tab says what the file is called, not its address. The
+        // address is passed too: a document still loading when the tab has moved
+        // on does not get to rename what is there now.
+        onTitle: function (title) {
+          if (tabs.retitle(title, entry.url)) {
+            win.setTitle(titleFor(tabs.currentEntry(), tab));
+          }
+        },
+        onRefused: function (why) {
+          // A link the browser will not follow. Edge refuses the navigation and
+          // stays where it is rather than arriving somewhere and reporting the
+          // problem there, so the tab does not move and this replaces the page
+          // that asked.
+          swap(buildRefusedPage(why, { onBack: function () { tabs.step(-1); } }));
+        }
+      });
+      swap(local.root);
+      localPage = local;
     } else {
       swap(buildPage(entry.page, entry, pageOps()));
     }
@@ -330,8 +385,13 @@ export function openEdge(context, args) {
   });
 
   // The first tab: the new tab page, unless the browser was asked to open an
-  // address - and an InPrivate window's tab is marked from the start.
-  tabs.open(options.url || NEW_TAB_URL, { inPrivate: !!options.inPrivate });
+  // address - and an InPrivate window's tab is marked from the start. A path
+  // (which is what a file association hands over) becomes the file: address a
+  // browser would show for it, so everything else agrees about what is open:
+  // the address bar, the history, and a link pasted into either.
+  tabs.open(options.url || (options.path ? fileUrlFor(options.path) : NEW_TAB_URL), {
+    inPrivate: !!options.inPrivate
+  });
 
   return win;
 }

@@ -53,7 +53,7 @@ import {
 import { listStartApps, launchApp } from './apps.js';
 import { subscribeWindows } from './windowmanager.js';
 import { showContextMenu, isContextMenuTarget } from './contextmenu.js';
-import { isRawDevicePress } from './cursor.js';
+import { isRawDevicePress, isSiteChromePress } from './cursor.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
   getRecentlyAdded,
@@ -602,8 +602,17 @@ export function closeStartMenu() {
 // gesture, or the locked stage swallowing a captured press — say nothing about
 // what was pressed and are ignored; so is the Start button, which toggles the
 // menu itself.
+//
+// The virtual keyboard is ignored for the same reason and with more force: a
+// press on one of its keys is a key, not a press on the screen. Left in, it shut
+// Start on the way down and the character that arrived next found no menu open to
+// answer it — so typing a letter to open search worked on a keyboard and did
+// nothing on a phone.
 function onOutsidePress(event) {
   if (isRawDevicePress(event)) {
+    return;
+  }
+  if (isSiteChromePress(event)) {
     return;
   }
   var target = event.target;

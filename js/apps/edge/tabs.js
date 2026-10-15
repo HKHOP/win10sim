@@ -179,6 +179,32 @@ export function createTabs(ops) {
     return img;
   }
 
+  // A document names itself once it has loaded, and the tab follows it. This is
+  // why a tab shows a page's own title rather than its address, and why it says
+  // "New tab" for a moment on the way - the name is not known until the document
+  // has been read.
+  //
+  // `url` is the address the document was loaded from, and it is what decides
+  // whether the name still applies. A document that was still loading when the
+  // tab went somewhere else has no say over what the new page is called, and this
+  // is how it does not get one. Returns whether the tab was renamed.
+  function retitle(title, url) {
+    var tab = active();
+    if (!tab || !title) {
+      return false;
+    }
+    if (url && tab.url !== url) {
+      return false;
+    }
+    tab.title = title;
+    var entry = tab.history[tab.index];
+    if (entry) {
+      entry.title = title;
+    }
+    paint();
+    return true;
+  }
+
   function paint() {
     while (strip.firstChild) {
       strip.removeChild(strip.firstChild);
@@ -196,18 +222,21 @@ export function createTabs(ops) {
       var label = document.createElement('span');
       label.className = 'edge-tab-title';
       label.textContent = tab.title;
-      var close = document.createElement('span');
-      close.className = 'edge-tab-close';
-      close.setAttribute('role', 'button');
-      close.setAttribute('aria-label', 'Close ' + tab.title);
-      close.innerHTML = CANCEL_SVG;
-      close.addEventListener('click', function (event) {
+      // Not named `close`: the function above has that name, and a local of the
+      // same name shadows it for the whole of paint(), so the press that meant
+      // to close the tab called this element instead and threw.
+      var closer = document.createElement('span');
+      closer.className = 'edge-tab-close';
+      closer.setAttribute('role', 'button');
+      closer.setAttribute('aria-label', 'Close ' + tab.title);
+      closer.innerHTML = CANCEL_SVG;
+      closer.addEventListener('click', function (event) {
         event.stopPropagation();
         close(tab.id);
       });
       button.appendChild(art);
       button.appendChild(label);
-      button.appendChild(close);
+      button.appendChild(closer);
       button.addEventListener('click', function () {
         activate(tab.id);
       });
@@ -243,6 +272,7 @@ export function createTabs(ops) {
     close: close,
     activate: activate,
     navigate: navigate,
+    retitle: retitle,
     step: step,
     canGo: canGo,
     reload: function () {

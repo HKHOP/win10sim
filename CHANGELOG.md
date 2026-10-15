@@ -3,6 +3,153 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.22.2] - Typing on a phone no longer puts one letter in and throws the rest away
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- `js/core/cursor.js`: `isSiteChromePress(event)` — whether a press landed on
+  the page's own furniture (the virtual keyboard, the handset button) rather
+  than on the emulated screen. It is deliberately **not** `isRawDevicePress`:
+  that one asks *who* made the press, this one asks *where* it landed, and it is
+  just as true of a press the emulated cursor delivered as of one a finger made.
+- `js/core/textfield.js`: the field's `outsidePress` asks it before blurring.
+
+### Fixed
+
+- **Typing in the taskbar's search box on a phone held exactly one character.**
+  Every key on the virtual keyboard is a button, and a finger on it lands a press
+  on that button — which every "dismiss myself on a press outside me" handler read
+  as a press on the page. So each keypress shut the panel on the way down, and
+  the character that arrived next reopened it with one letter in the box: "paint"
+  became "t", then "a", then "i". Three handlers had the defect, and they are
+  fixed by the same question asked in each:
+  - `js/core/search.js`: the panel closed and reopened on every keystroke.
+  - `js/core/textfield.js`: a field lost its caret to every character, so the
+    next key had no field to type into at all — `activeField()` answers null once
+    `hasCaret` is false, and `pressKey` then sends the key to the body.
+  - `js/core/startmenu.js`: Start shut before the character arrived, so typing a
+    letter to open search did nothing at all on a phone.
+
+- Left in the same class, deliberately, and still worth knowing about: a tap on a
+  virtual keyboard key dismisses an open **context menu**, **window menu**,
+  **Snap Assist chooser** or the **profile flyout**. None of those is in a typing
+  path, so none was changed here, but they share the shape.
+
+## [1.22.1] - Closing a tab threw instead of closing it
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- None
+
+### Fixed
+
+- **The X on a tab threw `TypeError: close is not a function`** (`js/apps/edge/tabs.js`).
+  Inside `paint()`, `var close = document.createElement('span')` shadows the
+  `close(id)` function for the whole of that function, so the click handler that
+  meant to close the tab called the element instead. Renamed to `closer`.
+  Worth recording that nothing caught it: shadowing is not a syntax error, so
+  `node --check` passed, the boot-graph walk passed (nothing is missing or
+  circular), and only a press in a browser could.
+
+## [1.22.0] - Edge opens local files, with the restrictions a local file has
+
+2026-10-15
+
+### Added
+
+- **The address of a local file (`js/apps/edge/fileurl.js`)**: `file://` in both
+  directions — the path Windows puts in the address bar, and the path the
+  filesystem has to be asked for. Every spelling a browser accepts
+  (`file:///C:/…`, `file://C:/…`, `file:/C:/…`, `file:C:/…`, `\\localhost`), drive
+  letters raised, spaces percent-encoded, every separator spelling, root
+  handling, and the resolution of a reference *inside* a document (siblings,
+  subfolders, `..`, `./`, root-absolute, fragments, queries). It is pure
+  arithmetic over strings, which is the point: **69 cases of it are checked under
+  node by `tools/check_edge_fileurl.js`**, with no browser and no shell.
+
+- **A local document (`js/apps/edge/localfile.js`)**: read off the emulated
+  volume and rendered by the browser itself, in an `<iframe>`. Writing an HTML
+  renderer here would be a worse browser pretending to be a better one; the frame
+  is the honest answer. The stylesheets, scripts and images a document asks for
+  are read from the volume and put in place by hand, because an `<iframe>` handed
+  a document *string* resolves relative URLs against the page holding the frame
+  rather than against the folder the document is in — which is what makes "a
+  folder with `page.html` and `style.css` in it" work.
+
+- **The restrictions, which are the substance of the feature**:
+  - **The sandbox is the point.** `sandbox` without `allow-same-origin`, so a
+    local document runs in an origin that belongs to nothing: no route to this
+    page, to the emulated C: volume, to the browser's profile, or to any other
+    document. Enforced by the browser, not promised in a comment. A document that
+    reaches for `localStorage` or for its parent gets the failure a real one does.
+  - **A local document cannot move the tab.** No `allow-top-navigation`; a link
+    is caught and handed to the tab, which decides.
+  - **A page on the web may not hand the browser a `file://` address**
+    (`mayNavigate`). Typing one into the address bar is not the same thing — that
+    is the person asking — so only a page's *own* links are gated. The two pages
+    deliberately excluded from the trusted list are the stand-in website and the
+    search results: a browser that let either open a local file would have given
+    the web a way onto the disk.
+  - **`javascript:` and `vbscript:` never run.** The scheme is stripped and the
+    rest searched for, which is what a paste of one gets you.
+  - **A scheme with no handler behind it is refused by name**, not reported as a
+    network failure — nothing went wrong with the network, there is nothing here
+    that could open an `ftp:` address at all. An ordinary `https://` address has a
+    handler and is simply unreachable, which is a different message.
+  - **No origin, no network**: a `fetch` or `XHR` from a document with no origin
+    is cross-origin to everything and is refused the way it is in a real browser.
+
+- **Edge claims `.html`, `.htm`, `.xhtml` and `.svg`**, so a double-click on one
+  in Explorer or on the desktop opens it in Edge — a file association handing an
+  app a path, and a browser's own answer to a path being the `file:` address for
+  it. Documents only: an image is not a thing a browser opens, and Edge downloads
+  nothing here, so a file it did not have is a file it cannot have.
+
+- **A `file://` folder is a listing**, the way a browser shows one — a folder you
+  can walk.
+
+### Removed
+
+- None
+
+### Changed
+
+- `js/apps/edge/net.js`: `file:` resolves rather than erroring; `schemeOf`;
+  `mayNavigate`; the scheme rules above; `hostOf` names a file by its path.
+- `js/apps/edge/edge.js`: renders the `file` page, hands it the volume through
+  the same lazy mount the dialogs use (`edgeVolume`), and puts the document's
+  listener away when the window closes. A `path` launch argument becomes the
+  `file:` address for it.
+- `js/apps/edge/tabs.js`: `retitle(title, url)` — a document names itself once
+  loaded, and `url` is what stops a document still loading when the tab moved on
+  from renaming what is there now.
+- `js/apps/edge/pages.js`: the blocked-scheme page.
+- `css/edge-page.css`: the frame, the two messages, and the folder listing.
+
+### Fixed
+
+- None
+
 ## [1.21.5] - Edge's error page is the old one again: a mark, words, a button
 
 2026-10-14

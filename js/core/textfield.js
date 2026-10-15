@@ -2,7 +2,7 @@ import { createFieldView } from './textfield-view.js';
 import { createKeyHandler } from './textfield-keys.js';
 import { applyInputApi } from './textfield-input.js';
 import { attachPointer } from './textfield-pointer.js';
-import { isRawDevicePress } from './cursor.js';
+import { isRawDevicePress, isSiteChromePress } from './cursor.js';
 
 // A text field the emulated OS owns.
 //
@@ -335,11 +335,19 @@ export function createTextField(options) {
 
   // A press outside the field, while it has the focus. See the focus listener
   // below for why the shell has to do this itself.
+  //
+  // The virtual keyboard is asked about first, and it matters more than it looks:
+  // a finger on one of its keys lands on a button that takes a press, so a field
+  // that took "outside" literally would lose its caret to every character typed
+  // into it, and the next key would find no field to type into at all.
   var outsidePress = function (event) {
     if (event.target === host || (host.contains && host.contains(event.target))) {
       return;
     }
     if (isRawDevicePress(event)) {
+      return;
+    }
+    if (isSiteChromePress(event)) {
       return;
     }
     host.blur();

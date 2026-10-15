@@ -151,6 +151,23 @@ export function isRawDevicePress(event) {
   return !!document.pointerLockElement;
 }
 
+// True for a press that landed on the page's own furniture rather than on the
+// emulated screen: the virtual keyboard, or the handset button. It is not
+// `isRawDevicePress` - that is about a press the device made; this is about
+// where it landed, and it is true for a routed press just as much as for a
+// real one.
+//
+// A surface that dismisses itself on a press outside itself has to ask this
+// first. The virtual keyboard sits over the bottom of the emulated screen and
+// every one of its keys is a button that takes a press, so a panel that treated
+// "outside" literally would close on every keystroke: the key's press would
+// dismiss it, and the character that followed would reopen it - which is what
+// made typing in the taskbar's search box leave exactly one character behind.
+export function isSiteChromePress(event) {
+  var target = event && event.target;
+  return isSiteChrome(target);
+}
+
 // One entry per cursor the OS can be wearing: the artwork and where its click
 // point sits inside it. Both come out of the source .cur files' own headers.
 var CURSOR_ART = {
