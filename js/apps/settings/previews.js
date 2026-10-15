@@ -6,7 +6,8 @@
 // is why they are here and not in the value controls: pressing them is not what
 // changes anything.
 
-import { DESKTOP_WALLPAPER_SRC, LOCK_WALLPAPER_SRC, THISPC_SRC } from '../../global/constants.js';
+import { DESKTOP_WALLPAPER_SRC, LOCK_WALLPAPER_SRC, THISPC_SRC, PICTURES_SRC } from '../../global/constants.js';
+import { glyphFor } from './glyphmap.js';
 
 function el(tag, className, text) {
   var node = document.createElement(tag);
@@ -129,6 +130,74 @@ var COLOURS = [
   { id: '7a7574', name: 'Windows grey' }
 ];
 
+// The two galleries on Personalisation > Colors. They are the same control over
+// the same table - which colour is the accent - drawn twice, and the difference
+// is only what is in them: Recent colours is a short row of what has been picked
+// lately, Windows colors is the whole palette.
+//
+// Declared as two items rather than one with a heading is what lets the two have
+// different contents without either of them having to know about the other. A
+// single gallery would have made the palette look like history.
+var RECENT_COLOURS = [
+  { id: '0078d7', name: 'Windows blue' },
+  { id: '0099bc', name: 'Windows teal' },
+  { id: '7a7574', name: 'Windows grey' },
+  { id: 'e81123', name: 'Windows red' },
+  { id: 'e3008c', name: 'Windows magenta' }
+];
+
+export function colourRow(item, ops) {
+  var palette = item.group === 'recent' ? RECENT_COLOURS : COLOURS;
+  var box = el('div', 'set-colours' + (item.group === 'windows' ? ' set-colours--grid' : ''));
+  palette.forEach(function (colour) {
+    var cell = el('button', 'set-colour');
+    cell.type = 'button';
+    cell.title = colour.name;
+    cell.setAttribute('aria-label', colour.name);
+    cell.style.background = '#' + colour.id;
+    cell.addEventListener('click', function () {
+      ops.write(item.key, colour.id);
+    });
+    box.appendChild(cell);
+  });
+  var sync = function () {
+    var chosen = ops.value(item.key);
+    Array.prototype.forEach.call(box.children, function (cell, at) {
+      cell.classList.toggle('is-chosen', palette[at].id === chosen);
+    });
+  };
+  sync();
+  return { el: box, sync: sync };
+}
+
+// The picture at the top of Personalisation > Colors: the desktop with the Start
+// menu over it, tinted with the accent that is chosen at the time.
+//
+// It is the same picture the Background page draws, and for the same reason - a
+// wallpaper previewed in isolation does not tell you what the accent does to it.
+// What differs is what it follows: this one follows the accent colour rather than
+// the picture, so it is a separate builder rather than a flag on the other.
+export function colorsPreview(item, ops) {
+  var frame = el('div', 'set-preview set-preview--desktop set-preview--colors');
+  var wall = document.createElement('img');
+  wall.src = DESKTOP_WALLPAPER_SRC;
+  wall.alt = '';
+  frame.appendChild(wall);
+  var menu = el('div', 'set-preview-menu');
+  ['Most used', 'Recently added', 'All apps'].forEach(function (name, at) {
+    var row = el('div', 'set-preview-tile' + (at === 0 ? ' is-active' : ''));
+    row.appendChild(el('span', 'set-preview-tile-name', name));
+    menu.appendChild(row);
+  });
+  frame.appendChild(menu);
+  var sync = function () {
+    var accent = ops.value('personalisation.colors.accent') || '0078d7';
+    frame.style.setProperty('--preview-accent', '#' + accent);
+  };
+  sync();
+  return { el: frame, sync: sync };
+}
+
 export function colourPicker(item, ops) {
   var box = el('div', 'set-colours');
   COLOURS.forEach(function (colour) {
@@ -152,42 +221,120 @@ export function colourPicker(item, ops) {
   return { el: box, sync: sync };
 }
 
-// The current-colours preview on Personalisation > Colors: the swatch Windows
-// draws under "Choose your colour", with the surfaces that take the accent
-// listed beside it.
-export function swatches(item, ops) {
-  var box = el('div', 'set-swatches');
-  var row = el('div', 'set-swatch-row');
-  row.appendChild(el('span', 'set-swatch-label', 'Accent colour'));
-  var chip = el('span', 'set-swatch-chip');
-  row.appendChild(chip);
+// The albums a slideshow picks from, under "Choose albums for your slideshow".
+//
+// This machine has one album and no picture library behind it, so the row lists
+// the one album and says so underneath rather than listing six that do not
+// exist. It is a row and not a picker because a picker would imply there is more
+// than one to choose.
+export function albumPicker(item, ops) {
+  var box = el('div', 'set-album');
+  var row = el('button', 'set-album-row');
+  row.type = 'button';
+  var art = el('span', 'set-album-art');
+  var icon = document.createElement('img');
+  icon.src = PICTURES_SRC;
+  icon.alt = '';
+  art.appendChild(icon);
+  row.appendChild(art);
+  var body = el('span', 'set-device-body');
+  body.appendChild(el('span', 'set-device-name', item.name || 'Pictures'));
+  body.appendChild(el('span', 'set-device-sub', 'This folder'));
+  row.appendChild(body);
+  row.addEventListener('click', function () {
+    ops.run('personalisation.background.chooseAlbum');
+  });
   box.appendChild(row);
-  var names = {
-    'Windows blue': '0078d7',
-    'Windows teal': '0099bc',
-    'Windows green': '00b294',
-    'Windows orange': 'e97000',
-    'Windows red': 'e81123',
-    'Windows purple': '8764b8'
-  };
-  var sync = function () {
-    chip.style.background = '#' + (names[ops.value('personalisation.colors.accent')] || '0078d7');
-  };
-  sync();
-  return { el: box, sync: sync };
+  return { el: box };
 }
 
 // The theme chooser on Personalisation > Themes: the current theme as a wide
-// picture, with the names of its colours under it.
+// picture with the list of what it is made of beside it.
+//
+// The list is not decoration. Each row names a part of Windows - the background,
+// the accent colour, the sounds, the pointer - and the value is the answer from
+// the page that owns that setting, read out of the store. A theme preview that
+// showed a picture and four invented captions would be the one page on this one
+// that told a lie.
 export function themePreview(item, ops) {
-  var frame = el('div', 'set-preview set-preview--theme');
+  var frame = el('div', 'set-theme-current');
+  var art = el('div', 'set-preview set-preview--theme');
   var wall = document.createElement('img');
   wall.src = DESKTOP_WALLPAPER_SRC;
   wall.alt = '';
-  frame.appendChild(wall);
-  var name = el('div', 'set-preview-theme-name', 'Windows');
-  frame.appendChild(name);
-  return { el: frame };
+  art.appendChild(wall);
+  frame.appendChild(art);
+  var list = el('div', 'set-theme-parts');
+  frame.appendChild(list);
+
+  var sync = function () {
+    var accent = ops.value('personalisation.colors.accent') || '0078d7';
+    var picture = ops.value('personalisation.background.picture');
+    var scheme = ops.value('sound.scheme');
+    var parts = [
+      { icon: 'picture', label: 'Background', value: picture ? 'img1' : 'Windows' },
+      { icon: 'color', label: 'Color', value: accentName(accent) },
+      { icon: 'sound', label: 'Sounds', value: scheme || 'Windows Default' },
+      { icon: 'pointer', label: 'Mouse cursor', value: 'Windows Default' }
+    ];
+    list.textContent = '';
+    parts.forEach(function (part) {
+      var row = el('div', 'set-theme-part');
+      var mark = el('span', 'set-theme-part-art');
+      mark.innerHTML = glyphFor(part.icon) || '';
+      row.appendChild(mark);
+      var body = el('span', 'set-theme-part-body');
+      body.appendChild(el('span', 'set-theme-part-label', part.label));
+      body.appendChild(el('span', 'set-theme-part-value', part.value));
+      row.appendChild(body);
+      list.appendChild(row);
+    });
+  };
+  sync();
+  return { el: frame, sync: sync };
+}
+
+// The name of an accent colour, the same table the gallery writes from.
+function accentName(hex) {
+  var found = null;
+  COLOURS.forEach(function (colour) {
+    if (colour.id === hex) {
+      found = colour.name;
+    }
+  });
+  return found || 'Default blue';
+}
+
+// The gallery under "Change theme": a card per theme, the picture above the name.
+//
+// This machine has one wallpaper, so all three cards draw it - which is honest
+// in a way a row of invented thumbnails would not be, and is why "Windows
+// (light)" is drawn light: that is the one thing about it this machine does know,
+// because the theme's whole subject is its background.
+var GALLERY_THEMES = [
+  { id: 'asus', name: 'ASUS', light: false },
+  { id: 'windows', name: 'Windows', light: false },
+  { id: 'windowsLight', name: 'Windows (light)', light: true }
+];
+
+export function themeGallery(item, ops) {
+  var box = el('div', 'set-gallery');
+  GALLERY_THEMES.forEach(function (theme) {
+    var cell = el('button', 'set-gallery-card');
+    cell.type = 'button';
+    var shot = el('div', 'set-gallery-shot' + (theme.light ? ' is-light' : ''));
+    var wall = document.createElement('img');
+    wall.src = DESKTOP_WALLPAPER_SRC;
+    wall.alt = '';
+    shot.appendChild(wall);
+    cell.appendChild(shot);
+    cell.appendChild(el('span', 'set-gallery-name', theme.name));
+    cell.addEventListener('click', function () {
+      ops.write('personalisation.theme.current', theme.id);
+    });
+    box.appendChild(cell);
+  });
+  return { el: box };
 }
 
 // The contrast-theme chooser on Ease of Access > High contrast: a grid of
@@ -399,11 +546,14 @@ export function profileCard(item, ops) {
 
 export var PREVIEW_WIDGETS = {
   backgroundPreview: backgroundPreview,
+  colorsPreview: colorsPreview,
   lockPreview: lockPreview,
   backgroundPicker: backgroundPicker,
+  albumPicker: albumPicker,
   colourPicker: colourPicker,
-  swatches: swatches,
+  colourRow: colourRow,
   themePreview: themePreview,
+  themeGallery: themeGallery,
   themePicker: themePicker,
   displayBoxes: displayBoxes,
   storageUsage: storageUsage,

@@ -117,8 +117,13 @@ INDEX.order.forEach(function (page) {
         ok('a ' + item.kind + ' names where its value is stored (' + where + ')', !!key);
         // A key may be declared twice only when it is the same setting shown in
         // two places - which Windows does, and which is why the Airplane mode
-        // page carries the Wi-Fi switch as well as the Wi-Fi page. Two different
-        // settings sharing a key would mean one silently wins.
+        // page carries the Wi-Fi switch as well as the Wi-Fi page, and why
+        // Colors draws the accent colour as both "Recent colors" and "Windows
+        // colors". Two controls of the same kind bound to one key cannot
+        // disagree: they read and write the same value, so there is no second
+        // answer for one of them to lose. Two controls of *different* kinds
+        // sharing a key would mean one silently wins, because the store coerces
+        // to whichever kind asked for it.
         if (key) {
           // A list kind's key is a prefix for entries made at runtime, not a
           // setting in its own right, so it is not a duplicate of anything and
@@ -128,7 +133,7 @@ INDEX.order.forEach(function (page) {
           } else {
             var seenAt = keys[key];
             ok('key "' + key + '" holds one setting (' + where + ')',
-              !seenAt || seenAt.kind === item.kind && seenAt.label === item.label,
+              !seenAt || seenAt.kind === item.kind,
               seenAt ? 'already declared as a ' + seenAt.kind + ' labelled "' + seenAt.label + '"' : '');
             if (!seenAt) {
               keys[key] = { kind: item.kind, label: item.label, where: where };
@@ -198,6 +203,24 @@ CATEGORIES.forEach(function (category) {
       seen[group] = true;
       open = group;
     }
+  });
+});
+
+// A group may only be drawn for one answer to a question elsewhere on the page -
+// "Change picture every" belongs to Slideshow and not to Picture. The rule names a
+// key, so that key has to exist: a group hiding itself against a key nobody
+// declared is a group that is never drawn and never explained.
+INDEX.order.forEach(function (page) {
+  page.groups.forEach(function (group) {
+    if (!group.when) {
+      return;
+    }
+    var where = page.id + ' > ' + (group.title || group.id);
+    ok('a conditional group names a key that exists (' + where + ')',
+      !!keys[group.when.key], 'when.key: ' + group.when.key);
+    ok('a conditional group names a key that holds a value (' + where + ')',
+      !group.when.key || !keys[group.when.key] || KINDS[keys[group.when.key].kind].value,
+      'when.key: ' + group.when.key);
   });
 });
 

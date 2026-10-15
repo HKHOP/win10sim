@@ -183,6 +183,10 @@ export const COLORS_SVG = MDL2_COLOR;
 export const LOCK_SCREEN_SVG = MDL2_SET_LOCK_SCREEN;
 export const THEMES_SVG = MDL2_LIBRARY;
 export const FONTS_SVG = MDL2_FONT;
+// Desktop icon settings: the computer, because the page is about what is drawn on
+// it. MDL2 has no desktop-monitor glyph that is not the television one, and the
+// television would be a lie - this is a machine's screen, not a set.
+export const DESKTOP_ICONS_SVG = MDL2_PC1;
 export const START_SVG = MDL2_TILES;
 export const TASKBAR_SVG = MDL2_DOCK_BOTTOM;
 

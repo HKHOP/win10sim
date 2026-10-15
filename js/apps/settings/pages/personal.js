@@ -96,17 +96,12 @@ export var GAMEBAR = {
   ]
 };
 
-// The Game bar's own page, as 1903 draws it. Two things on it are on no other
-// page and are the reason it is not Game Mode's page a second time.
+// The Game bar's own page, as 1903 draws it. The keyboard shortcuts are four
+// rows of "what it does, the keys", and they are the reason this is not Game
+// Mode's page a second time.
 //
-// The recording switch is in the amber of the Game bar rather than the blue every
-// other switch in Settings is: it turns the recording on, it does not change the
-// machine. It is declared with a variant rather than being a switch that happens
-// to be styled differently, so the colour is a property of the setting.
-//
-// The keyboard shortcuts are four rows of "what it does, the keys". Declaring
-// them one at a time is what lets the page say which four it has rather than
-// implying there is a fixed number of them.
+// Declaring them one at a time is what lets the page say which four it has
+// rather than implying there is a fixed number of them.
 export var GAME_BAR = {
   id: 'gameBarPage',
   title: 'Game bar',
@@ -120,8 +115,7 @@ export var GAME_BAR = {
           kind: 'toggle',
           key: 'gaming.recordWithBar',
           label: 'Record game clips, screenshots, and broadcast using Game bar',
-          default: false,
-          variant: 'amber'
+          default: false
         },
         {
           kind: 'toggle',

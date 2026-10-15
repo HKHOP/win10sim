@@ -45,9 +45,19 @@ export function buildPage(page, ops) {
   var repaints = [];
   var disposers = [];
 
+  // Groups that only exist for one answer to a question elsewhere on the page.
+  // "Change picture every" and "Shuffle" are slideshow settings and "Choose a fit"
+  // is a picture setting, and Windows shows the ones that apply rather than
+  // greying the ones that do not. The rule is a declaration rather than a builder
+  // because it is a fact about the page's shape, not about how anything is drawn.
+  var conditional = [];
+
   (page.groups || []).forEach(function (group) {
     var section = document.createElement('section');
     section.className = 'set-group';
+    if (group.when) {
+      conditional.push({ el: section, when: group.when });
+    }
     // A group with no heading is a real thing in Windows - the four switches at
     // the top of Snap, the rule list under Focus assist's own heading - so the
     // heading is drawn only when the declaration has one.
@@ -92,6 +102,17 @@ export function buildPage(page, ops) {
     body.appendChild(buildRail(page.rail, ops));
   }
 
+  // A group's condition is settled here and again on every refresh, because the
+  // answer can change from another page too: Background and Storage are the same
+  // kind of page, and a write to one is a write to the other.
+  function settle() {
+    conditional.forEach(function (entry) {
+      var actual = ops.value(entry.when.key);
+      entry.el.hidden = entry.when.is ? actual !== entry.when.is : !actual;
+    });
+  }
+  settle();
+
   return {
     el: root,
     // Re-reads every control and redraws every list. Called when a setting
@@ -106,6 +127,7 @@ export function buildPage(page, ops) {
           // still right, which is what matters.
         }
       });
+      settle();
       repaints.forEach(function (control) {
         try {
           control.refresh();

@@ -493,10 +493,24 @@
   flex: 1 1 auto;
 }
 
+/* Four columns, which is what Windows draws: the home screen is thirteen tiles
+   in rows of four, and the last row holds Update & Security on its own. Three
+   columns was a guess from the width of the window rather than from the screen,
+   and it left the grid two rows taller than Windows' and put the last tile on a
+   row of its own at the wrong place. */
 .set-home-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px 18px;
+}
+
+/* On a narrow window four columns would leave a tile too small to press - the
+   row has to stay tall enough to hit. Windows does the same thing: it drops to
+   two columns rather than squeezing the tiles. */
+@media (max-width: 760px) {
+  .set-home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .set-tile {
@@ -868,15 +882,6 @@
   min-width: 22px;
   text-align: left;
   color: var(--set-ink-soft);
-}
-
-/* Game bar's "Record game clips, screenshots, and broadcast using Game bar" is
-   the one switch in Settings that is not blue: Windows draws it in the amber of
-   the game bar itself, because it is the switch that turns the recording on
-   rather than one that changes the machine. */
-.set-switch--amber.is-on .set-switch-track {
-  background: #e8a33d;
-  border-color: #d18f2c;
 }
 
 .set-switch:hover .set-switch-track,
@@ -1870,15 +1875,6 @@
   background: var(--preview-accent, var(--set-accent));
 }
 
-.set-preview-theme-name {
-  position: absolute;
-  left: 10px;
-  bottom: 8px;
-  color: #fff;
-  font-size: 12px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-}
-
 /* --- pickers ------------------------------------------------------------- */
 
 .set-thumbs {
@@ -1936,30 +1932,174 @@
   border-color: #000;
 }
 
+/* The Windows palette is a grid and Recent colors is a single row. They are the
+   same control, so they are the same class with one modifier - the difference
+   between them is how many are in it, which is what the wrap is for. */
+.set-colours--grid {
+  max-width: 420px;
+}
+
+.set-colours--grid .set-colour {
+  width: 38px;
+  height: 30px;
+}
+
 .set-colour.is-chosen {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--set-accent);
 }
 
-.set-swatches {
-  border: 1px solid var(--set-rule);
-  padding: 10px 12px;
+/* The Colors page's preview is the same picture as the Background page's, tinted
+   with the accent colour instead of following the picture. It gets a class of
+   its own so the two can be told apart in the DOM and styled apart if they ever
+   need to be - which is also what documents that they are two builders drawing
+   one picture for two different settings. */
+.set-preview--colors {
+  --preview-accent: #0078d7;
 }
 
-.set-swatch-row {
+/* --- themes -------------------------------------------------------------- */
+
+/* "Current theme: Custom": the picture on the left, and the four rows that say
+   what it is made of on the right. The picture is the theme; the list is what the
+   theme is, and it is read from the store rather than written, so it is the one
+   preview on these pages that cannot show something that is not set. */
+.set-theme-current {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.set-theme-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.set-theme-part {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.set-swatch-label {
-  font-size: 12px;
+.set-theme-part-art {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--set-accent);
+}
+
+.set-theme-part-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+.set-theme-part-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.set-theme-part-label {
+  font-size: 13px;
+  color: var(--set-ink);
+}
+
+.set-theme-part-value {
+  font-size: 11px;
   color: var(--set-ink-soft);
 }
 
-.set-swatch-chip {
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+/* The card row under "Change theme". A picture above a name, which is what
+   Windows draws and what makes a row of them readable as a gallery rather than
+   as a list of buttons. */
+.set-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.set-gallery-card {
+  width: 140px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--set-ink);
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.set-gallery-shot {
+  height: 96px;
+  border: 1px solid var(--set-rule);
+  overflow: hidden;
+  background: #12325c;
+}
+
+.set-gallery-shot.is-light {
+  background: #eef3f8;
+}
+
+/* The picture inside a card is cropped rather than squashed: a card is a wide box
+   and the wallpaper is 16:9, and stretching it would make every theme look
+   different from the same picture for the wrong reason. */
+.set-gallery-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.set-gallery-name {
+  font-size: 12px;
+  color: var(--set-ink);
+}
+
+.set-gallery-card:hover .set-gallery-shot,
+.set-gallery-card.sim-hover .set-gallery-shot {
+  border-color: var(--set-accent);
+}
+
+/* --- background ---------------------------------------------------------- */
+
+/* The album row under "Choose albums for your slideshow": one wide row rather
+   than a grid of thumbnails, because there is one album and no picture library to
+   pick from. */
+.set-album-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+  padding: 10px 12px;
+  border: 1px solid var(--set-rule);
+  background: #fff;
+  font: inherit;
+  color: var(--set-ink);
+  text-align: left;
+  cursor: default;
+}
+
+.set-album-row:hover,
+.set-album-row.sim-hover {
+  border-color: var(--set-accent);
+}
+
+.set-album-art {
+  flex: 0 0 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.set-album-art img {
+  width: 26px;
+  height: 26px;
+  display: block;
 }
 
 .set-theme-grid {
@@ -2360,8 +2500,8 @@
  * the page you are leaving goes one way while the one you are going to arrives
  * from the other, so for a moment both are on screen. On a page that is all
  * words that means two settings overlapping in the same place, which is the one
- * thing a fade is supposed to avoid. So this is sequential instead — see
- * shell.js, which fades the page in front out before the next one arrives — and
+ * thing a fade is supposed to avoid. So this is sequential instead â€” see
+ * shell.js, which fades the page in front out before the next one arrives â€” and
  * these are the two halves:
  *
  *   - the exit fades only. Text sliding sideways while it is still readable is
@@ -2472,8 +2612,8 @@
     transition: none;
   }
 
-  /* No movement and no fade. The swap itself does not wait on an animation —
-     shell.js times the exit — so reduced motion still changes page at once. */
+  /* No movement and no fade. The swap itself does not wait on an animation â€”
+     shell.js times the exit â€” so reduced motion still changes page at once. */
   .set-page--leaving,
   .set-page--leave,
   .set-page--enter-forward,

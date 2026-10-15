@@ -22,7 +22,8 @@ import {
   PHONE
 } from './pages/network.js';
 import {
-  PERSONALISATION
+  PERSONALISATION,
+  PERSONALISATION_EXTRA_PAGES
 } from './pages/personalisation.js';
 import {
   APPS,
@@ -91,6 +92,7 @@ export var NAV_CATEGORIES = CATEGORIES.filter(function (category) {
 // a row Windows does not have.
 var EXTRA_PAGES = [
   { categoryId: 'system', pages: subPages(SYSTEM, SYSTEM_PAGES) },
+  { categoryId: 'personalisation', pages: PERSONALISATION_EXTRA_PAGES },
   { categoryId: 'apps', pages: APPS_EXTRA_PAGES },
   { categoryId: 'accounts', pages: ACCOUNTS_EXTRA_PAGES },
   { categoryId: 'privacy', pages: PRIVACY_EXTRA_PAGES },

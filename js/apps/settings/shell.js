@@ -421,6 +421,33 @@ onSearchChanged: function (searching) {
       });
       return;
     }
+    // The personalisation links that need a folder or the Store. Each one names
+    // what it would open, because a link that opens nothing and says nothing is
+    // the worst kind.
+    var PERSONALISATION_ACTIONS = {
+      'themes.store': ['Get more themes in Microsoft Store', 'There is no Microsoft Store on this computer.'],
+      'themes.save': ['Save theme', 'There is nowhere to save a theme to: this theme is built from settings, not from a file.'],
+      'personalisation.background.browse': ['Browse', 'There is no file browser on this computer to pick a picture with.'],
+      'personalisation.background.browseAlbum': ['Browse', 'There is no picture library on this computer to pick an album from.'],
+      'personalisation.background.chooseAlbum': ['Pictures', 'There is no picture library on this computer to pick an album from.'],
+      'personalisation.start.folders': ['Choose which folders appear on Start', 'There are no folders on this computer to choose from.'],
+      'background.help.change': ['Changing my desktop background', 'This PC has no network to look the answer up on.'],
+      'background.help.icons': ['Showing desktop icons', 'This PC has no network to look the answer up on.'],
+      'colors.help.background': ['Changing desktop or background colors', 'This PC has no network to look the answer up on.'],
+      'colors.help.taskbar': ['Changing taskbar color', 'This PC has no network to look the answer up on.'],
+      'taskbar.help': ['Fix a problem with the taskbar', 'This PC has no network to look the answer up on.']
+    };
+    if (PERSONALISATION_ACTIONS[name]) {
+      var entry = PERSONALISATION_ACTIONS[name];
+      showMessageBox(context, {
+        title: entry[0],
+        info: true,
+        message: entry[1],
+        ownerId: win.id,
+        buttons: [{ label: 'Close', primary: true }]
+      });
+      return;
+    }
     // A setting that is remembered but has nothing behind it. Windows shows
     // these as dimmed and says what they are for; saying so is more honest than
     // pressing a button that does nothing.
@@ -648,6 +675,9 @@ function swap(direction) {
       current.refresh();
     }
     find.refresh();
+    // The accent is the window's own colour as much as the page's, so a change
+    // to it from any page has to reach here too.
+    applyAccent();
   }
 
   // A setting written from anywhere - this page, another one, or the shell -
@@ -718,18 +748,20 @@ function swap(direction) {
 
   // The accent Personalisation > Colors chooses, applied to the window so the
   // switches and links are the colour the user picked.
+  //
+  // The stored value is the colour's own six hex digits rather than its name,
+  // because the gallery writes one and the shell reads it: a name would need a
+  // second table here that could disagree with the gallery's. Anything that is
+  // not six hex digits is not a colour this app knows, so it falls back to the
+  // default rather than painting the window with it.
   function applyAccent() {
-    var accents = {
-      'Windows blue': '#0078d7',
-      'Windows teal': '#0099bc',
-      'Windows green': '#00b294',
-      'Windows orange': '#e97000',
-      'Windows red': '#e81123',
-      'Windows purple': '#8764b8'
-    };
-    var accent = accents[ops.value('personalisation.colors.accent')] || DEFAULT_ACCENT;
+    var chosen = String(ops.value('personalisation.colors.accent') || '').replace('#', '');
+    var accent = /^[0-9a-f]{6}$/i.test(chosen) ? '#' + chosen : DEFAULT_ACCENT;
     root.style.setProperty('--set-accent', accent);
-    var dark = ['#e81123', '#e97000', '#107c10'].indexOf(accent) >= 0;
+    // A few of the palette are dark enough that the white text Windows puts on
+    // them is the wrong way round. This is the same list the dark-accent rule was
+    // written against.
+    var dark = ['#e81123', '#e97000', '#107c10', '#744da9', '#a4262c', '#7a7574'].indexOf(accent) >= 0;
     root.classList.toggle('is-dark-accent', dark);
   }
   applyAccent();

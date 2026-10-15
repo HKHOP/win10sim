@@ -31,11 +31,22 @@ export var KINDS = {
   slider: { value: true },
   select: { value: true },
   radio: { value: true },
-  swatches: { value: true },
   backgroundPicker: { value: true },
+  // The album row under "Choose albums for your slideshow". Nothing here stores:
+  // there is one album and no picture library to pick from, so it is a row and
+  // not a picker.
+  albumPicker: { value: false },
   colourPicker: { value: true },
+  // The accent-colour galleries on Personalisation > Colors: Recent colors and
+  // Windows colors are the same control over the same table, drawn twice.
+  colourRow: { value: true },
   themePicker: { value: true },
+  // The card row under "Change theme" on Personalisation > Themes.
+  themeGallery: { value: true },
   protectionRow: { value: true },
+  // A preview picture rather than a control: the accent-coloured desktop at the
+  // top of Personalisation > Colors.
+  colorsPreview: { value: false },
   // The shapes the 1903 pages are actually made of, which the simpler kinds
   // above cannot describe:
   //   - a rule row: an icon, what triggers it, what it will do, and a switch
@@ -80,6 +91,10 @@ export var KINDS = {
   clock: { value: false },
   languageList: { value: false },
   deviceList: { value: false },
+  // The device rows under the Bluetooth page's three headings: a mark, a name and
+  // a state, and no switch. Not deviceList, because there the switch *is* the
+  // state.
+  pairedDevices: { value: false },
   appVolumeList: { value: false },
   accountList: { value: false },
   cameraList: { value: false },
@@ -130,10 +145,11 @@ var KIND_DEFAULTS = {
   number: 0,
   // A row that draws something in this accent - a chosen picture, an accent
   // colour, a protection tile - is unset until it is pointed at something.
-  swatches: 'default',
   backgroundPicker: '',
   colourPicker: '',
+  colourRow: '',
   themePicker: '',
+  themeGallery: '',
   protectionRow: ''
 };
 
@@ -165,9 +181,6 @@ function allowedValues(item) {
     return item.options.map(function (option) {
       return option && typeof option === 'object' ? option.value : option;
     });
-  }
-  if (item.kind === 'swatches') {
-    return null;
   }
   return null;
 }
@@ -221,7 +234,7 @@ export function coerce(item, raw) {
     }
     return defaultOf(item);
   }
-  if (item.kind === 'swatches' || item.kind === 'text') {
+  if (item.kind === 'text') {
     return typeof raw === 'string' ? raw : defaultOf(item);
   }
   if (item.kind === 'protectionRow') {

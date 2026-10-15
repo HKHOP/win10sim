@@ -1,14 +1,19 @@
 // The Devices category: the hardware attached to the machine, and the switches
 // that decide how Windows treats it.
 
-// The Bluetooth page is the one page in Settings whose device is off in the
-// screenshot, and that is why it is shaped the way it is: the big Bluetooth
-// switch, then two checkboxes with an explanation under each, then the rail.
+// The Bluetooth page in build 1903. The switch and the discoverable line sit
+// under a "Bluetooth" heading, the two checkboxes come next, and then three
+// groups of what is actually paired - which is the part an earlier draft of this
+// page had no answer for at all.
 //
-// The two checkboxes are the ones 1903 puts on this page and no other. Swift Pair
-// is about connecting quickly; metered connections is about not spending money on
-// a driver. Neither has a group heading of its own, because Windows gives them
-// none - they sit directly under the Bluetooth switch.
+// The discoverable line is the control, not a caption: Windows lets you turn
+// discovery off by pressing it, and the words change to say so. It is declared
+// as a link because that is what it is, and the machine's own name is in it
+// because that is what Windows puts there.
+//
+// The device groups name their devices outright. Which mouse and which handset
+// are paired is not a question the shell can answer - there is no radio here to
+// ask - so it is declared, and it is what the page is for.
 export var BLUETOOTH_DEVICES = {
   id: 'bluetooth',
   title: 'Bluetooth & other devices',
@@ -24,7 +29,8 @@ export var BLUETOOTH_DEVICES = {
       id: 'bluetooth',
       title: 'Bluetooth',
       items: [
-        { kind: 'toggle', key: 'devices.bluetooth', label: 'Bluetooth', default: false },
+        { kind: 'toggle', key: 'devices.bluetooth', label: 'Bluetooth', default: true },
+        { kind: 'link', label: 'Now discoverable as “DESKTOP-WIN10SIM”', action: 'devices.bluetooth.discoverable' },
         {
           kind: 'checkbox',
           key: 'devices.swiftPair',
@@ -39,6 +45,36 @@ export var BLUETOOTH_DEVICES = {
           default: false,
           note: 'To help prevent extra charges, keep this off so device software (drivers, info, and apps) for new devices won’t download while you’re on metered Internet connections.'
         }
+      ]
+    },
+    {
+      id: 'mousekeyboard',
+      title: 'Mouse, keyboard & pen',
+      items: [
+        { kind: 'pairedDevices', label: 'Mouse, keyboard & pen', icon: 'keyboard', devices: [
+          { name: '2.4G Keyboard Mouse' },
+          { name: 'Surface Arc Touch Mouse' }
+        ] }
+      ]
+    },
+    {
+      id: 'audio',
+      title: 'Audio',
+      items: [
+        { kind: 'pairedDevices', label: 'Audio', icon: 'speaker', devices: [
+          { name: 'HD 4.40BT', state: 'Paired' },
+          { name: 'Surface Headphones', state: 'Paired' }
+        ] }
+      ]
+    },
+    {
+      id: 'other',
+      title: 'Other devices',
+      items: [
+        { kind: 'pairedDevices', label: 'Other devices', icon: 'bluetooth', devices: [
+          { name: 'Versa', state: 'Paired' },
+          { name: 'Xperia XZ1', state: 'Paired' }
+        ] }
       ]
     }
   ],

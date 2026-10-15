@@ -43,17 +43,21 @@ function row(className, labelText) {
 // the switch's own row and a switch with no label on it is not a setting you
 // can tell the state of.
 //
+// One switch for the whole app, in one colour. Several of the reference
+// screenshots show switches in amber, gold or teal; that is the accent colour of
+// the machine they were taken on, and this machine's accent is the default blue.
+// A second switch colour would be a claim that some settings are special, and
+// there are none.
+//
 // Built once here and handed out, because two places need it: a plain setting
 // row, and a rule row (Focus assist's automatic rules) which is the same switch
-// with a picture and two lines of words in front of it. Two copies of this
-// would be two places for the knob's one-pixel offset to be right in one and
-// wrong in the other.
-function switchNode(label, onToggle, options) {
-  var opts = options || {};
+// with a picture and two lines of words in front of it. Two copies of this would
+// be two places for the knob's one-pixel offset to be right in one and wrong in
+// the other.
+function switchNode(label, onToggle) {
   var field = document.createElement('button');
   field.type = 'button';
-  field.className = 'set-switch' + (opts.compact ? ' set-switch--compact' : '') +
-    (opts.variant ? ' set-switch--' + opts.variant : '');
+  field.className = 'set-switch';
   field.setAttribute('role', 'switch');
   var track = document.createElement('span');
   track.className = 'set-switch-track';
@@ -82,7 +86,7 @@ function switchControl(item, ops) {
   var el = row('set-row--switch');
   var node = switchNode(item.label, function () {
     ops.write(item.key, !ops.value(item.key));
-  }, { variant: item.variant });
+  });
   el.appendChild(node.field);
 
   return {
@@ -718,13 +722,13 @@ var BUILDERS = {
 // is) rather than just a stored value.
 export var WIDGET_KINDS = [
   'appsList', 'startupList', 'perAppList', 'quickActions', 'lockStatusApps',
-  'defaultApps', 'deviceList', 'appVolumeList', 'cameraList',
+  'defaultApps', 'deviceList', 'pairedDevices', 'appVolumeList', 'cameraList',
   'accountList', 'languageList', 'sitePermissions', 'featureList',
   'protectionRow', 'protectionHistory', 'storageUsage', 'storageBreakdown',
   'dataUsage', 'displayBoxes', 'backgroundPreview', 'backgroundPicker',
   'colourPicker', 'lockPreview', 'themePreview', 'themePicker', 'appsFilter',
   'startupSort', 'startupBackground', 'usageChart', 'specList', 'clock',
-  'profileCard', 'swatches'
+  'profileCard', 'colorsPreview', 'colourRow', 'albumPicker', 'themeGallery'
 ];
 
 // Built here and filled in by widgets.js when it loads, so a page can name any
@@ -838,11 +842,13 @@ var LABELLED_INSIDE = {
   backgroundPreview: true,
   backgroundPicker: true,
   colourPicker: true,
+  colourRow: true,
+  albumPicker: true,
   lockPreview: true,
   themePreview: true,
   themePicker: true,
   featureList: true,
   cameraList: true,
+  pairedDevices: true,
   appVolumeList: true,
-  swatches: true
 };

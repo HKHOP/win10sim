@@ -13,6 +13,7 @@
 // The Apps & features, Start-up and volume-mixer lists all build real range
 // inputs, so they all need the drag helper rather than only the value controls.
 import { attachSlider } from './sliderdrag.js';
+import { glyphFor } from './glyphmap.js';
 
 function el(tag, className, text) {
   var node = document.createElement(tag);
@@ -356,6 +357,37 @@ export function deviceList(item, ops) {
       ops.run('devices.toggle', device.name);
     });
     row.appendChild(enable);
+    box.appendChild(row);
+  });
+  return { el: box };
+}
+
+// The rows under "Mouse, keyboard & pen", "Audio" and "Other devices" on the
+// Bluetooth page: a mark, the device, and what it is doing - "Paired", or
+// nothing at all for one that is merely present.
+//
+// This is not deviceList with the switch hidden. There, the switch is the device's
+// state; here the state is a word, and a switch beside the word would be claiming
+// the device could be turned off from this page, which it cannot. So the rows
+// carry a glyph and two lines and no control, and the page names its devices
+// because which mouse and which handset is paired is not a question the shell can
+// answer - there is no Bluetooth radio here to ask.
+export function pairedDevices(item, ops) {
+  var box = el('div', 'set-list');
+  (item.devices || []).forEach(function (device) {
+    var row = el('div', 'set-device');
+    var art = el('span', 'set-device-art');
+    art.innerHTML = glyphFor(item.icon) || '';
+    if (!art.innerHTML) {
+      art.classList.add('is-empty');
+    }
+    row.appendChild(art);
+    var body = el('span', 'set-device-body');
+    body.appendChild(el('span', 'set-device-name', device.name));
+    if (device.state) {
+      body.appendChild(el('span', 'set-device-sub', device.state));
+    }
+    row.appendChild(body);
     box.appendChild(row);
   });
   return { el: box };
