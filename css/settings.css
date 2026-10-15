@@ -539,8 +539,9 @@
   color: var(--set-ink);
 }
 
-/* A select's own label sits above the box rather than beside it, because the
-   box is as wide as the longest answer in it. */
+/* A select's label sits above the box, not beside it: the box is as wide as the
+   longest answer in it, so there is no column for the label to share. The
+   control draws that label itself - see LABELLED_INSIDE in controls.js. */
 .set-row--select {
   display: block;
 }
@@ -609,11 +610,13 @@
 .set-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 8px;
-  height: 18px;
-  /* Centres the 18px thumb on the 2px track: (2 - 18) / 2. */
-  margin-top: -8px;
-  border-radius: 4px;
+  /* An upright bar with the ends rounded all the way round, which is what a
+     border-radius of half its width does on a rectangle this shape. */
+  width: 10px;
+  height: 20px;
+  /* Centres the 20px thumb on the 2px track: (2 - 20) / 2. */
+  margin-top: -9px;
+  border-radius: 5px;
   background: #f4f4f4;
   border: 1px solid #7a7a7a;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
@@ -642,9 +645,9 @@
 }
 
 .set-slider::-moz-range-thumb {
-  width: 8px;
-  height: 18px;
-  border-radius: 4px;
+  width: 10px;
+  height: 20px;
+  border-radius: 5px;
   background: #f4f4f4;
   border: 1px solid #7a7a7a;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.35);
@@ -1167,12 +1170,12 @@
 }
 
 .set-slider--slim::-webkit-slider-thumb {
-  height: 14px;
-  margin-top: -6px;
+  height: 16px;
+  margin-top: -7px;
 }
 
 .set-slider--slim::-moz-range-thumb {
-  height: 14px;
+  height: 16px;
 }
 
 .set-bar {

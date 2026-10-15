@@ -3,6 +3,39 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.3] - Sliders have a track again
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **`css/settings.css`**: the thumb is 10×20 with the ends rounded all the way
+  round, which is the shape Windows draws — an upright bar on a two-pixel line,
+  not the capsule-and-knob a browser gives you.
+
+- **`js/apps/settings/controls.js`**: `slider` and `select` now draw their own
+  label, above the control. Windows puts both labels above, and the drop-down is
+  as wide as the longest answer in it, so neither fits a column beside it.
+
+### Fixed
+
+- **Every slider was a knob with no track, and would not move.** `buildItem`
+  wraps a control that does not draw its own label in `.set-row--labelled`, a
+  two-column grid of `minmax(0, 1fr) auto`. The slider's track row landed in the
+  `auto` column, which is sized by its content — and the track's own width comes
+  from `flex: 1 1 0`, contributing nothing. So the column collapsed to the width
+  of the number beside it, the track was zero pixels wide, and the press handler
+  (which refuses a zero-width box) did nothing at all. The switch was never
+  affected: a switch has an intrinsic width, so the same grid served it.
+
 ## [1.23.2] - The Settings home screen is centred
 
 2026-10-15

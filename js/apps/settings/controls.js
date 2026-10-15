@@ -96,7 +96,10 @@ function checkboxControl(item, ops) {
 // room to show them all: a closed box showing the current answer, and a list
 // that comes down over the page when pressed.
 function selectControl(item, ops) {
-  var el = row('set-row--select');
+  // Labelled here for the same reason the slider is: Windows puts a drop-down's
+  // label above it, and the drop-down is as wide as the longest answer in it,
+  // so there is no sensible column for the label to sit in beside it.
+  var el = row('set-row--select', item.label);
   var field = document.createElement('button');
   field.type = 'button';
   field.className = 'set-select';
@@ -200,7 +203,12 @@ function selectControl(item, ops) {
 // The filled part of the track is drawn by a gradient over a custom property,
 // since there is no other way to colour the left of a native track.
 function sliderControl(item, ops) {
-  var el = row('set-row--slider');
+  // The label is drawn here, above the track, rather than being wrapped round
+  // the control. buildItem puts a wrapped label *beside* the control in a
+  // two-column grid, and in an `auto` column the track collapses to the width
+  // of the number beside it - leaving a thumb with no track to sit on and
+  // nothing to press.
+  var el = row('set-row--slider', item.label);
   var track = document.createElement('div');
   track.className = 'set-slider-row';
   var input = document.createElement('input');
@@ -447,6 +455,12 @@ export function buildItem(item, ops) {
 var LABELLED_INSIDE = {
   checkbox: true,
   radio: true,
+  // A slider and a drop-down put their label above themselves rather than
+  // beside them, which is what Windows does and what buildItem's two-column
+  // wrapper cannot give them: in an `auto` column a full-width track collapses
+  // to the width of whatever sits next to it.
+  slider: true,
+  select: true,
   quickActions: true,
   lockStatusApps: true,
   appsList: true,
