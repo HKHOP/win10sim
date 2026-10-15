@@ -3,6 +3,29 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.2] - The Settings home screen is centred
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **`css/settings.css`**: `.set-home` gets `margin: 0 auto`. It had a
+  `max-width` and no auto margins, so the whole block — heading, search box and
+  the grid of categories — was ranged along the left edge of the window with
+  several hundred pixels of white beside it. Windows lays it out in the middle.
+
+### Fixed
+
+- None
+
 ## [1.23.1] - Settings wears the Settings icon
 
 2026-10-15

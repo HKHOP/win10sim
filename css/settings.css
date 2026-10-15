@@ -397,9 +397,18 @@
 
 /* --- the home screen ----------------------------------------------------- */
 
+/* The home screen is centred in the window, not ranged along its left edge -
+   Windows lays the whole block out in the middle, which is why the heading and
+   the search box are centred too rather than sitting over the first column.
+   The auto margins are what centre it; the max-width is what stops the grid
+   from stretching across a wide window.
+ *
+ * A page is deliberately *not* centred: Settings ranges page content from the
+   left, so only the home screen gets this. */
 .set-home {
   padding: 28px 32px 40px;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 .set-home-title {
