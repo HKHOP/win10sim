@@ -40,6 +40,7 @@ import { getShowAppList, setShowAppList } from '../../core/startstate.js';
 import { listStartApps, getManifest, hasApp, launchApp } from '../../core/apps.js';
 import { registeredTypes, defaultAppFor, setDefaultApp, handlersFor } from '../../apis/associations.js';
 import { showMessageBox } from '../../core/msgbox.js';
+import { prefersReducedMotion } from '../../core/motion.js';
 
 // The list widgets and the preview widgets are handed to the control builder
 // here rather than imported by it: controls.js knows every *kind*, and these two
@@ -198,6 +199,14 @@ export async function openSettings(context, args) {
 
     storageUsage: function () {
       return STORAGE_USAGE;
+    },
+
+    // Where a drop-down opens. A layer over the whole window rather than a child
+    // of the box: the page scrolls, and a list positioned inside it is clipped
+    // at the content edges - one near the bottom of a long page would lose half
+    // its entries.
+    overlay: function () {
+      return overlay;
     },
 
     // What the search box tells the shell about itself.
@@ -399,7 +408,10 @@ onSearchChanged: function (searching) {
       state.at = state.history.length - 1;
     }
     state.pageId = pageId;
-    paint();
+    // Home is reached from a category, and everything else is a page, so the
+    // home grid gets its own kind of movement rather than a push in a direction
+    // it has no list to be pushed along.
+    paint(pageId ? 'forward' : 'home');
   }
 
   function back() {
@@ -408,7 +420,7 @@ onSearchChanged: function (searching) {
     }
     state.at -= 1;
     state.pageId = state.history[state.at];
-    paint();
+    paint(state.pageId ? 'back' : 'home');
   }
 
   function canGoBack() {
@@ -431,17 +443,78 @@ onSearchChanged: function (searching) {
     }
   }
 
-  function paint() {
-    // The home screen has no page to dispose; only a page does, and only a page
-    // holds anything that has to be put away - a clock's interval, a select's
-    // outside-press listener.
+  // The two halves of a page change, and why they are not one animation.
+//
+// Windows cross-fades: the page you are leaving slides one way while the one you
+// are going to arrives from the other, and for a moment both are on screen. For
+// a page of settings that means two sets of words overlapping in the same
+// place, which is genuinely unpleasant to look at — it is the whole of what a
+// fade is usually for, applied to the one thing on a page that is all text.
+//
+// So the two halves are sequential instead: what is on screen fades out, and
+// only once it has gone does the next page fade in. The movement is kept — the
+// arrival slides a little, in the direction you travelled — but there is never
+// a frame with both pages on it. The exit does not slide, because text moving
+// sideways while it is still readable is the worst of it.
+var OUT_MS = 90;
+var IN_MS = 150;
+
+var SLIDE = {
+  forward: ['set-page--leave', 'set-page--enter-forward'],
+  back: ['set-page--leave', 'set-page--enter-back'],
+  home: ['set-page--leave', 'set-page--enter-home']
+};
+
+// A swap waiting for the page in front to fade out. One at a time, and replaced
+// rather than queued: two navigations in quick succession should land on the
+// second, not animate through both.
+var pendingSwap = null;
+var swapToken = 0;
+
+function paint(direction) {
+  if (pendingSwap) {
+    window.clearTimeout(pendingSwap);
+    pendingSwap = null;
+  }
+
+  var leaving = contentEl.firstElementChild;
+  var pair = SLIDE[direction];
+  // Nothing to fade out on the first paint, and nothing to animate for a visitor
+  // who has asked for less motion.
+  if (!pair || !leaving || prefersReducedMotion()) {
+    swap(direction);
+    return;
+  }
+
+  // The page in front is put away now whatever the transition does with it: a
+  // clock's interval and a drop-down's listener are not wanted for the next
+  // quarter of a second, and the store does not depend on them.
+  if (current && typeof current.dispose === 'function') {
+    current.dispose();
+  }
+
+  leaving.classList.add('set-page--leaving', pair[0]);
+  var token = ++swapToken;
+  pendingSwap = window.setTimeout(function () {
+    pendingSwap = null;
+    if (token !== swapToken) {
+      return;
+    }
+    swap(direction);
+  }, OUT_MS);
+}
+
+// Puts the page on screen and starts it arriving.
+function swap(direction) {
     if (current && typeof current.dispose === 'function') {
       current.dispose();
     }
+
     while (contentEl.firstChild) {
       contentEl.removeChild(contentEl.firstChild);
     }
-    nav.setScope(state.pageId);
+
+    var navChanged = nav.setScope(state.pageId);
     backButton.disabled = !canGoBack();
 
     // There is one search box, not one per page, so it goes back to the nav
@@ -450,10 +523,11 @@ onSearchChanged: function (searching) {
     // been thrown away, which is how it goes missing with nothing on screen.
     putFindInNav();
 
+    var next;
     if (!state.pageId) {
       var home = buildHome(ops);
       current = home;
-      contentEl.appendChild(home.el);
+      next = home.el;
       // Windows puts the search box in the middle of the home screen rather
       // than down in the nav pane, so it is moved rather than duplicated: two
       // boxes would search two different things and neither would be the one
@@ -463,17 +537,30 @@ onSearchChanged: function (searching) {
       find.el.classList.add('set-find--home');
       home.searchSlot.classList.add('set-home-search--inline');
       titleEl.textContent = 'Settings';
-      return;
+    } else {
+      var page = pageById(state.pageId);
+      if (!page) {
+        go(HOME_PAGE_ID);
+        return;
+      }
+      current = buildPage(page, ops);
+      next = current.el;
+      titleEl.textContent = 'Settings';
     }
-    var page = pageById(state.pageId);
-    if (!page) {
-      go(HOME_PAGE_ID);
-      return;
-    }
-    current = buildPage(page, ops);
-    contentEl.appendChild(current.el);
-    titleEl.textContent = 'Settings';
+
+    contentEl.appendChild(next);
     contentEl.scrollTop = 0;
+
+    if (prefersReducedMotion()) {
+      return;
+    }
+    var pair = SLIDE[direction];
+    if (pair) {
+      next.classList.add(pair[1]);
+    }
+    if (navChanged) {
+      nav.markFade();
+    }
   }
 
   function refresh() {
@@ -492,6 +579,12 @@ onSearchChanged: function (searching) {
   });
 
   // --- the window ---------------------------------------------------------
+
+  // The caption, the nav pane and the page - in that order in the document, and
+  // the overlay last so a drop-down is over everything.
+  var overlay = document.createElement('div');
+  overlay.className = 'set-overlay';
+  root.appendChild(overlay);
 
   var caption = document.createElement('div');
   caption.className = 'set-caption';

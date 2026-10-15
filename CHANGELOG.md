@@ -3,6 +3,52 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.24.0] - Settings moves
+
+2026-10-15
+
+### Added
+
+- **Page transitions.** Windows moves between Settings pages rather than
+  cutting, and so does this now: the arrival slides a short way in the direction
+  you travelled and fades in, and the page in front fades out first.
+- **The nav pane's rows fade in on a change of category** — and only then.
+  Navigating between two pages of the same category leaves the pane alone, which
+  is what Windows does and what stops the whole pane flickering on every click.
+- **The drop-down opens with a short fade and slide**, the way a flyout does.
+
+### Removed
+
+- None
+
+### Changed
+
+- **`js/apps/settings/shell.js`**: the exit and the arrival are **sequential**,
+  not a cross-fade. Windows cross-fades, and for a page that is entirely words
+  that means two settings overlapping in the same place for the length of the
+  animation — the exact thing a fade exists to prevent, applied to the one thing
+  on the page that is all text. So the page in front fades out (90ms, and it
+  does not move — text sliding sideways while still readable is the worst of
+  both effects) and only then does the next one arrive (150ms).
+  - A navigation during a transition replaces the one waiting rather than
+    queueing behind it, so two quick clicks land on the second and do not
+    animate through both.
+  - The swap is timed, not `animationend`, so reduced motion still changes page
+    immediately rather than waiting for an animation that never runs.
+
+### Fixed
+
+- **A drop-down opened at the bottom of the window instead of under its box.**
+  The list was absolutely positioned with no positioned ancestor, so it resolved
+  against the window — and because `.set-content` scrolls, a list positioned
+  inside the page would have been clipped at the content edges anyway, losing
+  half its entries near the bottom of a long page. It now opens in
+  **`.set-overlay`**, a layer over the whole window, positioned from the box's
+  own rectangle.
+- **A drop-down now opens upwards** when the window ends first, rather than
+  running off the bottom. Windows does this, and on a page that mostly scrolls
+  it happens often.
+
 ## [1.23.8] - One way to drag, for every control that follows the pointer
 
 2026-10-15

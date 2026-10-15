@@ -17,6 +17,13 @@ import { CHEVRON_SVG } from '../../global/icons.js';
 import { defaultOf } from './schema.js';
 import { attachSlider } from './sliderdrag.js';
 
+// The open list: how much of it there is, and how close to the box it sits.
+// Both are the same numbers Windows uses for a flyout - a list is never taller
+// than about ten entries before it scrolls.
+var MENU_MAX_H = 260;
+var MENU_OPTION_H = 32;
+var MENU_GAP = 2;
+
 function row(className, labelText) {
   var el = document.createElement('div');
   el.className = 'set-row' + (className ? ' ' + className : '');
@@ -98,7 +105,14 @@ function checkboxControl(item, ops) {
 
 // The drop-down Settings uses for every choice with more than one answer and no
 // room to show them all: a closed box showing the current answer, and a list
-// that comes down over the page when pressed.
+// that opens over the window.
+//
+// The list is placed in the shell's overlay rather than under the box, and it is
+// positioned from the box's own rectangle. That is not fussiness: the page
+// scrolls, so a list positioned inside it is clipped at the content edges and
+// one near the bottom of a long page would be cut in half - and an absolutely
+// positioned element with no positioned ancestor resolves against the whole
+// window, which is what put it at the bottom left.
 function selectControl(item, ops) {
   // Labelled here for the same reason the slider is: Windows puts a drop-down's
   // label above it, and the drop-down is as wide as the longest answer in it,
@@ -119,15 +133,41 @@ function selectControl(item, ops) {
   el.appendChild(field);
 
   var menu = null;
+
   function close() {
     if (!menu) {
       return;
     }
-    menu.remove();
+    if (menu.parentNode) {
+      menu.parentNode.removeChild(menu);
+    }
     menu = null;
     field.setAttribute('aria-expanded', 'false');
     el.classList.remove('is-open');
+    document.removeEventListener('mousedown', outside, true);
   }
+
+  // Puts the list under the box, or above it when the window ends first. Windows
+  // opens a drop-down upwards rather than let it run off the bottom of the
+  // screen, and a settings page is mostly scrolling, so it happens often.
+  function place() {
+    var box = field.getBoundingClientRect();
+    var frame = ops.overlay().getBoundingClientRect();
+    // How tall the list would like to be, bounded by the longest list here.
+    var wanted = Math.min(MENU_MAX_H, (item.options || []).length * MENU_OPTION_H + 2);
+    var roomBelow = frame.bottom - box.bottom - MENU_GAP;
+    var roomAbove = box.top - frame.top - MENU_GAP;
+    var height = Math.min(wanted, Math.max(roomBelow, roomAbove));
+    menu.style.left = (box.left - frame.left) + 'px';
+    menu.style.width = box.width + 'px';
+    menu.style.setProperty('--menu-h', Math.max(MENU_OPTION_H, height) + 'px');
+    if (roomBelow >= height || roomBelow >= roomAbove) {
+      menu.style.top = (box.bottom - frame.top + 1) + 'px';
+    } else {
+      menu.style.top = (box.top - frame.top - height - 1) + 'px';
+    }
+  }
+
   function open() {
     if (menu) {
       close();
@@ -153,22 +193,27 @@ function selectControl(item, ops) {
       });
       menu.appendChild(entry);
     });
-    el.appendChild(menu);
+    ops.overlay().appendChild(menu);
+    place();
     field.setAttribute('aria-expanded', 'true');
     el.classList.add('is-open');
+    // The list is placed after it is in the document, because its height is what
+    // decides which side of the box it opens on.
     // A press outside the control puts the list away, the way any drop-down
-    // does. isSiteChromePress is asked about first: a press on the virtual
+    // does. isRawDevicePress is asked about first: a press on the virtual
     // keyboard is about the device, not about what is open on the screen.
     setTimeout(function () {
       document.addEventListener('mousedown', outside, true);
     }, 0);
   }
+
   function outside(event) {
     if (el.contains(event.target)) {
       return;
     }
     close();
   }
+
   function onKey(event) {
     if (event.key === 'Escape' && menu) {
       close();
@@ -177,6 +222,7 @@ function selectControl(item, ops) {
       event.stopPropagation();
     }
   }
+
   el.addEventListener('keydown', onKey);
   field.addEventListener('click', open);
 
@@ -188,9 +234,7 @@ function selectControl(item, ops) {
       value.textContent = found ? found.label : String(current);
       field.setAttribute('aria-label', (item.label || 'Setting') + ': ' + value.textContent);
     },
-    dispose: function () {
-      document.removeEventListener('mousedown', outside, true);
-    }
+    dispose: close
   };
 }
 

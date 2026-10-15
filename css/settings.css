@@ -32,6 +32,29 @@
   flex-direction: row;
   height: 100%;
   overflow: hidden;
+  /* The overlay below is placed against this, and the caption is placed against
+     it too. */
+  position: relative;
+}
+
+/* Where a drop-down opens. It cannot live inside the page: the page scrolls, so
+ * a list positioned inside it is clipped at the content edges and a list near
+ * the bottom of a long page would be cut off. Windows opens a drop-down in a
+ * layer above the window, and so does this - a sibling of the page, positioned
+ * from the box's own rectangle, and released as soon as it is dismissed.
+ *
+ * pointer-events is off for the layer and on again for its contents, so the
+ * layer covering the whole window does not swallow the presses meant for
+ * everything else while a list is open. */
+.set-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.set-overlay > * {
+  pointer-events: auto;
 }
 
 /* The accent on a coloured fill is white; on a light one it stays dark or the
@@ -225,6 +248,10 @@
   overflow-x: hidden;
   padding: 34px 0 0 0;
   background: #fff;
+  /* The two pages of a transition are siblings, and the leaving one is taken out
+   * of the flow so the scroll container does not grow to fit both. See the
+   * motion section. */
+  position: relative;
 }
 
 /* --- the nav pane -------------------------------------------------------- */
@@ -879,19 +906,16 @@
   height: 14px;
 }
 
-/* The open list drops over the page rather than pushing it, which is what a
-   drop-down does and what keeps the page from jumping under the pointer. */
+/* The open list. Its position comes from the box's rectangle rather than from
+ * the stylesheet, because it lives in the overlay rather than under the box: see
+ * .set-overlay. `--menu-h` is how much room it actually has, which is what lets
+ * it open upwards when there is none below. */
 .set-select-menu {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  z-index: 5;
-  margin-top: 1px;
   background: #fff;
   border: 1px solid #b1b1b1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  max-height: 260px;
+  max-height: var(--menu-h, 260px);
   overflow-y: auto;
 }
 
@@ -1878,6 +1902,98 @@
   }
 }
 
+/* --- motion --------------------------------------------------------------
+ *
+ * Windows moves between Settings pages rather than cutting, but it cross-fades:
+ * the page you are leaving goes one way while the one you are going to arrives
+ * from the other, so for a moment both are on screen. On a page that is all
+ * words that means two settings overlapping in the same place, which is the one
+ * thing a fade is supposed to avoid. So this is sequential instead — see
+ * shell.js, which fades the page in front out before the next one arrives — and
+ * these are the two halves:
+ *
+ *   - the exit fades only. Text sliding sideways while it is still readable is
+ *     the worst of both effects, so it does not move.
+ *   - the arrival slides a little, in the direction you travelled, and fades in.
+ *     It is short, because the point of the movement is to say which way you
+ *     went, not to keep you waiting.
+ */
+.set-content {
+  position: relative;
+}
+
+.set-page--leaving {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+@keyframes set-page-leave {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes set-enter-forward {
+  from { opacity: 0; translate: 14px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes set-enter-back {
+  from { opacity: 0; translate: -14px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes set-enter-home {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+.set-page--leave { animation: set-page-leave 0.09s ease-in forwards; }
+.set-page--enter-forward { animation: set-enter-forward 0.15s ease-out both; }
+.set-page--enter-back { animation: set-enter-back 0.15s ease-out both; }
+.set-page--enter-home { animation: set-enter-home 0.18s ease-out both; }
+
+/* The nav pane's rows change with the category, so they arrive rather than
+   being there already. Only on a change of category: navigating between two
+   pages of the same one leaves the pane alone, the way it does in Windows. */
+@keyframes set-nav-rows-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.set-nav-list.is-entering {
+  animation: set-nav-rows-in 0.16s ease-out both;
+}
+
+/* The drop-down opens under the box it belongs to, the way a flyout does. */
+@keyframes set-menu-in {
+  from { opacity: 0; translate: 0 -4px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+.set-select-menu {
+  animation: set-menu-in 0.12s ease-out both;
+}
+
+/* The home grid fades up rather than sliding: it is a different kind of place,
+   and a push would imply it is somewhere further along the same list. */
+@keyframes set-home-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.set-home.is-entering {
+  animation: set-home-in 0.2s ease-out both;
+}
+
+/* A press on a category tile lifts it very slightly, the way a tile does. */
+.set-tile:active,
+.set-tile.is-down {
+  background: var(--set-pressed);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .set-switch-track,
   .set-switch-knob {
@@ -1886,5 +2002,20 @@
 
   .set-nav {
     transition: none;
+  }
+
+  /* No movement and no fade. The swap itself does not wait on an animation —
+     shell.js times the exit — so reduced motion still changes page at once. */
+  .set-page--leaving,
+  .set-page--leave,
+  .set-page--enter-forward,
+  .set-page--enter-back,
+  .set-page--enter-home,
+  .set-nav-list.is-entering,
+  .set-select-menu,
+  .set-home.is-entering {
+    animation: none;
+    opacity: 1;
+    translate: none;
   }
 }

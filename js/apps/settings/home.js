@@ -8,6 +8,7 @@
 import { glyphFor } from './glyphmap.js';
 import { CATEGORIES, HOME_PAGE_ID } from './catalogue.js';
 import { HOME_SVG } from './glyphs.js';
+import { prefersReducedMotion } from '../../core/motion.js';
 
 export function buildHome(ops) {
   var root = document.createElement('div');
@@ -107,6 +108,10 @@ export function buildNav(ops) {
   root.appendChild(list);
 
   var rows = [];
+  // The category the pane is currently showing, so a navigation between two of
+  // its pages leaves the pane alone - the way it does in Windows - and only a
+  // change of category brings the rows in again.
+  var scopedTo = null;
 
   return {
     el: root,
@@ -114,17 +119,19 @@ export function buildNav(ops) {
     homeRow: home,
 
     // Draws the pane for one page, or hides the pane on the home screen.
+    // Returns whether the category changed, which is what decides whether the
+    // rows animate.
     setScope: function (pageId) {
+      var category = pageId ? ops.categoryOf(pageId) : null;
+      var changed = (category ? category.id : null) !== scopedTo;
       root.hidden = !pageId;
       root.classList.remove('is-searching');
+      scopedTo = category ? category.id : null;
       rows = [];
       list.textContent = '';
-      if (!pageId) {
-        return;
-      }
-      var category = ops.categoryOf(pageId);
+      list.classList.remove('is-entering');
       if (!category) {
-        return;
+        return changed;
       }
       var title = document.createElement('h3');
       title.className = 'set-nav-group-title';
@@ -146,6 +153,18 @@ export function buildNav(ops) {
         rows.push({ el: row, pageId: page.id });
       });
       this.mark(pageId);
+      return changed;
+    },
+
+    // Fades the rows in, for a change of category. Restarted rather than left
+    // to run once, so two category changes in quick succession both show it.
+    markFade: function () {
+      if (prefersReducedMotion()) {
+        return;
+      }
+      list.classList.remove('is-entering');
+      void list.offsetWidth;
+      list.classList.add('is-entering');
     },
 
     // Marks the row for the page on screen, and only that row.
