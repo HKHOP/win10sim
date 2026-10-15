@@ -1,36 +1,24 @@
-// The page a browser shows when the network is not there.
+// The page a browser shows when a page cannot be shown.
 //
-// Edge's own page draws a dropped ice cream: the scoop on the ground with the
-// cone fallen beside it, both looking unhappy about it. That is the shape
-// Windows 10's Edge uses, so it is the shape drawn here - a scene rather than a
-// face, because a face that is trying to look sad reads as broken, and a cone
-// on the floor does not have to try.
+// This is the older Edge error page, which is the one to copy: a circled
+// exclamation mark, the heading, a line of advice, the two things you can try
+// instead, and one blue button. There is no illustration on it, and the whole
+// of it is left-aligned inside a column that sits in the middle of the tab -
+// which is the part that matters, because a centred column of centred text reads
+// as a poster and this is a page telling you what went wrong.
+//
+// ops:
+//   onReload    the Refresh button, and "Refresh this page"
+//   onNewTab    "Open a new tab"
 
-import { hostOf } from './net.js';
-
-// Line art in the page's own palette: the strokes the text uses, the paper fill
-// the page uses. Drawn on a 200x140 scene so the ground the two pieces land on
-// has room to be a ground.
-var DROPPED =
-  '<svg class="edge-error-art" viewBox="0 0 200 140" aria-hidden="true">' +
-  // the ground
-  '<path d="M14 120 H186" fill="none" stroke="#c8d2d8" stroke-width="3" stroke-linecap="round"/>' +
-  // where it hit
-  '<path d="M30 114 l-8 -5 M36 108 l-4 -9" fill="none" stroke="#c8d2d8" stroke-width="2.6" stroke-linecap="round"/>' +
-  // the scoop, resting on the ground
-  '<circle cx="64" cy="92" r="28" fill="#f7f9fa" stroke="#5b6b74" stroke-width="3"/>' +
-  '<circle cx="54" cy="86" r="3.4" fill="#5b6b74"/>' +
-  '<circle cx="74" cy="86" r="3.4" fill="#5b6b74"/>' +
-  // a frown, not a smile: the control point sits below the ends of the curve
-  '<path d="M53 100 Q64 109 75 100" fill="none" stroke="#5b6b74" stroke-width="3" stroke-linecap="round"/>' +
-  // the cone, fallen beside it: the point on the ground, the open end to the side
-  '<path d="M96 120 L172 92 V120 Z" fill="#f7f9fa" stroke="#5b6b74" stroke-width="3" stroke-linejoin="round"/>' +
-  '<ellipse cx="172" cy="106" rx="9" ry="14" fill="#f7f9fa" stroke="#5b6b74" stroke-width="3"/>' +
-  // the waffle
-  '<path d="M112 116 L126 106 M122 119 L136 109" fill="none" stroke="#c8d2d8" stroke-width="2.4" stroke-linecap="round"/>' +
-  '<circle cx="148" cy="102" r="2.6" fill="#5b6b74"/>' +
-  '<circle cx="158" cy="102" r="2.6" fill="#5b6b74"/>' +
-  '<path d="M146 110 Q153 119 160 110" fill="none" stroke="#5b6b74" stroke-width="2.6" stroke-linecap="round"/>' +
+// A ring and an exclamation mark, drawn rather than typed: the mark is the only
+// artwork on the page, and a typed "!" in a CSS circle would be the wrong weight
+// and would not sit on the circle's centre.
+var MARK =
+  '<svg class="edge-error-mark" viewBox="0 0 96 96" aria-hidden="true">' +
+  '<circle cx="48" cy="48" r="41" fill="none" stroke="#202124" stroke-width="7"/>' +
+  '<rect x="43" y="25" width="10" height="31" rx="5" fill="#202124"/>' +
+  '<circle cx="48" cy="69" r="6" fill="#202124"/>' +
   '</svg>';
 
 export function buildErrorPage(entry, ops) {
@@ -40,35 +28,60 @@ export function buildErrorPage(entry, ops) {
   var box = document.createElement('div');
   box.className = 'edge-error-box';
 
-  var art = document.createElement('div');
-  art.innerHTML = DROPPED;
-  box.appendChild(art);
+  var mark = document.createElement('div');
+  mark.innerHTML = MARK;
+  box.appendChild(mark);
 
-  var words = document.createElement('div');
-  words.className = 'edge-error-words';
   var heading = document.createElement('h1');
-  heading.textContent = "Hmmm\u2026 can't reach this page";
-  var address = document.createElement('p');
-  address.className = 'edge-error-address';
-  address.textContent = hostOf(entry.url) || entry.url;
-  var because = document.createElement('p');
-  because.className = 'edge-error-because';
-  because.textContent = 'This computer is not connected to the internet, so there is nothing to reach.';
-  var again = document.createElement('p');
-  again.className = 'edge-error-again';
-  again.textContent = 'Try checking the connection, or open a new tab and start from there.';
-  words.appendChild(heading);
-  words.appendChild(address);
-  words.appendChild(because);
-  words.appendChild(again);
-  box.appendChild(words);
+  heading.className = 'edge-error-heading';
+  heading.textContent = 'This page is having a problem';
+
+  var sub = document.createElement('p');
+  sub.className = 'edge-error-sub';
+  sub.textContent = 'Try coming back to it later.';
+
+  box.appendChild(heading);
+  box.appendChild(sub);
+
+  // The two things you can do instead, offered as buttons rather than as prose,
+  // because both of them are real: this one can open a tab and it can reload.
+  var also = document.createElement('div');
+  also.className = 'edge-error-also';
+  var alsoLabel = document.createElement('p');
+  alsoLabel.className = 'edge-error-also-label';
+  alsoLabel.textContent = 'You could also:';
+  also.appendChild(alsoLabel);
+
+  var list = document.createElement('ul');
+  list.className = 'edge-error-also-list';
+  [
+    { label: 'Open a new tab', run: ops.onNewTab },
+    { label: 'Refresh this page', run: ops.onReload }
+  ].forEach(function (item) {
+    var row = document.createElement('li');
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'edge-error-also-link';
+    button.textContent = item.label;
+    button.addEventListener('click', function () {
+      if (item.run) {
+        item.run();
+      }
+    });
+    row.appendChild(button);
+    list.appendChild(row);
+  });
+  also.appendChild(list);
+  box.appendChild(also);
 
   var button = document.createElement('button');
   button.type = 'button';
   button.className = 'edge-error-reload';
-  button.textContent = 'Reload';
+  button.textContent = 'Refresh';
   button.addEventListener('click', function () {
-    ops.onReload();
+    if (ops.onReload) {
+      ops.onReload();
+    }
   });
   box.appendChild(button);
 

@@ -210,7 +210,12 @@ export function openEdge(context, args) {
     if (entry.page === 'newtab') {
       swap(buildNewTab({ onNavigate: go, onReady: onReady }));
     } else if (entry.page === 'error') {
-      swap(buildErrorPage(entry, { onReload: function () { tabs.reload(); } }));
+      // Both of the page's suggestions do something: one reloads, the other
+      // opens a tab on the new tab page, which is where a person starts again.
+      swap(buildErrorPage(entry, {
+        onReload: function () { tabs.reload(); },
+        onNewTab: function () { tabs.open(NEW_TAB_URL); }
+      }));
     } else {
       swap(buildPage(entry.page, entry, pageOps()));
     }

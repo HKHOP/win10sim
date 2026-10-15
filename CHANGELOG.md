@@ -3,6 +3,50 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.21.5] - Edge's error page is the old one again: a mark, words, a button
+
+2026-10-14
+
+### Added
+
+- **The circled exclamation mark (`js/apps/edge/errorpage.js`)**: the page's only
+  artwork, drawn rather than typed - a ring at the viewBox's own weight with the
+  bar and the dot as shapes, so it sits on the circle's centre.
+
+- **"You could also:"** with two working suggestions: `Open a new tab`
+  (`tabs.open(NEW_TAB_URL)`) and `Refresh this page` (`tabs.reload()`). Both are
+  real; both are drawn as plain words, as the older page writes them, and say so
+  with an underline on a press.
+
+### Removed
+
+- The dropped ice cream, after two attempts at it. A circle with two dots on it
+  and a curve for a mouth **is** a smiley whatever else stands beside it, and the
+  second attempt's cone read as a ring on a stick: the two halves of the drawing
+  each said something on their own and neither said ice cream.
+- The old face, and with it the page's illustrations entirely. The page has none.
+
+### Changed
+
+- `css/edge-page.css`: the page is now a **centred column of left-aligned text**,
+  which is the older Edge layout and the part that actually mattered - a centred
+  column of centred words reads as a poster rather than a page telling you what
+  went wrong. Heading 26px bold, advice line, the two suggestions as a bulleted
+  list, and one filled blue `Refresh` button. Centring is auto margins rather
+  than `justify-content: center`, which spills content off both ends and cannot
+  scroll back the top.
+
+- Heading and body copy match the older page: `This page is having a problem` /
+  `Try coming back to it later.` The `google.com` address line and the
+  not-connected explanation are gone with the rest of the restyle.
+
+### Fixed
+
+- The drawing used to sit badly placed because its viewBox was taller than its
+  content (a 220x150 box holding art in the bottom 50 units), which left a band
+  of white above it as tall as the subject. Relevant only to the drawing that is
+  now removed; the mark's element matches its viewBox for the same reason.
+
 ## [1.21.4] - Edge's error page draws a dropped ice cream, and centres by layout
 
 2026-10-14

@@ -306,71 +306,116 @@
 
 /* --- the page a browser shows when the network is not there --------------- */
 
-/* Centred by layout rather than by a row of flex: the box is a column's item,
-   sized to the width it is given and capped, so nothing can be wider than the
-   tab and end up pushed off to one side. A row of flex with `center` puts an
-   item that is too wide half out of frame on the left, where it cannot be
-   scrolled to - which is what had the whole page sitting against the right
-   edge. */
+/* The page a browser shows when a page cannot be shown: the older Edge error
+   page, which is a column of left-aligned text sitting in the middle of the
+   tab. Centred column, left-aligned words - not the other way round. */
+
 .edge-error {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  padding: 32px 24px;
   min-height: 100%;
   box-sizing: border-box;
-  padding: 24px;
   background: #ffffff;
+  color: #202124;
 }
 
 .edge-error-box {
   width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   flex: 0 0 auto;
-  /* A URL longer than the box is broken rather than pushing it wider. */
+  /* Auto margins rather than `justify-content: center` on the parent: content
+     taller than the tab spills off both ends under `center`, and the part above
+     the top cannot be scrolled to, where auto margins stop centring and align
+     to the top instead. */
+  margin-block: auto;
   overflow-wrap: anywhere;
-  text-align: center;
+  text-align: left;
 }
 
-.edge-error-art {
-  width: 200px;
-  height: 140px;
+/* The mark. Sized in the element, so the viewBox maps to it exactly. */
+.edge-error-mark {
   display: block;
-  margin: 0 auto 16px;
+  width: 72px;
+  height: 72px;
+  max-width: 100%;
+  margin: 0 0 34px;
 }
 
-.edge-error-words h1 {
+.edge-error-heading {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #202124;
+}
+
+.edge-error-sub {
+  margin: 0 0 30px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #5f6368;
+}
+
+.edge-error-also {
+  margin: 0 0 34px;
+}
+
+.edge-error-also-label {
   margin: 0 0 10px;
-  font-size: 19px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  color: #202124;
 }
 
-.edge-error-address {
-  margin: 0 0 12px;
-  color: #5f5f5f;
-  word-break: break-all;
+.edge-error-also-list {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: #202124;
 }
 
-.edge-error-because {
-  margin: 0 0 8px;
-  color: #3c3c3c;
+.edge-error-also-list li::marker {
+  color: #9aa0a6;
 }
 
-.edge-error-again {
-  margin: 0 0 18px;
-  color: #5f5f5f;
+/* The two suggestions are buttons, because both of them do something - but the
+   older page writes them as plain words, so they are drawn as plain words and
+   only say so on a press. */
+.edge-error-also-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.edge-error-also-link:hover,
+.edge-error-also-link.sim-hover {
+  text-decoration: underline;
 }
 
 .edge-error-reload {
-  padding: 7px 22px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  background: #f7f7f7;
-  font-size: 12.5px;
-  cursor: default;
+  padding: 11px 26px;
+  border: 0;
+  border-radius: 2px;
+  background: #1a73e8;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .edge-error-reload:hover,
 .edge-error-reload.sim-hover {
-  background: #ececec;
+  background: #1765cc;
+}
+
+.edge-error-reload:active {
+  background: #12509f;
 }
