@@ -1,31 +1,11 @@
-// Making a range input follow the emulated pointer.
+// A range input that follows the emulated pointer.
 //
-// This does what the shell's own drags do — desktop.js's icon drag, the Start
-// tiles — which is the only approach that works across a mouse, a locked mouse
-// and a finger:
-//
-//   - **It listens on the window, not on the input.** A window listener sees the
-//     browser's own mousemove whether the pointer is over the capture layer or
-//     the cursor is locked; a listener on the input sees nothing at all, because
-//     the capture layer keeps the browser's pointer off the emulated UI.
-//   - **It takes no position off the event.** Under pointer lock the browser's
-//     pointer is frozen and only `movementX` moves, so an event's `clientX`
-//     says nothing about where the emulated cursor is. The position comes from
-//     `pointerClient()`, which is the one answer to that question.
-//
-// It also listens on the document, because that is where a finger's travel
-// arrives (cursor.js publishes a document mousemove for it). Both listeners run
-// the same idempotent thing — put the value at the pointer — so being called
-// twice costs nothing and being called from only one of them still works.
-//
-// The keyboard is left to the browser: arrow keys and Home/End on a focused
-// range input raise `input` by themselves, and that is the path they take
-// through here.
-//
-// One helper rather than a copy per control, because two sliders that drag
-// differently is a thing you only notice on the second one.
+// Nothing here knows how the press, the move or the release arrives - that is
+// the gesture service's whole job (see pointergesture.js), and it is the only
+// part of this that was ever in any doubt. What is left is the arithmetic: where
+// along the track the pointer is, and what the value there is.
 
-import { pointerClient } from '../../core/cursor.js';
+import { registerDragSurface } from '../../core/pointergesture.js';
 
 export function attachSlider(input, spec) {
   var min = Number(spec.min);
@@ -42,26 +22,22 @@ export function attachSlider(input, spec) {
     return min + Math.round((value - min) / step) * step;
   }
 
-  // The value at the emulated pointer, or null when the slider has no width yet.
-  function valueAtPointer() {
-    var at = pointerClient();
-    if (!at) {
-      return null;
-    }
+  // The value at a pointer position, or null when the slider has no width yet.
+  function valueAt(pointer) {
     var box = input.getBoundingClientRect();
-    if (!box.width) {
+    if (!pointer || !box.width) {
       return null;
     }
     // Browsers map the value so the thumb's centre follows the pointer, which is
     // why the travel is the track less the thumb rather than the whole track.
     var travel = box.width - THUMB;
-    var fraction = travel > 0 ? (at.x - box.left - THUMB / 2) / travel : 0;
+    var fraction = travel > 0 ? (pointer.x - box.left - THUMB / 2) / travel : 0;
     fraction = Math.max(0, Math.min(1, fraction));
     return Math.max(min, Math.min(max, snap(min + fraction * (max - min))));
   }
 
   // Redraws the filled part of the track and the number from whatever the input
-  // holds now. Called during a drag as well as after one, so the thumb and the
+  // holds now. Called during the drag as well as after it, so the thumb and the
   // readout do not lag a move behind.
   function paint() {
     var value = Number(input.value);
@@ -73,14 +49,11 @@ export function attachSlider(input, spec) {
     }
   }
 
-  function followPointer() {
-    var next = valueAtPointer();
-    if (next === null) {
-      return;
-    }
-    if (Number(input.value) === next) {
-      // Already there. Both listeners call this, and re-storing the value it is
-      // already at would make the store write for a pointer that did not move.
+  function moveTo(pointer) {
+    var next = valueAt(pointer);
+    if (next === null || Number(input.value) === next) {
+      // Already there. Re-storing the value the slider is already at would make
+      // the store write for a pointer that did not move.
       return;
     }
     input.value = String(next);
@@ -88,43 +61,27 @@ export function attachSlider(input, spec) {
     spec.write(next);
   }
 
-  function stop() {
-    if (!dragging) {
-      return;
+  var surface = registerDragSurface(input, {
+    onDown: function (pointer) {
+      dragging = true;
+      // The focus is taken here because the gesture service declines the press's
+      // default - which is what stops the browser starting a drag of its own
+      // alongside this one, and also what stops it focusing the input. Without a
+      // focus the arrow keys go nowhere.
+      if (input.focus) {
+        input.focus();
+      }
+      moveTo(pointer);
+    },
+    onMove: moveTo,
+    onUp: function () {
+      dragging = false;
     }
-    dragging = false;
-    window.removeEventListener('mousemove', followPointer);
-    document.removeEventListener('mousemove', followPointer);
-    window.removeEventListener('mouseup', stop);
-    document.removeEventListener('mouseup', stop);
-  }
-
-  function onDown(event) {
-    if (event.button !== 0) {
-      return;
-    }
-    // The browser's own drag is declined, so two of them cannot fight, and the
-    // focus is taken here because declining the default stops that too - and
-    // without a focus the arrow keys go nowhere.
-    //
-    // No `simEcho` check: that mark says "the routed press that accompanies a
-    // real one", and on a mouse *this* press is the only press the input ever
-    // sees - the real one lands on the capture layer, not here. Skipping it
-    // meant the slider ignored every press on a desktop and worked on a phone.
-    event.preventDefault();
-    input.focus();
-    dragging = true;
-    window.addEventListener('mousemove', followPointer);
-    document.addEventListener('mousemove', followPointer);
-    window.addEventListener('mouseup', stop);
-    document.addEventListener('mouseup', stop);
-    followPointer();
-  }
-
-  input.addEventListener('mousedown', onDown);
+  });
 
   // The keyboard path, and the path a real mouse takes if the shell ever stops
-  // intercepting it.
+  // intercepting it. Left to the browser: arrow keys and Home/End on a focused
+  // range input raise `input` by themselves.
   input.addEventListener('input', function () {
     paint();
     spec.write(Number(input.value));
@@ -141,7 +98,9 @@ export function attachSlider(input, spec) {
       paint();
     },
     paint: paint,
-    stop: stop,
-    dispose: stop
+    stop: function () {
+      dragging = false;
+    },
+    dispose: surface.release
   };
 }

@@ -208,6 +208,7 @@ export function setCursorBusy(busy) {
 
 // Set once, by the one createCursor() the session makes. See pointerClient().
 var activeClientPoint = null;
+var activeHitTest = null;
 
 export function createCursor(stage) {
   var x = Math.floor(DISPLAY_WIDTH / 2);
@@ -457,26 +458,23 @@ function updateHover(target) {
     updateHover(target);
   }
 
-  // A move is an event as well as a position. Anything that follows a pointer -
-  // a selection being dragged out of a text box, a slider being dragged along
-  // its track - is listening for mousemove, and the emulated cursor is the only
-  // pointer in the shell, so without this a press-and-drag across either
-  // selects nothing at all.
+  // A move is an event as well as a position, and it is published two ways.
   //
-  // Every route the cursor can move dispatches this: the touchpad's finger
-  // travel below, and both branches of the window mousemove handler above. The
-  // mouse path used to be missing, which is why dragging a text selection or a
-  // slider worked with a finger on the touchpad and did nothing with a mouse.
+  // This one is the emulated move: dispatched on the document, without bubbling,
+  // so a surface inside the emulated UI that wants to follow the pointer can be
+  // told where it has got to. It is dispatched from the touchpad's finger travel
+  // below, because on a touch screen there is no mousemove to listen for — a
+  // finger moving is a touchmove, not a mousemove.
   //
-  // It is dispatched on the document rather than on the element under the cursor,
-  // and it does not bubble: the shell's window-level mousemove handlers are the
-  // emulated pointer's own plumbing (the window gesture, the desktop's icons, the
-  // Start tiles), already fed by the device that moved the cursor, and an event
-  // bubbling up from an element would make every one of those drags happen twice.
-  // Non-bubbling is also what keeps this from reaching a window handler at all:
-  // for an event dispatched on the document the bubble phase goes nowhere, so
-  // only a document-level listener - which is what a control that wants to
-  // follow the pointer has to be - ever hears it.
+  // The mouse path does not need it: a real mousemove reaches the window whether
+  // the pointer is over the capture layer or the cursor is locked, which is why
+  // the gesture service (pointergesture.js) listens there rather than here.
+  //
+  // Not bubbling is what keeps it away from the window handlers: for an event
+  // dispatched on the document the bubble phase goes nowhere, so the six
+  // window-level handlers that are the shell's own plumbing (window gestures,
+  // desktop icons, Start tiles, menu) cannot see it and their drags cannot
+  // double.
   function synthMove(source) {
     var opts = eventOpts(source, clientPoint());
     opts.bubbles = false;
@@ -717,7 +715,6 @@ function updateHover(target) {
       clamp();
       render();
       updateHoverTarget();
-      synthMove(event);
       return;
     }
     if (Date.now() < ignoreMovesUntil) {
@@ -745,7 +742,6 @@ function updateHover(target) {
     clamp();
     render();
     updateHoverTarget();
-    synthMove(event);
   }, true);
 
   function updateHoverTarget() {
@@ -868,6 +864,7 @@ function updateHover(target) {
   // emulated cursor's position in the page's own coordinates, which is the space
   // `getBoundingClientRect` speaks.
   activeClientPoint = clientPoint;
+  activeHitTest = hitTestThroughInputLayer;
 
   return {
     element: el,
@@ -894,4 +891,17 @@ function updateHover(target) {
 // icon drags take no event argument at all and call getPosition() instead.
 export function pointerClient() {
   return activeClientPoint ? activeClientPoint() : null;
+}
+
+// The element under the emulated pointer, for a surface that has to find its own
+// target because the press that began the gesture never named one. Goes through
+// the cursor's hit test, which looks past the capture layer — the browser's
+// pointer is kept off the emulated UI entirely, so elementFromPoint would only
+// ever find the layer.
+export function pointerHitTest() {
+  if (!activeClientPoint || !activeHitTest) {
+    return null;
+  }
+  var at = activeClientPoint();
+  return activeHitTest(at.x, at.y);
 }

@@ -3,6 +3,76 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.8] - One way to drag, for every control that follows the pointer
+
+2026-10-15
+
+### Added
+
+- **`js/core/pointergesture.js`** — the shell's answer to "what does a drag look
+  like in here", once, in one place. A control registers an element and gets
+  `onDown(pointer)`, `onMove(pointer)` and `onUp(pointer, cancelled)`.
+
+  It exists because the answer is not obvious from the outside and getting it
+  wrong is silent — a control that takes the press and then refuses to move, or
+  moves on a phone and not on a desktop, with nothing to say why. Three things
+  have to hold at once, and each was a separate bug:
+  - **a drag has to begin on the real press.** A routed click compresses
+    down + up + click into one instant, so a gesture begun on a routed press is
+    over before the pointer has moved. The real press reaches the window, but
+    says nothing about what it pressed — the capture layer keeps the browser's
+    pointer off the emulated UI — so the target is found by hit-testing under
+    the emulated cursor.
+  - **the position never comes off the event.** Under pointer lock the browser's
+    pointer is frozen and only `movementX` moves, so `clientX` says nothing
+    about where the emulated cursor is.
+  - **a gesture ends on the release that belongs to its press.** A real press is
+    released by the real `mouseup`, which arrives *after* the routed press
+    compressed into its instant click; a routed release while a real press is
+    live is that echo.
+
+  One set of window listeners for the whole shell, installed on first
+  registration. The deepest registered surface containing the target owns the
+  gesture, so a slider inside a list is handed it rather than the list. The
+  touchpad never needed any of this — no `mousemove`, no `movementX`, down and
+  up genuinely separate — which is exactly why a control could work with a
+  finger and do nothing with a mouse.
+
+  `starttiles.js` and `desktop.js` already each had a version of this for their
+  own surfaces. They are left as they are; this is for the ones that were
+  getting it wrong.
+
+- **`js/core/cursor.js`**: `pointerHitTest()`, the element under the emulated
+  pointer, through the cursor's own hit test — `elementFromPoint` would only ever
+  find the capture layer.
+
+### Removed
+
+- **`js/core/textfield-pointer.js`: its own document-level listeners.** Every
+  field in the shell had its own pair, attached only while a selection was being
+  dragged. They now go through the service.
+
+- **`js/core/cursor.js`: the two `synthMove` calls added in 1.23.6.** They were
+  an attempt to make the document channel carry a mouse, which was the wrong
+  place to fix it. A real `mousemove` already reaches the window whether the
+  pointer is over the capture layer or the cursor is locked.
+
+### Changed
+
+- **`js/apps/settings/sliderdrag.js`** is now only arithmetic: where along the
+  track the pointer is, and what the value there is.
+
+- **`js/core/textfield-pointer.js`** keeps only what is about *fields* — caret
+  placement, double and triple click, extending a selection — and asks the
+  service for the press.
+
+### Fixed
+
+- **Dragging a text selection with a mouse still did nothing**, in every text
+  field in the app. Two causes, both now in the service: the position came from
+  `event.clientX`, frozen under pointer lock, and the move was listened for on
+  the document alone, which carries a finger and not a mouse.
+
 ## [1.23.7] - The mouse drags, and the thing that stopped it
 
 2026-10-15
