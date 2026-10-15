@@ -3,6 +3,47 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.6] - A mouse drag reaches the controls that follow the pointer
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **`js/core/cursor.js`**: `synthMove` is now dispatched from both branches of
+  the window `mousemove` handler as well as from the touchpad. The comment above
+  `synthMove` already claimed it was there "so a press-and-drag across a text box
+  selects nothing at all" — it was wired to the touchpad only, so the claim was
+  true of a finger and false of a mouse.
+
+### Fixed
+
+- **Dragging with a mouse told nothing to follow it.** `synthMove` — the
+  document-level `mousemove` the shell publishes so a control can track the
+  pointer — was called from exactly one place: a finger travelling across the
+  touchpad. The browser's own `mousemove` steered the cursor and stopped there.
+  So with a real mouse:
+  - a slider took the press (hence the thumb lighting up) and then never heard
+    another move;
+  - **and dragging a text selection in any text field did nothing at all.** That
+    has been quietly broken on a mouse for as long as the fields have existed,
+    and this fixes it too.
+
+  Both routes the cursor can move now publish it. The blast radius is two
+  listeners — `sliderdrag.js` and `textfield-pointer.js`, both document-level —
+  because the event is dispatched on the document with `bubbles: false`: for an
+  event dispatched on the document the bubble phase goes nowhere, so the six
+  window-level handlers that are the shell's own plumbing (window gestures,
+  desktop icons, Start tiles and menu) cannot see it and their drags cannot
+  double.
+
 ## [1.23.5] - Sliders can be dragged with the pointer
 
 2026-10-15
