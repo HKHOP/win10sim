@@ -3,6 +3,36 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.23.4] - The switch knob sits in the middle of its track
+
+2026-10-15
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **`js/apps/settings/controls.js`**: `switchControl` marks the switch itself
+  `is-on` rather than its row, which is what `switchNode` already did down the
+  app lists. One CSS rule now moves both knobs, and the compact switch in a list
+  is no longer the one kind that does not light up.
+
+### Fixed
+
+- **Every toggle's knob sat one pixel above the middle of its track.** The track
+  has a 1px border and the page never set `box-sizing`, so `height: 20px` was
+  the *content* height and the track was drawn 22px tall — while the knob's
+  `top: 3px` centred a 12px knob against the 20px content box. The knob was
+  measured against one box and drawn inside another. `box-sizing: border-box`
+  makes the 40×20 track the size it says it is, and every measurement is now
+  against the 38×18 content box that leaves: the knob is centred by
+  `(18 − 10) / 2` and travels to `38 − 10 − 4`.
+
 ## [1.23.3] - Sliders have a track again
 
 2026-10-15

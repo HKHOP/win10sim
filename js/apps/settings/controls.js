@@ -57,7 +57,10 @@ function switchControl(item, ops) {
       field.setAttribute('aria-checked', on ? 'true' : 'false');
       field.setAttribute('aria-label', (item.label || 'Setting') + ': ' + (on ? 'on' : 'off'));
       state.textContent = on ? 'On' : 'Off';
-      el.classList.toggle('is-on', on);
+      // The class goes on the switch itself, not the row, so that this and the
+      // compact switches down a list of apps are told "on" the same way and one
+      // CSS rule can move both knobs.
+      field.classList.toggle('is-on', on);
     }
   };
 }

@@ -713,9 +713,17 @@
   color: var(--set-ink);
 }
 
+/* The Win10 switch: a track, a knob, and the word On or Off beside it.
+ *
+ * box-sizing is border-box because the track has a border: without it the 20px
+ * height is the *content* height and the track ends up 22px tall, which puts the
+ * knob a pixel above the middle of what you can see. Every measurement below is
+ * against the 38x18 content box that border-box leaves inside a 40x20 track, so
+ * the knob is centred by (18 - 10) / 2 and travels to 38 - 10 - 4. */
 .set-switch-track {
   position: relative;
   display: block;
+  box-sizing: border-box;
   width: 40px;
   height: 20px;
   border-radius: 10px;
@@ -726,24 +734,27 @@
 
 .set-switch-knob {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 12px;
-  height: 12px;
+  top: 4px;
+  left: 4px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.55);
   transition: left 120ms ease;
 }
 
-.set-switch.is-on .set-switch-track,
-.set-row--switch.is-on .set-switch-track {
+/* One rule for both kinds of switch: the one on a settings row and the compact
+   one down a list of apps. They differ only in size, so they take their
+   travelled position from a modifier of their own rather than from where the
+   class name happens to sit in the tree. */
+.set-switch.is-on .set-switch-track {
   background: var(--set-accent);
   border-color: var(--set-accent);
 }
 
-.set-row--switch.is-on .set-switch-knob {
-  left: 23px;
+.set-switch.is-on .set-switch-knob {
+  left: 24px;
 }
 
 .set-switch-state {
@@ -764,18 +775,21 @@
   outline-offset: 2px;
 }
 
+/* The compact switch: a 34x18 track, so a 32x16 content box, a 10px knob
+   centred by (16 - 10) / 2 and travelling to 32 - 10 - 3. */
 .set-switch--compact .set-switch-track {
   width: 34px;
   height: 18px;
+  border-radius: 9px;
 }
 
 .set-switch--compact .set-switch-knob {
-  width: 10px;
-  height: 10px;
+  top: 3px;
+  left: 3px;
 }
 
 .set-switch--compact.is-on .set-switch-knob {
-  left: 20px;
+  left: 19px;
 }
 
 /* --- the checkbox -------------------------------------------------------- */
