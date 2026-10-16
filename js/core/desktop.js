@@ -114,13 +114,33 @@ function buildDesktopIcon(icon) {
   return el;
 }
 
-export function createDesktop(cursor, stage) {
+export function createDesktop(cursor, stage, options) {
+  options = options || {};
+  var hideTaskbar = !!options.hideTaskbar;
+
   var desktop = document.createElement('div');
   desktop.className = 'desktop';
   // The picture, its fit and its colour all come from Personalisation >
   // Background now, so the wallpaper below is only the shell's own default
   // until the first look arrives.
   desktop.style.backgroundImage = 'url("' + DESKTOP_WALLPAPER_SRC + '")';
+
+  // Taskbar can be hidden initially and faded in later (used during boot
+  // so it appears smoothly after the sign-in wallpaper fades).
+  var taskbarHidden = hideTaskbar;
+  var taskbarEl = null;
+
+  function showTaskbar() {
+    if (!taskbarHidden || !taskbarEl) {
+      return;
+    }
+    taskbarHidden = false;
+    taskbarEl.style.opacity = '0';
+    taskbarEl.style.transition = 'opacity 0.4s ease';
+    // Force reflow
+    void taskbarEl.offsetWidth;
+    taskbarEl.style.opacity = '1';
+  }
 
   var icons = document.createElement('div');
   icons.className = 'desktop-icons';
@@ -818,11 +838,18 @@ export function createDesktop(cursor, stage) {
   desktop.appendChild(windowLayer);
   initWindowSystem(windowLayer, cursor);
 
-  desktop.appendChild(buildTaskbar());
+  taskbarEl = buildTaskbar();
+  if (taskbarHidden) {
+    taskbarEl.style.opacity = '0';
+  }
+  desktop.appendChild(taskbarEl);
   // The Start menu paints above everything, including the windows layer.
   desktop.appendChild(buildStartMenu(cursor, stage));
   // Search flyout paints above Start.
   desktop.appendChild(buildSearchMenu(cursor, stage));
 
-  return desktop;
+  return {
+    element: desktop,
+    showTaskbar: showTaskbar
+  };
 }

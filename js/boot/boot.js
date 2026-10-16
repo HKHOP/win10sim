@@ -17,6 +17,7 @@ import { prefersReducedMotion } from '../core/motion.js';
 import { initAppearance, attachCursor } from '../core/appearance.js';
 import { createLockLayer } from './lockscreen.js';
 import { createSignInLayer } from './signin.js';
+import { getLook } from '../core/appearance.js';
 // App registrations (side effects): taskbar, desktop and Start menu launch
 // by app id.
 import '../apps/explorer/app.js';
@@ -133,16 +134,35 @@ function showLockScreen() {
   root.className = 'lock-root';
   lockRoot = root;
 
+  var desktopApi = null;
+
   root.appendChild(createSignInLayer(
     function insertDesktop() {
       if (signedIn) {
         return;
       }
       signedIn = true;
+      // Preload the desktop wallpaper so there's no flash of the accent color.
+      // The wallpaper URL comes from the current look (Personalisation settings).
+      var look = getLook();
+      var wallpaperUrl = look.wallpaper && look.wallpaper.image;
+      if (wallpaperUrl && wallpaperUrl !== 'none') {
+        // Strip url("...") to get the raw URL
+        var match = wallpaperUrl.match(/^url\(["']?([^"')]+)["']?\)$/);
+        var rawUrl = match ? match[1] : wallpaperUrl;
+        var img = new Image();
+        img.src = rawUrl;
+      }
       // Underneath: desktop waits while the sign-in fades in two phases.
-      stage.insertBefore(createDesktop(cursor, stage), root);
+      // Hide taskbar initially; it will fade in after the sign-in wallpaper fades.
+      desktopApi = createDesktop(cursor, stage, { hideTaskbar: true });
+      stage.insertBefore(desktopApi.element, root);
     },
     function finishSignIn() {
+      // Fade in the taskbar now that the sign-in background has faded out.
+      if (desktopApi && desktopApi.showTaskbar) {
+        desktopApi.showTaskbar();
+      }
       if (root.parentNode) {
         root.parentNode.removeChild(root);
       }

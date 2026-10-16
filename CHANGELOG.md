@@ -3,6 +3,140 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.29.1] - The real Disk Cleanup icon
+
+2026-10-16
+
+Disk Cleanup's mark was drawn by hand, because the curated shell icon library
+held nothing shaped like cleanmgr's drive and brush. The real mark is in
+`assets/` now and the app draws it.
+
+### Added
+
+- **`assets/disk-cleanup.png`** - the tool's own icon: the drive with the brush
+  laid across it. Prepared the way the rest of `assets/` is: cropped to the
+  artwork and squared on transparency, because the supplied file carried the
+  drawing at 44% x 32% of its canvas and would have sat noticeably smaller than
+  the icons it shares a tile size with.
+
+### Removed
+
+- **`assets/disk-cleanup.svg`** - the hand-drawn stand-in added in 1.28.0, and
+  the note in it that said no such icon existed here.
+
+### Changed
+
+- `DISK_CLEANUP_SRC` points at the PNG, so the app window, the Start app list
+  and any tile pinned for it all carry the real mark.
+- Disk Cleanup's Start tile is one of the light tiles (`#eef3f7`) rather than
+  the blue it was declared with: the artwork is the light-surface mark, as
+  Notepad's, Settings' and this PC's are, and a coloured tile was only ever
+  standing in for the icon that was missing.
+
+### Fixed
+
+- None
+
+## [1.29.2] - Lock screen wallpaper and taskbar fade-in
+
+2026-10-16
+
+Two boot-sequence fixes: the lock screen now shows its wallpaper correctly,
+and the taskbar fades in smoothly after the sign-in screen finishes.
+
+### Added
+
+- None
+
+### Removed
+
+- None
+
+### Changed
+
+- **`js/core/appearance.js`** - the lock-screen and sign-in wallpaper URLs are
+  now absolute (`/assets/...`) so they resolve correctly from the CSS files
+  under `/css/` (previously they were relative and resolved to the wrong path).
+- **`js/core/desktop.js`** - `createDesktop()` accepts a `hideTaskbar` option
+  and returns a `showTaskbar()` method that fades the bar in with a 0.4s
+  transition.
+- **`js/boot/boot.js`** - the desktop is created with the taskbar hidden, and
+  `showTaskbar()` is called after the sign-in background fade completes. The
+  desktop wallpaper is also preloaded before insertion so there's no flash of
+  the accent color while the image loads.
+
+### Fixed
+
+- **Lock screen wallpaper 404.** The `--lock-wallpaper` and `--signin-image`
+  custom properties used relative paths that resolved against the CSS file
+  location (`/css/assets/...`) instead of the site root. Now they use absolute
+  paths.
+- **Desktop shows solid blue before wallpaper loads.** The wallpaper image is
+  now preloaded in the `insertDesktop` callback before the desktop element is
+  inserted.
+- **Taskbar appears instantly under the sign-in screen.** It now fades in only
+  after the sign-in wallpaper has fully faded out, matching Windows 10's
+  behaviour.
+
+## [1.29.0] - The Win10 check box and scrollbar, from WinUI's own numbers
+
+2026-10-16
+
+The shell's check boxes were the browser's, tinted with `accent-color` where a
+surface remembered to, so they were the wrong size and shape on every page,
+dialog and option list. Scrollbars were worse: three panes drew their own and
+everything else scrolled under Chromium's. Both are now the ones Windows 10
+draws, value by value out of WinUI 2.6's own resources - the version that
+matches build 21343, the build the shell icons come from - and both are drawn
+once for the whole screen.
+
+### Added
+
+- **`css/checkbox.css`** - one check box for every surface in the shell, in the
+  two sizes Windows 10 really uses: the 13px system box (`SM_CXMENUCHECK`,
+  unchanged since Windows 95) that the shell's own Win32 dialogs carry, and
+  WinUI's 20px box with its 12px glyph (`CheckBoxSize` / `CheckBoxGlyphSize`)
+  that the Settings app carries. The outline is `ControlStrongStrokeColorDefault`,
+  the pointer states are the `ControlAltFillColor` secondary / tertiary /
+  quarternary ramp, a checked box is `AccentFillColorDefault` with its 0.9 and
+  0.8 pointer opacities, and a disabled one is
+  `ControlStrongStrokeColorDisabled` over `AccentFillColorDisabled`. The tick is
+  painted as a background image rather than built as a child element, because a
+  native input has nowhere to put a child and one background serves the Settings
+  app's span as well.
+- **`css/scrollbar.css`** - one scrollbar for every pane that scrolls:
+  `ScrollBarSize` 12px gutter, `ScrollBarThumbOffset` 2px either side so the
+  thumb is the 8px `ScrollBarVerticalThumbMinWidth`, `ScrollBarCornerRadius` 3,
+  `ControlStrongFillColorDefault` for the thumb in all three of its states, and
+  no track and no border.
+
+### Removed
+
+- The hand-drawn tick the Settings app's check box built as an inline SVG
+  (`js/apps/settings/controls.js`), and the box's own size, border, fill and
+  checked state in `css/settings.css` - the shared sheet draws all of it now.
+- The per-surface `accent-color` declarations in `css/popup.css`,
+  `css/ribbon.css`, `css/explorer.css` and `css/diskcleanup.css`, which had left
+  every check box outside Settings at the browser's own size and shape.
+- The three hand-rolled scrollbars: `css/startmenu.css` and `css/search.css`
+  drew 6px gutters and `css/saveas.css` an 8px one.
+
+### Changed
+
+- Every check box in the shell is the same box at the same size: the ribbon,
+  Open with and the shell's popup boxes at 13px, Disk Cleanup's list at 13px,
+  and the Settings app at WinUI's 20px, as Windows draws each of them.
+- The three scrollbars the shell drew itself are the shared 12px gutter now,
+  which is what Explorer's panes, Start, search and save-as all get.
+
+### Fixed
+
+- **The tick was a wedge.** Its outline is a copy of `ACCEPT_CHECK`'s out of
+  `js/global/mdl2.js`, and the first copy had two signs the wrong way round
+  (`-278.5-279` for `-278.5 279`), which closed the check into a triangle. What
+  `css/checkbox.css` carries is now copied out of the font data character for
+  character.
+
 ## [1.28.0] - Settings that take effect, and Disk Cleanup
 
 2026-10-16

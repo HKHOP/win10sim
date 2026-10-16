@@ -284,22 +284,9 @@
   text-overflow: ellipsis;
 }
 
-/* Win10's own slim scrollbars for the app list. */
-.start-list::-webkit-scrollbar,
-.start-tiles::-webkit-scrollbar {
-  width: 6px;
-}
-
-.start-list::-webkit-scrollbar-thumb,
-.start-tiles::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 3px;
-}
-
-.start-list::-webkit-scrollbar-track,
-.start-tiles::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* Win10's own scrollbars: css/scrollbar.css draws every one of them, so the
+   app list, the search results and the save-as panes all show the same 12px
+   gutter as the rest of the shell. */
 
 /* --- App list column ----------------------------------------------------- */
 

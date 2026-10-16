@@ -149,8 +149,9 @@ function checkboxControl(item, ops) {
   el.setAttribute('role', 'checkbox');
   var box = document.createElement('span');
   box.className = 'set-check-box';
-  box.innerHTML =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // The box and the tick are painted entirely by css/checkbox.css, out of the
+  // real MDL2 check (U+E73E), so that this control and every native check box
+  // in the shell are drawn from the one set of Win10 brushes and metrics.
   var text = document.createElement('span');
   text.className = 'set-check-text';
   text.textContent = item.label || '';

@@ -172,22 +172,7 @@
   padding-right: 4px;
 }
 
-/* Win10's own slim scrollbars, as the Start menu's app list already uses. */
-.search-scroll-list::-webkit-scrollbar,
-.search-right-pane::-webkit-scrollbar {
-  width: 6px;
-}
-
-.search-scroll-list::-webkit-scrollbar-thumb,
-.search-right-pane::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 3px;
-}
-
-.search-scroll-list::-webkit-scrollbar-track,
-.search-right-pane::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* Scrollbars are css/scrollbar.css's, shell-wide. */
 
 .search-right-pane {
   flex: 0.9;

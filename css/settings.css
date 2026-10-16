@@ -917,7 +917,8 @@
 .set-check {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  /* CheckBoxPadding: 8px between the box and the words, as WinUI sets it. */
+  gap: 8px;
   border: 0;
   background: transparent;
   padding: 0;
@@ -928,21 +929,12 @@
   text-align: left;
 }
 
+/* The box and the tick are css/checkbox.css's: the Win10 check box every
+   surface in the shell shows, at WinUI's 20px because the Settings app is
+   built the way WinUI builds a page. It is a span rather than an input
+   because this control is a button with role="checkbox". */
 .set-check-box {
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
-  border: 1px solid #8a8a8a;
-  background: #fff;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: transparent;
-}
-
-.set-check-box svg {
-  width: 14px;
-  height: 14px;
 }
 
 /* The words beside the box. min-width: 0 because the row is an inline-flex and a
@@ -951,17 +943,6 @@
    longest word, and never smaller. */
 .set-check-text {
   min-width: 0;
-}
-
-.set-check.is-on .set-check-box {
-  background: var(--set-accent);
-  border-color: var(--set-accent);
-  color: #fff;
-}
-
-.set-check:hover .set-check-box,
-.set-check.sim-hover .set-check-box {
-  border-color: var(--set-accent);
 }
 
 /* --- the select ---------------------------------------------------------- */

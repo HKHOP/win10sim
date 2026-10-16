@@ -946,11 +946,8 @@
   color: #111;
 }
 
-.exp-openwith-remember input {
-  accent-color: var(--accent, #0078d7);
-  margin: 0;
-}
-
+/* The box is css/checkbox.css's: the 13px system check box, like the rest of
+   the shell's Win32 dialogs. */
 .exp-openwith-actions {
   display: flex;
   justify-content: flex-end;

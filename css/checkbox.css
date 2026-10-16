@@ -1,0 +1,150 @@
+/* The Windows 10 check box, drawn once for every surface in the shell that
+   shows one.
+
+   Nothing here is invented. The metrics and brushes are WinUI 2.6's - the
+   control's own resources in dev/CommonStyles/CheckBox_themeresources.xaml and
+   the palette they name in Common_themeresources_any.xaml - which is the check
+   box Windows 10 build 21343 draws, the same build the shell icons in assets/
+   come from.
+
+   Windows 10 really does draw two sizes, so both are here:
+
+     - the system check box, 13px across (SM_CXMENUCHECK, unchanged since
+       Windows 95), which the shell's own Win32 dialogs carry: Disk Cleanup,
+       the font dialog, the ribbon, Open with, the shell's popup boxes;
+     - WinUI's, 20px with a 12px glyph (CheckBoxSize / CheckBoxGlyphSize),
+       which the UWP-style surfaces carry - in this shell, the Settings app.
+
+   The tick is the real glyph: Segoe MDL2 Assets' CheckMark, the outline
+   js/global/mdl2.js carries under ACCEPT_CHECK, inked white because that is
+   what TextOnAccentFillColorPrimary is over an accent fill. WinUI names the
+   codepoint it puts in a checked box as U+E001, and in this build of the font
+   U+E001 and U+E73E are the same outline, so the tick below is that one
+   exactly - copied out of the font, not redrawn from the look of it. It is
+   painted as a background image rather than drawn as a child element because a
+   native input has nowhere to put a child, and one background serves the
+   Settings app's box too.
+
+   Hover is the `:hover, .sim-hover` pair every surface here uses: the capture
+   layer means the browser's own :hover never fires on the emulated UI, so
+   .sim-hover, set by js/core/cursor.js from the emulated pointer, is the
+   hover that actually happens. The pressed wash is keyed on :active, which
+   only a real pointer can reach - a press the shell routes is synthesized, and
+   a synthesized press does not put an element in the active state. */
+
+#monitor-stage {
+  /* ControlStrongStrokeColorDefault: what draws the grey square. */
+  --check-stroke: rgba(0, 0, 0, 0.45);
+  /* The ControlAltFill ramp: a black wash over whatever surface the box is on.
+     ControlAltFillColorSecondary / Tertiary / Quarternary. */
+  --check-fill: rgba(0, 0, 0, 0.024);
+  --check-fill-hover: rgba(0, 0, 0, 0.059);
+  --check-fill-pressed: rgba(0, 0, 0, 0.094);
+  /* ControlStrongStrokeColorDisabled, which the pressed stroke borrows too. */
+  --check-stroke-muted: rgba(0, 0, 0, 0.216);
+  /* A checked box is filled with the accent. WinUI 2.6 fills one with
+     SystemAccentColorDark1 in light theme and shows the pointer states as that
+     same colour at 0.9 and 0.8 opacity; the shell draws every other accent
+     surface in the accent itself, so this one is too, and only the two
+     opacities are copied. AccentFillColorDisabled is what a disabled check
+     gets. */
+  --check-accent: var(--accent, #0078d7);
+  --check-accent-hover: rgba(var(--accent-rgb, 0, 120, 215), 0.9);
+  --check-accent-pressed: rgba(var(--accent-rgb, 0, 120, 215), 0.8);
+  --check-accent-disabled: rgba(0, 0, 0, 0.216);
+  --check-size: 13px;
+  /* The glyph is the font's 1024-unit CheckMark scaled to this. 13px for the
+     small box and 12px for the big one is not an inconsistency: WinUI's own
+     CheckBoxGlyphSize is 12 in a 20px box, which is a modest tick, while the
+     Win32 control draws its tick from the theme's own bitmap and fills more of
+     its box - and at 8px, which is 12/20 of the small box, the font's 6%-of-em
+     stroke comes out at half a pixel and disappears. */
+  --check-glyph-size: 13px;
+  --check-glyph: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201024%201024'%3E%3Cpath%20transform='translate(0,1024)%20scale(1,-1)'%20fill='%23ffffff'%20d='M873.5%20790.5l45-45-534.5-535-278.5%20279%2045%2045%20233.5-233%20489.5%20489z'/%3E%3C/svg%3E");
+}
+
+/* The box itself: the native input every surface uses, and the Settings app's
+   span, which draws its own because that control is a button with
+   role="checkbox" rather than an input. */
+#monitor-stage input[type="checkbox"],
+#monitor-stage .set-check-box {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--check-size);
+  height: var(--check-size);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--check-stroke);
+  border-radius: 2px; /* ControlCornerRadius */
+  background-color: var(--check-fill);
+  background-image: none;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: var(--check-glyph-size) var(--check-glyph-size);
+  vertical-align: middle;
+}
+
+/* appearance:none is what makes a native box paintable at all: without it the
+   browser draws its own control on top of everything above. */
+#monitor-stage input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* The UWP-sized box. The Settings app is the only surface here built the way
+   WinUI builds a page, so it is the only one that gets it. */
+#monitor-stage .set-check-box {
+  --check-size: 20px;
+  --check-glyph-size: 12px;
+}
+
+/* Pointer over an unchecked box: a slightly heavier wash, same grey square. */
+#monitor-stage input[type="checkbox"]:not(:disabled):hover,
+#monitor-stage input[type="checkbox"]:not(:disabled).sim-hover,
+#monitor-stage .set-check:not(.is-disabled):hover .set-check-box,
+#monitor-stage .set-check:not(.is-disabled).sim-hover .set-check-box {
+  background-color: var(--check-fill-hover);
+}
+
+/* Held down: heavier still, and the grey square gives way. */
+#monitor-stage input[type="checkbox"]:not(:disabled):active,
+#monitor-stage .set-check:not(.is-disabled):active .set-check-box {
+  background-color: var(--check-fill-pressed);
+  border-color: var(--check-stroke-muted);
+}
+
+/* Checked: the accent fills the box, the tick appears. */
+#monitor-stage input[type="checkbox"]:checked,
+#monitor-stage .set-check.is-on .set-check-box {
+  border-color: var(--check-accent);
+  background-color: var(--check-accent);
+  background-image: var(--check-glyph);
+}
+
+#monitor-stage input[type="checkbox"]:checked:not(:disabled):hover,
+#monitor-stage input[type="checkbox"]:checked:not(:disabled).sim-hover,
+#monitor-stage .set-check.is-on:not(.is-disabled):hover .set-check-box,
+#monitor-stage .set-check.is-on:not(.is-disabled).sim-hover .set-check-box {
+  border-color: var(--check-accent-hover);
+  background-color: var(--check-accent-hover);
+}
+
+#monitor-stage input[type="checkbox"]:checked:not(:disabled):active,
+#monitor-stage .set-check.is-on:not(.is-disabled):active .set-check-box {
+  border-color: var(--check-accent-pressed);
+  background-color: var(--check-accent-pressed);
+}
+
+/* Disabled: the box keeps its outline and loses its fill, checked or not, and
+   a check on one is a wash rather than the accent. */
+#monitor-stage input[type="checkbox"]:disabled,
+#monitor-stage .set-check.is-disabled .set-check-box {
+  background-color: transparent;
+  border-color: var(--check-stroke-muted);
+}
+
+#monitor-stage input[type="checkbox"]:disabled:checked,
+#monitor-stage .set-check.is-disabled.is-on .set-check-box {
+  background-color: var(--check-accent-disabled);
+  border-color: var(--check-accent-disabled);
+}

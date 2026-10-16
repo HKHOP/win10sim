@@ -693,22 +693,8 @@
   cursor: default;
 }
 
-/* Slim scrollbars, the ones the rest of the shell draws. */
-.sa-nav::-webkit-scrollbar,
-.sa-list-wrap::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sa-nav::-webkit-scrollbar-thumb,
-.sa-list-wrap::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
-}
-
-.sa-nav::-webkit-scrollbar-track,
-.sa-list-wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* Scrollbars are css/scrollbar.css's, shell-wide: these two panes used to draw
+   their own 8px ones. */
 
 @media (prefers-reduced-motion: reduce) {
   .sa-foot-toggle svg {

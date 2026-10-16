@@ -56,12 +56,11 @@
   background: #cce4f7;
 }
 
+/* Sized and painted by css/checkbox.css: the shell's Win32 dialogs all carry
+   the same 13px system check box. */
 .dc-check {
   flex: 0 0 auto;
-  width: 15px;
-  height: 15px;
   margin: 0;
-  accent-color: var(--accent, #0078d7);
 }
 
 .dc-name {

@@ -1,0 +1,65 @@
+/* The Windows 10 scrollbar, drawn once for every pane in the shell that
+   scrolls.
+
+   The metrics are WinUI 2.6's (dev/CommonStyles/ScrollBar_themeresources.xaml),
+   the scrollbar Windows 10 build 21343 draws in its Settings pages, File
+   Explorer and Start:
+
+     ScrollBarSize              12   the gutter
+     ScrollBarThumbOffset        2   the gap either side of the thumb
+     ScrollBarVerticalThumbMinWidth 8   so the thumb is 8 of those 12
+     ScrollBarCornerRadius       3
+     ScrollBarThumbFill          ControlStrongFillColorDefault, rgba(0,0,0,0.45)
+     ScrollBarTrackBorderThemeThickness 0   no track, no border
+
+   Two things Win10's own copy has are left out on purpose. The first is the
+   collapsed 2px form the pointer-away scrollbar wears: it only ever becomes
+   the 8px thumb above when the pointer reaches the scrollbar, and nothing can
+   reach this one - the capture layer sits between the device's pointer and the
+   emulated screen, and a browser scrollbar is not a DOM element, so the
+   emulated pointer can neither hover it nor drag it. The thumb is therefore
+   left in the state Windows shows whenever a scrollbar is being used, which is
+   also the state it wears on a touch screen, and the shell's own scrolling
+   stays where it has always been (the wheel and the touch flick, routed by
+   js/core/cursor.js). The second is the pair of arrow buttons, which only
+   appear in that expanded state; drawing them here would be two arrows that
+   cannot be pressed.
+
+   Chromium draws its own arrow buttons in the gutter unless they are told
+   otherwise, so scrollbar-button is turned off - without it the exact 12px
+   gutter comes with a chunk of the browser's furniture inside it. */
+
+#monitor-stage *::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background: transparent;
+}
+
+#monitor-stage *::-webkit-scrollbar-track {
+  background: transparent;
+  border: 0;
+}
+
+#monitor-stage *::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.45);
+  /* The transparent border is the offset: it keeps the thumb 8px wide inside
+     the 12px gutter, at the 2px the theme puts it. */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 3px;
+}
+
+/* WinUI darkens nothing on a press either - the thumb's fill is the same
+   brush in all three of its states. */
+#monitor-stage *::-webkit-scrollbar-thumb:hover,
+#monitor-stage *::-webkit-scrollbar-thumb:active {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+#monitor-stage *::-webkit-scrollbar-button {
+  display: none;
+}
+
+#monitor-stage *::-webkit-scrollbar-corner {
+  background: transparent;
+}

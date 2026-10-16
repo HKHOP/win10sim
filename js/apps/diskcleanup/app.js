@@ -25,7 +25,11 @@ registerApp({
     subtitle: 'Windows Administrative Tools',
     tile: {
       size: 'medium',
-      color: '#0b5fa5'
+      // The tool's own artwork is the light-surface mark (a silver drive with a
+      // brush across it), so the tile is one of the light tiles the other
+      // art-bearing apps use rather than a coloured one.
+      background: '#eef3f7',
+      color: '#eef3f7'
     }
   },
   launch: function (context) {

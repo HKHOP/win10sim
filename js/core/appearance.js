@@ -95,7 +95,7 @@ function desktopWallpaper(kind, fit, colour) {
   }
   if (kind === 'Slideshow') {
     return {
-      image: 'url("' + SLIDESHOW_IMAGES[slideshow.index % SLIDESHOW_IMAGES.length] + '")',
+      image: 'url("/' + SLIDESHOW_IMAGES[slideshow.index % SLIDESHOW_IMAGES.length] + '")',
       size: 'cover',
       repeat: 'no-repeat',
       position: 'center',
@@ -104,7 +104,7 @@ function desktopWallpaper(kind, fit, colour) {
   }
   var pair = FIT[fit] || FIT.Fill;
   return {
-    image: 'url("' + DESKTOP_WALLPAPER_SRC + '")',
+    image: 'url("/' + DESKTOP_WALLPAPER_SRC + '")',
     size: pair[0],
     repeat: pair[1],
     position: fit === 'Center' ? 'center' : 'center',
@@ -157,7 +157,7 @@ function computeLook() {
     accentLock: flag('personalisation.colourOn.lockScreen', false),
     wallpaper: desktopWallpaper(kind, fit, colour),
     wallpaperKind: kind,
-    lockWallpaper: 'url("' + LOCK_WALLPAPER_SRC + '")',
+    lockWallpaper: 'url("/' + LOCK_WALLPAPER_SRC + '")',
     lockOnSignIn: flag('personalisation.lock.onSignIn', true),
     // The screen is drawn as if the panel were at its shipped 51%: brightness
     // can only ever be *taken away* from here, because there is nothing brighter
@@ -211,7 +211,7 @@ function apply() {
   style.setProperty('--wallpaper-position', look.wallpaper.position);
   style.setProperty('--wallpaper-colour', look.wallpaper.colour);
   style.setProperty('--lock-wallpaper', look.lockWallpaper);
-  style.setProperty('--signin-image', look.lockOnSignIn ? look.lockWallpaper : 'none');
+  style.setProperty('--signin-image', look.lockOnSignIn ? 'url("/' + LOCK_WALLPAPER_SRC + '")' : 'none');
   style.setProperty('--dim', String(look.dim));
   style.setProperty('--nightlight', look.nightLight ? String(look.nightLightStrength) : '0');
 

@@ -312,12 +312,8 @@
   background: #e5f1fd;
 }
 
-.ribbon-check input {
-  accent-color: var(--accent, #0078d7);
-  margin: 0;
-  width: 13px;
-  height: 13px;
-}
+/* The box itself is css/checkbox.css's: a ribbon check box is the 13px system
+   one, as it is in Win10. */
 
 /* Backstage: what the File tab shows instead of a ribbon. */
 
