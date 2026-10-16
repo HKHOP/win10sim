@@ -15,6 +15,7 @@ import {
   BELL_SVG
 } from '../global/icons.js';
 import { launchApp } from './apps.js';
+import { subscribeLook } from './appearance.js';
 import { subscribeWindows, showWindowSystemMenu } from './windowmanager.js';
 import { toggleStartMenu, subscribeStartOpen } from './startmenu.js';
 import { openSearch, searchTyped, attachSearchInput, subscribeSearchOpen } from './search.js';
@@ -166,6 +167,13 @@ export function buildTaskbar() {
       } else {
         button.textContent = item.title.charAt(0);
       }
+      // Windows only spells a window's name on the taskbar under one of the
+      // "combine" choices; the label is always built and the choice is what
+      // shows it, so changing the setting does not have to rebuild every button.
+      var label = document.createElement('span');
+      label.className = 'task-running-label';
+      label.textContent = item.title;
+      button.appendChild(label);
       button.addEventListener('click', function () {
         if (item.focused && !item.minimized) {
           item.win.minimize();
@@ -227,6 +235,20 @@ export function buildTaskbar() {
   showDesktop.className = 'task-showdesktop';
   showDesktop.title = 'Show desktop';
   bar.appendChild(showDesktop);
+
+  // Personalisation > Taskbar, applied to the bar. Where the bar sits is a fact
+  // about the screen's work area as well, but the bar is not in the DOM yet when
+  // it is built, so the desktop's own rules reach it with :has() rather than a
+  // stage attribute this could not set.
+  subscribeLook(function (look) {
+    var vertical = look.taskbarWhere === 'Left' || look.taskbarWhere === 'Right';
+    bar.style.height = vertical ? '100%' : TASKBAR_HEIGHT_PX + 'px';
+    bar.dataset.location = look.taskbarWhere;
+    bar.dataset.autohide = look.taskbarAutoHide ? 'on' : 'off';
+    bar.dataset.small = look.taskbarSmallIcons ? 'on' : 'off';
+    bar.dataset.labels = look.taskbarLabels ? 'show' : 'hide';
+    bar.dataset.peek = look.taskbarPeek ? 'on' : 'off';
+  });
 
   return bar;
 }

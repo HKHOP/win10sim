@@ -139,7 +139,7 @@
 .popup-select:focus,
 .popup-multiline:focus {
   outline: none;
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .popup-multiline {
@@ -216,7 +216,7 @@
 
 .popup-check,
 .popup-radio input {
-  accent-color: #0078d7;
+  accent-color: var(--accent, #0078d7);
   margin: 0;
   width: 15px;
   height: 15px;
@@ -224,7 +224,7 @@
 
 .popup-slider {
   width: 100%;
-  accent-color: #0078d7;
+  accent-color: var(--accent, #0078d7);
 }
 
 .popup-progress {
@@ -236,7 +236,7 @@
 
 .popup-progress-fill {
   height: 100%;
-  background: #0078d7;
+  background: var(--accent, #0078d7);
   transition: width 120ms linear;
 }
 
@@ -276,7 +276,7 @@
 .popup-btn:hover:not(:disabled),
 .popup-btn.sim-hover {
   background: #e5f1fd;
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .popup-btn:active:not(:disabled) {
@@ -284,7 +284,7 @@
 }
 
 .popup-btn.is-primary {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .popup-btn:disabled {

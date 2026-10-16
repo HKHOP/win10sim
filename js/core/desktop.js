@@ -11,6 +11,7 @@ import {
   DOUBLE_TAP_MS
 } from '../global/constants.js';
 import { buildTaskbar } from './taskbar.js';
+import { subscribeLook } from './appearance.js';
 import { initWindowSystem } from './windowmanager.js';
 import { launchApp, getApp, getVolume } from './apps.js';
 import { createWindow } from './windowmanager.js';
@@ -72,6 +73,12 @@ var ICON_SCALE_LARGE = 1.5;
 var ICON_SCALE_MEDIUM = 1;
 var ICON_SCALE_SMALL = 0.7;
 var iconScale = ICON_SCALE_MEDIUM;
+// Settings' own desktop-icon choices (Personalisation > Themes): how big the
+// icons are and whether the grid is drawn at all. They multiply the View menu's
+// scale rather than replacing it, because the two are different questions - one
+// is a preference, the other a glance.
+var settingsIconScale = 1;
+var showIcons = true;
 var autoArrange = false;
 var sortKey = 'name';
 var sortAsc = true;
@@ -110,6 +117,9 @@ function buildDesktopIcon(icon) {
 export function createDesktop(cursor, stage) {
   var desktop = document.createElement('div');
   desktop.className = 'desktop';
+  // The picture, its fit and its colour all come from Personalisation >
+  // Background now, so the wallpaper below is only the shell's own default
+  // until the first look arrives.
   desktop.style.backgroundImage = 'url("' + DESKTOP_WALLPAPER_SRC + '")';
 
   var icons = document.createElement('div');
@@ -295,15 +305,23 @@ export function createDesktop(cursor, stage) {
   }
 
   // View ▸ icon sizes rescale the whole grid, the way Win10 re-flows the
-  // desktop when you switch between Large / Medium / Small.
+  // desktop when you switch between Large / Medium / Small. Settings' own
+  // "Change the size of desktop icons" multiplies the same grid, so the two
+  // agree instead of one overwriting the other.
   function setIconScale(next) {
     iconScale = next;
+    paintIconScale();
+  }
+
+  function paintIconScale() {
+    var next = iconScale * settingsIconScale;
     SLOT_W = Math.round(88 * next);
     SLOT_H = Math.round(96 * next);
     ICON_W = Math.round(84 * next);
     ICON_H = Math.round(92 * next);
     icons.style.setProperty('--desktop-icon-w', ICON_W + 'px');
     icons.style.setProperty('--desktop-icon-art', Math.round(42 * next) + 'px');
+    icons.style.display = showIcons ? '' : 'none';
     entries.forEach(function (entry) {
       entry.row = Math.max(0, Math.min(maxRow(), entry.row));
     });
@@ -777,6 +795,23 @@ export function createDesktop(cursor, stage) {
 
   renderPositions();
   desktop.appendChild(icons);
+
+  // Personalisation > Background and Themes: the wallpaper, its fit, and the
+  // desktop icons. Redrawn rather than restyled, so the desktop follows the look
+  // instead of reading the store itself - and it is where a slideshow's next
+  // picture lands.
+  subscribeLook(function (look) {
+    settingsIconScale = look.desktopIconSize === 'Small icons' ? 0.8
+      : (look.desktopIconSize === 'Large icons' ? 1.3 : 1);
+    showIcons = look.showDesktopIcons;
+    var paper = look.wallpaper;
+    desktop.style.backgroundImage = paper.image;
+    desktop.style.backgroundColor = paper.colour;
+    desktop.style.backgroundSize = paper.size;
+    desktop.style.backgroundRepeat = paper.repeat;
+    desktop.style.backgroundPosition = paper.position;
+    paintIconScale();
+  });
 
   var windowLayer = document.createElement('div');
   windowLayer.className = 'window-layer';

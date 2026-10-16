@@ -137,7 +137,7 @@
 }
 
 .sa-addr-search:focus-within {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .sa-addr-search .sa-glyph {
@@ -594,8 +594,8 @@
 }
 
 .sa-name-input:focus-within {
-  border-color: #0078d7;
-  box-shadow: 0 0 0 1px #0078d7;
+  border-color: var(--accent, #0078d7);
+  box-shadow: 0 0 0 1px var(--accent, #0078d7);
 }
 
 .sa-select-wrap {
@@ -622,9 +622,9 @@
 }
 
 .sa-select:focus {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
   outline: none;
-  box-shadow: 0 0 0 1px #0078d7;
+  box-shadow: 0 0 0 1px var(--accent, #0078d7);
 }
 
 .sa-select-chevron {
@@ -671,12 +671,12 @@
 .sa-btn:hover,
 .sa-btn.sim-hover {
   background: #e5f1fb;
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .sa-btn.is-primary {
-  background: #0078d7;
-  border-color: #0078d7;
+  background: var(--accent, #0078d7);
+  border-color: var(--accent, #0078d7);
   color: #fff;
 }
 

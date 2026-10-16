@@ -15,6 +15,9 @@
   position: absolute;
   inset: 0;
   background-color: #000;
+  /* The picture Personalisation > Lock screen chose, handed down as a custom
+     property from the stage. */
+  background-image: var(--lock-wallpaper);
   background-size: cover;
   background-position: center;
   cursor: pointer;

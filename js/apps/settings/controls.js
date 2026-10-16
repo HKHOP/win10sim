@@ -274,7 +274,13 @@ function selectControl(item, ops) {
   }
 
   function outside(event) {
-    if (el.contains(event.target)) {
+    // The list is not a child of the control - it is placed in the page overlay
+    // so it cannot be clipped - so it has to be named here as well. Without
+    // this, the press that was aimed at an option reads as a press outside the
+    // control, the list is taken down on the press-down, and the click that
+    // follows lands on whatever the option was covering: choosing anything did
+    // nothing at all.
+    if (el.contains(event.target) || (menu && menu.contains(event.target))) {
       return;
     }
     close();

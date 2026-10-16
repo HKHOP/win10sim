@@ -62,8 +62,8 @@
 .task-search.is-open {
   width: var(--search-w);
   background: #fff;
-  border-color: #0078d7;
-  box-shadow: 0 0 0 1px #0078d7;
+  border-color: var(--accent, #0078d7);
+  box-shadow: 0 0 0 1px var(--accent, #0078d7);
 }
 
 .task-search-icon {
@@ -190,4 +190,151 @@
 .task-showdesktop:hover,
 .task-showdesktop.sim-hover {
   background: rgba(0, 0, 0, 0.12);
+}
+
+/* --- Personalisation > Taskbar ----------------------------------------- */
+
+/* "Automatically hide the taskbar": the bar slides off, leaving a sliver on
+   screen. That sliver is the bar's own pixels, and the cursor puts .sim-hover on
+   the bar when the pointer reaches it (cursor.js lists .taskbar among its hover
+   targets), so the bar comes back without the shell having to watch the
+   pointer's every step. */
+.taskbar[data-autohide="on"] {
+  transform: translateY(calc(100% - 4px));
+  transition: transform 0.18s ease;
+}
+
+.taskbar[data-autohide="on"].sim-hover,
+.taskbar[data-autohide="on"]:has(.sim-hover) {
+  transform: none;
+}
+
+/* "Use small taskbar buttons": Windows also drops the bar to 30px. The height
+   is fixed for the whole shell (window work area, Start menu, the search panel),
+   so here only the artwork on the bar shrinks - the same change seen from the
+   part of it that is not load-bearing. */
+.taskbar[data-small="on"] .task-start-logo,
+.taskbar[data-small="on"] .task-btn svg,
+.taskbar[data-small="on"] .task-pinned svg,
+.taskbar[data-small="on"] .task-pinned img,
+.taskbar[data-small="on"] .task-running-app img,
+.taskbar[data-small="on"] .tray-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.taskbar[data-small="on"] .task-start {
+  width: 36px;
+}
+
+.taskbar[data-small="on"] .task-running-app {
+  width: 40px;
+}
+
+.taskbar[data-small="on"] .tray-btn {
+  width: 24px;
+}
+
+/* "Taskbar location on screen". The bar moves and the work area moves with it,
+   because the desktop icons and every window have to stay clear of it. The bar
+   carries the choice itself, and the desktop's rules reach it with :has() -
+   nothing has to find the stage and label it. */
+.taskbar[data-location="top"] {
+  top: 0;
+  bottom: auto;
+  border-top: 0;
+  border-bottom: 1px solid #d4d4d4;
+}
+
+.desktop:has(.taskbar[data-location="top"]) .desktop-icons,
+.desktop:has(.taskbar[data-location="top"]) .window-layer {
+  top: 40px;
+}
+
+.taskbar[data-location="top"][data-autohide="on"] {
+  transform: translateY(calc(-100% + 4px));
+}
+
+.taskbar[data-location="left"],
+.taskbar[data-location="right"] {
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  border-top: 0;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.taskbar[data-location="left"] {
+  left: 0;
+  right: auto;
+  border-right: 1px solid #d4d4d4;
+}
+
+.taskbar[data-location="right"] {
+  right: 0;
+  left: auto;
+  border-left: 1px solid #d4d4d4;
+}
+
+/* Stacked bars: the groups become columns and the wide search box drops its
+   input, keeping the magnifier like Windows' narrow taskbar. */
+.taskbar[data-location="left"] :is(.task-pinned-group, .task-running, .task-tray),
+.taskbar[data-location="right"] :is(.task-pinned-group, .task-running, .task-tray) {
+  flex-direction: column;
+}
+
+.taskbar[data-location="left"] :is(.task-start, .task-btn, .task-pinned,
+  .task-running-app, .tray-btn),
+.taskbar[data-location="right"] :is(.task-start, .task-btn, .task-pinned,
+  .task-running-app, .tray-btn) {
+  width: 100%;
+  height: 40px;
+}
+
+.taskbar[data-location="left"] .task-search,
+.taskbar[data-location="right"] .task-search {
+  width: 100%;
+}
+
+.taskbar[data-location="left"] .task-search-input,
+.taskbar[data-location="right"] .task-search-input {
+  display: none;
+}
+
+.taskbar[data-location="left"] .task-showdesktop,
+.taskbar[data-location="right"] .task-showdesktop {
+  width: auto;
+  height: 6px;
+  border-left: 0;
+  border-top: 1px solid #999;
+}
+
+.desktop:has(.taskbar[data-location="left"]) .desktop-icons,
+.desktop:has(.taskbar[data-location="left"]) .window-layer {
+  left: 40px;
+}
+
+.desktop:has(.taskbar[data-location="right"]) .desktop-icons,
+.desktop:has(.taskbar[data-location="right"]) .window-layer {
+  right: 40px;
+}
+
+.taskbar[data-location="left"][data-autohide="on"] {
+  transform: translateX(calc(-100% + 4px));
+}
+
+.taskbar[data-location="right"][data-autohide="on"] {
+  transform: translateX(calc(100% - 4px));
+}
+
+/* "Use Peek to preview the desktop when you move your pointer to the Show
+   desktop button": hovering it fades the windows out of the way. The pointer
+   sets .sim-hover on the button, and :has() carries that up to the desktop. */
+.desktop:has(.taskbar[data-peek="on"]) .window-layer {
+  transition: opacity 0.18s ease;
+}
+
+.desktop:has(.taskbar[data-peek="on"]):has(.task-showdesktop.sim-hover) .window-layer {
+  opacity: 0.12;
 }

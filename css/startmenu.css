@@ -34,7 +34,7 @@
 .start-resize::after {
   content: '';
   position: absolute;
-  background: rgba(0, 120, 215, 0.35);
+  background: rgba(var(--accent-rgb, 0, 120, 215), 0.35);
 }
 
 .start-resize-x {
@@ -71,14 +71,14 @@
 .start-resize-x.sim-hover,
 .start-resize-y:hover,
 .start-resize-y.sim-hover {
-  background: rgba(0, 120, 215, 0.18);
+  background: rgba(var(--accent-rgb, 0, 120, 215), 0.18);
 }
 
 .start-resize-x:hover::after,
 .start-resize-x.sim-hover::after,
 .start-resize-y:hover::after,
 .start-resize-y.sim-hover::after {
-  background: rgba(0, 120, 215, 0.9);
+  background: rgba(var(--accent-rgb, 0, 120, 215), 0.9);
 }
 
 /* Win10 slides the Start menu out of the taskbar while it fades in, and
@@ -376,17 +376,6 @@
   display: block;
 }
 
-/* Running apps get the taskbar's blue underline, the way Win10 marks them. */
-.start-item.is-running .start-item-icon::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: -4px;
-  height: 2px;
-  background: #0078d7;
-}
-
 .start-item-text {
   flex: 1 1 auto;
   min-width: 0;
@@ -644,9 +633,9 @@
   left: 0;
   right: 0;
   top: 0;
-  border: 2px dashed rgba(0, 120, 215, 0.65);
+  border: 2px dashed rgba(var(--accent-rgb, 0, 120, 215), 0.65);
   border-radius: 2px;
-  background: rgba(0, 120, 215, 0.08);
+  background: rgba(var(--accent-rgb, 0, 120, 215), 0.08);
 }
 
 .start-tile {
@@ -704,8 +693,8 @@
 
 /* Running apps keep a marker, as on the taskbar. */
 .start-tile.is-running .start-tile-art {
-  border-color: #0078d7;
-  box-shadow: inset 0 0 0 1px rgba(0, 120, 215, 0.6);
+  border-color: var(--accent, #0078d7);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb, 0, 120, 215), 0.6);
 }
 
 .start-tile-label {
@@ -763,4 +752,13 @@
   .start-closing {
     animation: none;
   }
+}
+
+/* "Use Start full screen": the menu covers the screen above the taskbar. Size
+   is set inline from the display metrics; this is what keeps the rail's
+   open state from widening the menu past the screen. */
+.start-menu.start-fullscreen,
+.start-menu.start-fullscreen.rail-open {
+  width: var(--menu-w, 1366px);
+  border-radius: 0;
 }

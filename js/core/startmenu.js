@@ -54,9 +54,12 @@ import { listStartApps, launchApp } from './apps.js';
 import { subscribeWindows } from './windowmanager.js';
 import { showContextMenu, isContextMenuTarget } from './contextmenu.js';
 import { isRawDevicePress, isSiteChromePress } from './cursor.js';
+import { getLook, subscribeLook } from './appearance.js';
 import { sleep, shutDown, restart } from './power.js';
 import {
   getRecentlyAdded,
+  getMostUsed,
+  getLaunchCount,
   getPins,
   pinApp,
   isPinned,
@@ -188,6 +191,18 @@ function bareWidth(listW) {
 }
 
 function applyStartSize() {
+  // "Use Start full screen": the menu becomes the screen above the taskbar,
+  // which is what Windows 10 does in tablet mode or when the setting is on.
+  if (getLook().startFullScreen) {
+    menuEl.classList.add('start-fullscreen');
+    menuEl.style.setProperty('--menu-w', DISPLAY_WIDTH + 'px');
+    menuEl.style.setProperty('--menu-h', (DISPLAY_HEIGHT - TASKBAR_HEIGHT_PX) + 'px');
+    menuEl.style.top = '0px';
+    menuEl.style.left = '0px';
+    return;
+  }
+  menuEl.classList.remove('start-fullscreen');
+  menuEl.style.left = START_LEFT_PX + 'px';
   var size = getStartSize();
   var listW = listWidth();
   var shown = applyTilesPane();
@@ -430,15 +445,45 @@ function renderList() {
     byId[entry.id] = entry;
   });
 
-  // Only genuinely new apps get a Recently added section.
-  var recent = getRecentlyAdded()
-    .map(function (id) { return byId[id]; })
-    .filter(Boolean);
+  // Only genuinely new apps get a Recently added section, and only while
+  // Personalisation > Start asks for one.
+  var look = getLook();
+  var recent = look.startRecentlyAdded
+    ? getRecentlyAdded().map(function (id) { return byId[id]; }).filter(Boolean)
+    : [];
   if (recent.length) {
     listEl.appendChild(sectionHeader('Recently added'));
     recent.forEach(function (entry) {
       listEl.appendChild(buildRow(entry));
     });
+  }
+
+  // "Show most used apps": the apps this profile opens most, above the A-Z
+  // list, which is where Windows puts them.
+  var used = look.startMostUsed
+    ? getMostUsed().map(function (id) { return byId[id]; }).filter(Boolean)
+    : [];
+  if (used.length) {
+    listEl.appendChild(sectionHeader('Most used'));
+    used.forEach(function (entry) {
+      listEl.appendChild(buildRow(entry));
+    });
+  }
+
+  // "Show suggestions occasionally in Start": Windows offers an app this
+  // profile has never opened. There is no Store here and no telemetry, so the
+  // suggestion is the simplest honest reading of that rule - one app the
+  // person has never launched, never the one already shown above.
+  if (look.startSuggestions) {
+    var shown = {};
+    recent.concat(used).forEach(function (entry) { shown[entry.id] = true; });
+    var suggestion = entries.filter(function (entry) {
+      return !shown[entry.id] && getLaunchCount(entry.id) === 0;
+    })[0];
+    if (suggestion) {
+      listEl.appendChild(sectionHeader('Suggested'));
+      listEl.appendChild(buildRow(suggestion));
+    }
   }
 
   var groups = {};
@@ -1040,6 +1085,16 @@ export function buildStartMenu(cursor, stage) {
   // Launching from a tile folds the menu away, like Win10.
   setTileLaunchHandler(function () {
     closeStartMenu();
+  });
+
+  // Personalisation > Start: "recently added", "most used", "full screen" and
+  // the app list all come from the stored settings, so the menu follows them
+  // the moment they change rather than at the next boot.
+  subscribeLook(function () {
+    if (open) {
+      render();
+    }
+    applyStartSize();
   });
 
   return menuEl;

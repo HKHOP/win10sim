@@ -24,6 +24,9 @@ var MAX_START_ROWS = 5;
 var state = {
   // appId -> epoch ms the app first appeared in this profile.
   firstSeen: {},
+  // appId -> how many times this profile has launched it, which is what
+  // "Most used apps" counts. Windows keeps the same tally.
+  launches: {},
   // [{ appId, size, col, row }] in tile order; the tile grid reads this.
   pins: [],
   // The menu's size in grid cells: Win10 lets Start be dragged bigger and
@@ -58,12 +61,12 @@ function volume() {
 function snapshot() {
   return {
     pins: state.pins,
+    launches: state.launches,
     startCols: state.startCols,
     startRows: state.startRows,
     showAppList: state.showAppList
   };
 }
-
 function emit() {
   var snap = snapshot();
   listeners.forEach(function (fn) {
@@ -117,7 +120,7 @@ async function load() {
 }
 
 function mergeState(stored) {
-  ['firstSeen'].forEach(function (key) {
+  ['firstSeen', 'launches'].forEach(function (key) {
     if (stored[key] && typeof stored[key] === 'object') {
       for (var id in stored[key]) {
         if (Object.prototype.hasOwnProperty.call(stored[key], id)) {
@@ -265,6 +268,36 @@ export function getRecentlyAdded(limit) {
     })
     .sort(function (a, b) { return state.firstSeen[b] - state.firstSeen[a]; })
     .slice(0, max);
+}
+
+// Launch history ------------------------------------------------------------
+
+// Called by the registry every time an app is launched, so "Most used apps"
+// counts what this profile really opens rather than guessing.
+export function noteAppLaunched(appId) {
+  if (!appId) {
+    return;
+  }
+  state.launches[appId] = (state.launches[appId] || 0) + 1;
+  save();
+  emit();
+}
+
+// Most used: the apps with the highest launch tally, most used first. Only
+// apps that have actually been opened qualify, so a fresh profile shows no
+// section rather than a list of zeroes.
+export function getMostUsed(limit) {
+  var max = limit || 3;
+  return Object.keys(state.launches)
+    .filter(function (id) { return state.launches[id] > 0; })
+    .sort(function (a, b) { return state.launches[b] - state.launches[a]; })
+    .slice(0, max);
+}
+
+// How many times this profile has opened an app. Start reads it to tell which
+// apps are still unused, which is what the "suggestions" section offers.
+export function getLaunchCount(appId) {
+  return state.launches[appId] || 0;
 }
 
 // The Start menu size -------------------------------------------------------

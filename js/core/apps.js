@@ -5,7 +5,7 @@ import { attachQuickAccess } from '../apis/quickaccess.js';
 import { attachAssociations, registerAssociations } from '../apis/associations.js';
 import { attachSettings } from '../apis/settings-store.js';
 import { APP_PERMISSIONS } from '../global/constants.js';
-import { initStartState, setRegistryHook, noteAppRegistered } from './startstate.js';
+import { initStartState, setRegistryHook, noteAppRegistered, noteAppLaunched } from './startstate.js';
 import { setCursorBusy } from './cursor.js';
 
 // App registry + launcher: each app registers { id, name, icon, manifest,
@@ -186,6 +186,7 @@ export function launchApp(id, args) {
   if (!def) {
     return null;
   }
+  noteAppLaunched(def.id);
   const manifest = def.manifest;
   const mayUseFiles = manifest.permissions.indexOf('storage') >= 0;
   // Windows puts the spinning ring on the pointer while an app starts, and

@@ -294,7 +294,35 @@
 .task-running-app.task-active::after {
   left: 6px;
   right: 6px;
-  background: #0078d7;
+  /* The accent, unless "Start, taskbar and action center" is off, when this
+     falls back to the grey Windows leaves it. */
+  background: var(--shell-accent, #0078d7);
+}
+
+/* Personalisation > Taskbar > "Combine taskbar buttons": the two "show labels"
+   choices put the window's name beside its icon. The label is always in the
+   button; this is what shows it. */
+.task-running-label {
+  display: none;
+  max-width: 140px;
+  padding-right: 8px;
+  font-size: 12px;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskbar[data-labels="show"] .task-running-app {
+  width: auto;
+  min-width: 48px;
+  padding: 0 8px;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.taskbar[data-labels="show"] .task-running-label {
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {

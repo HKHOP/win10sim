@@ -1,4 +1,3 @@
-import { LOCK_WALLPAPER_SRC } from '../global/constants.js';
 import { NETWORK_OFFLINE_SVG } from '../global/icons.js';
 
 // Lock screen: opaque wallpaper panel with the big live clock + date
@@ -27,7 +26,9 @@ export function createLockLayer(onDismiss) {
   var layer = document.createElement('div');
   layer.className = 'lock-layer';
   // Opaque: nothing from the sign-in layer may show through before dismissal.
-  layer.style.backgroundImage = 'url("' + LOCK_WALLPAPER_SRC + '")';
+  // The picture is the lock wallpaper Personalisation > Lock screen chose,
+  // inherited from the stage as --lock-wallpaper; the element supplies no image
+  // of its own.
 
   var clock = document.createElement('div');
   clock.className = 'lock-clock';

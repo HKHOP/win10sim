@@ -195,7 +195,7 @@
 }
 
 .sim-field.is-keyboard-focus {
-  outline: 1px solid #0078d7;
+  outline: 1px solid var(--accent, #0078d7);
   outline-offset: -1px;
 }
 

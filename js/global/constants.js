@@ -140,6 +140,11 @@ export const DRIVE_SRC = 'assets/shell/system-drive.png';
 export const WINDOWS_ON_DISK_BYTES = Math.round(30.9 * 1024 * 1024 * 1024);
 // Notepad: the real Windows 10 Notepad icon (blue spiral notepad).
 export const NOTEPAD_SRC = 'assets/notepad.png';
+// Disk Cleanup. This one is not extracted: the whole shell icon library held
+// nothing shaped like cleanmgr's hard drive and broom, and the MDL2 font has no
+// broom codepoint, so assets/disk-cleanup.svg is drawn to match. See the note
+// in that file.
+export const DISK_CLEANUP_SRC = 'assets/disk-cleanup.svg';
 // What a registered app may ask the shell for in its manifest. The shell
 // checks the manifest before it hands an app a surface, so an app that has not
 // asked is never given one: a permission is a promise it keeps rather than a

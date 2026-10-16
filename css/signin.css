@@ -3,12 +3,16 @@
 .signin-layer {
   position: absolute;
   inset: 0;
+  /* Behind the wallpaper copy: the accent, which shows when "Show lock screen
+     background picture on the sign-in screen" is off. */
+  background: var(--accent, #0078d7);
   color: #fff;
 }
 
 .signin-wallpaper {
   position: absolute;
   inset: 0;
+  background-image: var(--signin-image);
   background-size: cover;
   background-position: center;
   transform: scale(1);

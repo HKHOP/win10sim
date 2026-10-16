@@ -14,6 +14,7 @@ import { createDesktop } from '../core/desktop.js';
 import { createSiteChrome } from '../core/sitechrome.js';
 import { createVirtualKeyboard } from '../core/keyboard.js';
 import { prefersReducedMotion } from '../core/motion.js';
+import { initAppearance, attachCursor } from '../core/appearance.js';
 import { createLockLayer } from './lockscreen.js';
 import { createSignInLayer } from './signin.js';
 // App registrations (side effects): taskbar, desktop and Start menu launch
@@ -23,6 +24,7 @@ import '../apps/notepad/app.js';
 import '../apps/edge/app.js';
 import '../apps/store/app.js';
 import '../apps/settings/app.js';
+import '../apps/diskcleanup/app.js';
 
 // Boot flow: black splash with logo + spinner, then the classic Win10 bug
 // (logo and spinner vanish for no reason), a beat of dead black, and the
@@ -227,6 +229,11 @@ function init() {
   watchStage(stage);
   // No cursor until boot finishes: the machine is not usable yet.
   cursor = createCursor(stage);
+  // Settings > Personalisation / Display / Ease of Access become the shell's
+  // own look here, before the desktop or the lock screen is drawn, so the
+  // first thing on screen is already wearing the profile's choices.
+  initAppearance(stage);
+  attachCursor(cursor);
 
   var bootEl = stage.querySelector('.boot-screen');
 

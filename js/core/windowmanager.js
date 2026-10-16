@@ -22,6 +22,7 @@ import { openWindowMenu, startGuidedMode, stopGuidedMode } from './windowmenu.js
 import { createPointerTracker } from './pointer.js';
 import { beginDrag, endDrag } from '../system/drag.js';
 import { prefersReducedMotion } from './motion.js';
+import { storedValue } from '../apis/settings-store.js';
 
 // Floating window system: window records and chrome, focus z-order,
 // minimize / maximize / Aero Snap state, Aero shake, and the drag / resize
@@ -520,6 +521,11 @@ function unsnapWindow(win) {
 // Snap Assist: offer the other open windows for the vacant half, most
 // recently focused first, the way Win10 fills the rest of the screen.
 function offerSnapAssist(snappedWin, zone) {
+  // System > Multitasking > "When I snap a window, show what I can snap next to
+  // it": off, the vacant half is just left empty.
+  if (storedValue('multitasking.snapAssist') === false) {
+    return;
+  }
   var vacant = oppositeHalf(zone);
   // Win10 shows the chooser only while the space it fills is empty: with
   // both halves taken there is nothing to offer.
@@ -774,6 +780,17 @@ function updateGesture() {
 }
 
 function trackSnapZone(g, pos) {
+  // System > Multitasking > "Snap windows": off, dragging a window to an edge
+  // leaves it where it is dropped, the way Windows 10 behaves with snapping
+  // turned off. The preview never appears either, so the screen is not promised
+  // a snap that will not happen.
+  if (storedValue('multitasking.snapWindows') === false) {
+    if (g.pendingZone) {
+      g.pendingZone = null;
+      hideSnapPreview();
+    }
+    return;
+  }
   var zone = snapZoneAt(pos.x, pos.y);
   if (zone === g.pendingZone) {
     return;

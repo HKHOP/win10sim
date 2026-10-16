@@ -3,6 +3,87 @@
 All task completions (not conversations) get a new version section below.
 Format: MAJOR.MINOR.PATCH. Latest version on top.
 
+## [1.28.0] - Settings that take effect, and Disk Cleanup
+
+2026-10-16
+
+The Settings app used to describe Windows rather than change it: every control
+wrote a value that nothing read back. This makes the settings whose effect is
+visible on screen true of the shell that is drawing - the accent, the
+wallpapers, the taskbar, Start, night light, high contrast and the pointer - and
+adds the app most people first meet these settings through.
+
+### Added
+
+- **`js/core/appearance.js`** - one place that turns the stored profile into the
+  shell's look, written onto `#monitor-stage` as custom properties and data
+  attributes, so a surface made of CSS follows a setting by inheriting it and a
+  surface that has to redraw asks `subscribeLook()`.
+- **Display.** Brightness, as a black overlay whose opacity follows the slider
+  below the panel's shipped 51% (there is nothing brighter to draw, so the
+  control only ever takes light away); night light, as a warm multiply layer at
+  the chosen strength, on its own or on the always-on schedule.
+- **Personalisation.** The accent colour, shell-wide; "Transparency effects";
+  "Choose where you want to see the accent colour" for Start/taskbar, title bars
+  and the lock screen; the background's kind, fit, colour and picture; a
+  slideshow that alternates the two pictures this machine owns on the chosen
+  interval, with or without shuffle; the taskbar's location, auto-hide, small
+  buttons, labels and Peek; Start's recently added apps, most used apps,
+  suggestions and full screen.
+- **Ease of Access.** "Animation effects" off, which now really does stop the
+  shell's motion; "Choose a pointer size"; the colour filters; the high contrast
+  themes.
+- **Multitasking.** "Snap windows" and "When I snap a window, show what I can
+  snap next to it" now decide whether those happen.
+- **Disk Cleanup** (`js/apps/diskcleanup/`), registered by search or from the
+  Start app list rather than pinned. Both halves of the real tool are here: the
+  account's own folders - Temp, Downloads, the Recycle Bin - are measured by
+  walking them and cleaned by really deleting what is in them, so the space
+  really does come back; Windows' own categories - Windows Update Cleanup,
+  Delivery Optimization, the memory dumps, the upgrade logs, the previous
+  installation - carry the figures cleanmgr reports for them and are cleaned in
+  the tool's accounting only, because this drive never held those bytes
+  (categories.js says which is which). "Clean up system files" adds the second
+  group, the calculating and cleaning progress dialogs behave as they do in
+  Windows, and Cancel calls a run off.
+- **A launch tally** for the profile (`js/core/startstate.js`), fed by
+  `launchApp`, which is what "Show most used apps" counts and what the
+  suggestions section uses to find an app nobody has opened yet.
+- **`assets/disk-cleanup.svg`** - Disk Cleanup's mark. The whole shell icon
+  library was rendered and looked at and holds nothing shaped like cleanmgr's
+  drive and broom, and the Segoe MDL2 font has no broom codepoint, so this one is
+  drawn; the file says so.
+
+### Removed
+
+- The lock screen's and sign-in's hard-coded wallpaper: both now follow the
+  stored profile, so changing the lock picture changes them.
+- The blue underline the Start app list drew beneath the icon of every running
+  app.
+
+### Changed
+
+- The hard-coded accent blue in `explorer.css`, `popup.css`, `ribbon.css`,
+  `saveas.css`, `search.css`, `notepad.css`, `textfield.css` and `startmenu.css`
+  is now `var(--accent)`, so one choice on the Colors page reaches all of them.
+- The taskbar labels its own choices (`data-location`, `data-autohide`,
+  `data-small`, `data-labels`, `data-peek`) and the desktop's rules reach it with
+  `:has()`, because the bar is not in the document yet when it is built.
+- `prefersReducedMotion()` also answers "yes" when "Animation effects" is off, so
+  the shell stops moving without every caller having to ask twice.
+
+### Fixed
+
+- **Settings drop-downs did nothing.** Choosing an option closed the list on the
+  press-down and let the click land on whatever the option had been covering: the
+  option list is placed in the page overlay rather than inside the control, and
+  the "press outside" handler only knew about the control. It knows about the list
+  too now.
+- **A crash while drawing the taskbar** (`Cannot read properties of null
+  (reading 'dataset')`): the taskbar location was being written to the stage,
+  which the bar cannot reach at build time because it is not in the document
+  yet.
+
 ## [1.27.1] - Settings previews syntax fix
 
 2026-10-15

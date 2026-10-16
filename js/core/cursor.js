@@ -67,7 +67,12 @@ var TEXT_SELECTOR = 'textarea, input[type="text"], input[type="password"], input
 // only hover the OS gets.
 var HOVER_SELECTOR = 'button, a, input, select, textarea, [role="button"], [role="textbox"], ' +
   '.desktop-icon, .exp-tile, .exp-list-row, .exp-detail-row, .exp-drive, ' +
-  '.exp-qa-row, .exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item';
+  '.exp-qa-row, .exp-nav-row, .exp-crumb-btn, .task-showdesktop, .start-item, ' +
+  '.dc-row, ' +
+  // The bar itself carries the class so an auto-hidden taskbar knows the
+  // pointer has reached the sliver of it left on screen, which is the bar's own
+  // background rather than any control on it.
+  '.taskbar';
 
 var inputLayer = null;
 
@@ -245,6 +250,10 @@ export function createCursor(stage) {
   // monitor is scaled to a fraction, an unscaled cursor would be several times
   // too big next to the taskbar it is pointing at. It scales with the stage.
   var scale = 1;
+  // Ease of Access > Cursor & pointer sizes the glyph on top of the stage
+  // scale, so the pointer can be made easier to see without touching the
+  // monitor's own scale.
+  var userScale = 1;
   var busy = false;
   var busyFrame = 0;
   var busyTimer = null;
@@ -256,13 +265,25 @@ export function createCursor(stage) {
   function applyCursorArt() {
     var art = CURSOR_ART[state] || CURSOR_ART.idle;
     var hotspot = art.hotspot;
+    var size = CURSOR_SIZE_PX * scale * userScale;
     img.src = art.animated ? busySrc() : art.src;
-    img.style.width = (CURSOR_SIZE_PX * scale) + 'px';
-    img.style.height = (CURSOR_SIZE_PX * scale) + 'px';
+    img.style.width = size + 'px';
+    img.style.height = size + 'px';
     // The hotspot is in emulated pixels too, so the pointer tip stays on the
     // pixel it points at at every stage scale.
-    img.style.marginLeft = (-hotspot[0] * scale) + 'px';
-    img.style.marginTop = (-hotspot[1] * scale) + 'px';
+    img.style.marginLeft = (-hotspot[0] * scale * userScale) + 'px';
+    img.style.marginTop = (-hotspot[1] * scale * userScale) + 'px';
+  }
+
+  // Ease of Access > "Choose a pointer size". 1 is the shipped pointer; the
+  // steps above it draw the same artwork larger.
+  function setSizeScale(next) {
+    var wanted = isFinite(next) && next > 0 ? next : 1;
+    if (wanted === userScale) {
+      return;
+    }
+    userScale = wanted;
+    applyCursorArt();
   }
 
   // The loading ring is an animated cursor, so it is played here rather than
@@ -856,7 +877,8 @@ function updateHover(target) {
   // The one cursor in the session, so anything in the shell can put the loading
   // ring on without being handed the cursor itself.
   session = {
-    setBusy: setBusy
+    setBusy: setBusy,
+    setSizeScale: setSizeScale
   };
 
   // Published so a control that follows the pointer can find it without being
@@ -876,6 +898,7 @@ function updateHover(target) {
     // the target themselves.
     hitTest: hitTestThroughInputLayer,
     setBusy: setBusy,
+    setSizeScale: setSizeScale,
     setBooted: setBooted
   };
 }

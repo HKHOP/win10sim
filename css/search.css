@@ -108,7 +108,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: #0078d7;
+  background: var(--accent, #0078d7);
 }
 
 .search-header-actions {
@@ -337,7 +337,7 @@
 }
 
 .search-best-match-open {
-  background: #0078d7;
+  background: var(--accent, #0078d7);
   color: #fff;
   border: 0;
   padding: 6px 24px;

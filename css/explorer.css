@@ -72,7 +72,7 @@
 
 /* Edit mode: crumbs swap for the full path, box takes the focus colour. */
 .exp-crumb-edit {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .exp-addr-input {
@@ -125,7 +125,7 @@
 }
 
 .exp-search:focus-within {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .exp-search-icon {
@@ -256,7 +256,7 @@
 .exp-msgbox-btn:hover,
 .exp-msgbox-btn.sim-hover {
   background: #e5f1fd;
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 /* Buttons sit bottom-right in a row, as in Win10 dialogs. */
@@ -340,7 +340,7 @@
 .exp-rename {
   width: 100%;
   min-width: 60px;
-  border: 1px solid #0078d7;
+  border: 1px solid var(--accent, #0078d7);
   outline: 0;
   padding: 1px 2px;
   font-size: 12px;
@@ -441,7 +441,7 @@
   width: 100%;
   font-size: 12px;
   font-family: inherit;
-  color: #0078d7;
+  color: var(--accent, #0078d7);
   padding: 8px 0 6px;
   cursor: pointer;
   text-align: left;
@@ -608,7 +608,7 @@
 
 .exp-drive-fill {
   height: 100%;
-  background: #0078d7;
+  background: var(--accent, #0078d7);
 }
 
 /* A drive with this little room left is drawn red, the way Win10 draws it once
@@ -744,8 +744,8 @@
 .exp-qa-tab-on,
 .exp-qa-tab-on:hover,
 .exp-qa-tab-on.sim-hover {
-  border-color: #0078d7;
-  color: #0078d7;
+  border-color: var(--accent, #0078d7);
+  color: var(--accent, #0078d7);
 }
 
 .exp-qa-list {
@@ -906,7 +906,7 @@
 }
 
 .exp-openwith-row-on {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
   background: #cde6ff;
 }
 
@@ -947,7 +947,7 @@
 }
 
 .exp-openwith-remember input {
-  accent-color: #0078d7;
+  accent-color: var(--accent, #0078d7);
   margin: 0;
 }
 
@@ -971,11 +971,11 @@
 .exp-openwith-btn:hover,
 .exp-openwith-btn.sim-hover {
   background: #e5f1fd;
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 .exp-openwith-btn.is-primary {
-  border-color: #0078d7;
+  border-color: var(--accent, #0078d7);
 }
 
 /* Shortcuts: Win10 draws a small arrow over the icon a shortcut points at, so

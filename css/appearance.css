@@ -1,0 +1,171 @@
+/* What the stored Settings do to the shell.
+   js/core/appearance.js turns the profile's choices into custom properties and
+   data attributes on #monitor-stage; this sheet is the other half of that, and
+   it lives on its own because the same handful of attributes restyle surfaces
+   that otherwise have nothing to do with one another. Surfaces whose settings
+   are entirely their own (the taskbar's auto-hide, the Start menu's full-screen
+   size) keep those rules in their own sheets. */
+
+#monitor-stage {
+  --accent: #0078d7;
+  --accent-rgb: 0, 120, 215;
+  --accent-on: #ffffff;
+  --shell-accent: #0078d7;
+  --dim: 0;
+  --nightlight: 0;
+  --lock-wallpaper: url("../assets/Windows-10-lock-screen-bg.jpg");
+  --signin-image: url("../assets/Windows-10-lock-screen-bg.jpg");
+}
+
+/* --- Display: brightness and night light -------------------------------- */
+
+.sim-screen-dim,
+.sim-screen-warm {
+  position: absolute;
+  inset: 0;
+  z-index: 9000;
+  /* Nothing here is a control: every press still belongs to what is underneath. */
+  pointer-events: none;
+}
+
+/* The screen is drawn as if the panel were at Windows' own 51%, so brightness
+   can only take light away: below that mark the black sheet follows the slider,
+   above it there is nothing brighter to draw and the sheet is gone. */
+.sim-screen-dim {
+  background: #000;
+  opacity: calc(var(--dim) * 0.85);
+}
+
+/* Night light is a warm cast, so it multiplies rather than paints over: the
+   picture stays readable and only takes on the orange. */
+.sim-screen-warm {
+  background: rgb(255, 147, 41);
+  mix-blend-mode: multiply;
+  opacity: calc(var(--nightlight) * 0.35);
+}
+
+/* --- Ease of Access: colour filters ------------------------------------- */
+
+/* Applied to the stage's children rather than the stage itself, so the
+   monitor's own bezel (a box-shadow on the stage) is not filtered with the
+   screen. Context menus live outside the stage and so keep their colours, which
+   is the one place this is not exactly the real thing. */
+#monitor-stage[data-color-filter="Grayscale"] > * {
+  filter: grayscale(1);
+}
+
+#monitor-stage[data-color-filter="Inverted"] > * {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+#monitor-stage[data-color-filter="Red-Green filter"] > * {
+  filter: saturate(0.35);
+}
+
+#monitor-stage[data-color-filter="Red-Blue filter"] > * {
+  filter: hue-rotate(40deg) saturate(0.6);
+}
+
+#monitor-stage[data-color-filter="Green-Blue filter"] > * {
+  filter: hue-rotate(-40deg) saturate(0.6);
+}
+
+/* --- Ease of Access: high contrast -------------------------------------- */
+
+/* Windows re-themes every app under a high contrast theme. The shell surfaces
+   are re-themed here; the apps that draw their own artwork keep it, which is the
+   honest boundary of what a stylesheet can do to someone else's pixels. */
+#monitor-stage[data-contrast="white-on-black"] {
+  --hc-bg: #000000;
+  --hc-fg: #ffffff;
+}
+
+#monitor-stage[data-contrast="black-on-white"] {
+  --hc-bg: #ffffff;
+  --hc-fg: #000000;
+}
+
+#monitor-stage[data-contrast="yellow-on-black"] {
+  --hc-bg: #000000;
+  --hc-fg: #ffff00;
+}
+
+#monitor-stage[data-contrast]:not([data-contrast=""]) .win,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .win-body,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .win-titlebar,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .win:not(.win-focused) .win-titlebar,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .taskbar,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .start-menu,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .start-rail,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .start-power-menu,
+#monitor-stage[data-contrast]:not([data-contrast=""]) .start-account-menu {
+  background: var(--hc-bg);
+  color: var(--hc-fg);
+  border-color: var(--hc-fg);
+}
+
+#monitor-stage[data-contrast]:not([data-contrast=""]) :is(.win-title, .start-item-name,
+  .start-item-sub, .start-section, .start-rail-title, .start-rail-view-label,
+  .start-account-name, .tray-clock, .tray-lang, .desktop-icon-label) {
+  color: var(--hc-fg);
+}
+
+/* The taskbar's and Start's own glyphs are filled with currentColor, so they
+   take the theme's foreground with no rule of their own. */
+#monitor-stage[data-contrast]:not([data-contrast=""]) :is(.taskbar, .start-menu) {
+  --tw: var(--hc-fg);
+}
+
+/* --- Personalisation: accent reaches the title bars --------------------- */
+
+#monitor-stage.accent-titlebars .win-focused .win-titlebar {
+  background: var(--accent);
+}
+
+#monitor-stage.accent-titlebars .win-focused .win-title,
+#monitor-stage.accent-titlebars .win-focused .win-capt {
+  color: var(--accent-on);
+}
+
+/* An unfocused window takes a muted version of the accent, the way Windows
+   fades the title bar of a window that is not in front. */
+#monitor-stage.accent-titlebars .win:not(.win-focused) .win-titlebar {
+  background: color-mix(in srgb, var(--accent) 55%, #ffffff);
+}
+
+#monitor-stage.accent-titlebars .win:not(.win-focused) .win-title {
+  color: #333333;
+}
+
+/* --- Personalisation: transparency effects ------------------------------ */
+
+/* With "Transparency effects" off, the translucent surfaces become solid. Each
+   surface keeps its own solid colour so the change is only about opacity. */
+#monitor-stage[data-transparency="off"] .taskbar {
+  background: #eeeeee;
+}
+
+#monitor-stage[data-transparency="off"] .start-menu {
+  background: #f3f3f3;
+}
+
+#monitor-stage[data-transparency="off"] .start-rail {
+  background: #eeeeee;
+}
+
+#monitor-stage[data-transparency="off"] .start-power-menu,
+#monitor-stage[data-transparency="off"] .start-account-menu {
+  background: #fcfcfc;
+}
+
+/* --- Ease of Access: animations off ------------------------------------- */
+
+/* The JavaScript half of this lives in motion.js; this is for the transitions
+   written into the sheets that have no JavaScript reading them. */
+#monitor-stage.reduce-motion *,
+#monitor-stage.reduce-motion *::before,
+#monitor-stage.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

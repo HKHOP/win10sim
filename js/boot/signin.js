@@ -3,7 +3,6 @@ import {
   ACCOUNT_NAME,
   AVATAR_SIZE_PX,
   BOOT_SPINNER_SRC,
-  LOCK_WALLPAPER_SRC,
   WELCOME_DURATION_MS,
   WELCOME_SPINNER_PX,
   WELCOME_CONTENT_HOLD_MS,
@@ -96,10 +95,12 @@ export function createSignInLayer(onInsertDesktop, onFinished) {
   layer.className = 'signin-layer';
 
   // Own wallpaper copy: on dismiss it smoothly zooms + blurs, Win10-style,
-  // while the content above stays sharp.
+  // while the content above stays sharp. The picture and whether it is shown at
+  // all come from the look (Lock screen settings); when "Show lock screen
+  // background picture on the sign-in screen" is off, --signin-image is none and
+  // the accent colour behind it shows instead.
   var wallpaper = document.createElement('div');
   wallpaper.className = 'signin-wallpaper';
-  wallpaper.style.backgroundImage = 'url("' + LOCK_WALLPAPER_SRC + '")';
   layer.appendChild(wallpaper);
 
   var dim = document.createElement('div');

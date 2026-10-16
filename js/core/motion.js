@@ -11,10 +11,19 @@
 // matchMedia() per read: asking the browser to evaluate the query is cheap, but
 // this is read on every window that opens.
 
+import { storedValue } from '../apis/settings-store.js';
+
 var QUERY = '(prefers-reduced-motion: reduce)';
 
 var media = window.matchMedia ? window.matchMedia(QUERY) : null;
 
 export function prefersReducedMotion() {
+  // Ease of Access > Display > "Show animations in Windows" is the same
+  // question asked from the other side: turning the setting off is asking for
+  // less motion even when the device has not asked for it, and it is read here
+  // rather than sampled once so a change takes effect at once.
+  if (storedValue('ease.animations') === false) {
+    return true;
+  }
   return !!(media && media.matches);
 }
